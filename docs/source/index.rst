@@ -15,5 +15,5 @@ Contents
 .. toctree::
 
    usage
-   api
    datasets
+   api
