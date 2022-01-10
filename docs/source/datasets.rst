@@ -1,2 +1,2 @@
-DATASETS
+Datasets
 ========
