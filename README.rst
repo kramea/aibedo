@@ -1,8 +1,6 @@
-Template for the Read the Docs tutorial
+AIBEDO 
 =======================================
-
-This GitHub template includes fictional Python library
-with some basic Sphinx docs.
+A hybrid AI framework to capture the effects of cloud properties on global circulation and regional climate patterns
 
 Read the tutorial here:
 
