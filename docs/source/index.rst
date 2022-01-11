@@ -1,9 +1,5 @@
-Welcome to AIBEDO documentation!
+AIBEDO: a hybrid AI framework to capture the effects of cloud properties on global circulation and regional climate patterns.
 ===================================
-
-
-Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
 
 .. note::
 
@@ -13,7 +9,9 @@ Contents
 --------
 
 .. toctree::
+   :maxdepth: 3
 
-   usage
-   datasets
-   api
+   dynamics/index
+   datasets/index
+   architecture/index
+   reports/index
