@@ -1,5 +1,5 @@
 .. _aibedo_dynamics:
 
 
-Climate Dynamics bedhind the development of AIBEDO
+Climate Dynamics behind the development of AIBEDO
 ===================================================
