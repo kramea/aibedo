@@ -1,8 +1,8 @@
 .. _aibedo_architecture
 
 
-AIBEDO Hybrid Model Architecture
-================================
+Hybrid AI Model Architecture
+============================
 
 
 

@@ -1,5 +1,5 @@
 .. _aibedo_dynamics:
 
 
-Climate Dynamics behind the development of AIBEDO
+Climate dynamics of clouds and global circulation
 ===================================================
