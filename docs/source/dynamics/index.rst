@@ -1,5 +1,15 @@
 .. _aibedo_dynamics:
 
 
-Climate dynamics of clouds and global circulation
-===================================================
+Climate dynamics
+================
+
+
+.. toctree::
+   :maxdepth: 4
+
+   clouds
+   fdtheorem
+   mcb
+
+
