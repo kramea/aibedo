@@ -1,8 +1,20 @@
-[build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
+[tool.black]
+line-length = 150
+target-version = ['py37']
 
-[project]
-name = "aibedo"
-authors = [{name = "KalaiRamea", email = "kramea@parc"}]
-dynamic = ["version", "description"]
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 150
+known_third_party = ['sklearn', 'ignite', 'pygsp']
+
+[build-system]
+build-backend = 'setuptools.build_meta'
+requires = [
+    "setuptools >= 40.0.4",
+    "setuptools_scm >= 2.0.0, <4",
+    "wheel >= 0.29.0",
+]
+
