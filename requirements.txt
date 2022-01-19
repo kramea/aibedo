@@ -9,3 +9,6 @@ jupyter==1.0.0
 pytorch-ignite==0.2.1
 pillow==6.2.2
 trimesh==3.9.35
+netCDF4
+jupyterlab
+

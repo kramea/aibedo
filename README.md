@@ -171,3 +171,6 @@ Please consider citing our papers if you find this repository useful.
   url = {https://arxiv.org/abs/1904.05146},
 }
 ```
+
+## Additional note for AIBEDO
+Documentation of deepsphere can be found at [here] (https://deepsphere.readthedocs.io/_/downloads/en/latest/pdf/)
