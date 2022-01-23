@@ -29,7 +29,7 @@ Climate intervention techniques—like marine cloud brightening—that need to b
 
 ## Funding
 
-The development of EMMAA is funded under the DARPA AI-assisted Climate Tipping-point Modeling (ACTM) program under award DARPA-PA-21-04-02.
+The development of AIBEDO is funded under the DARPA AI-assisted Climate Tipping-point Modeling (ACTM) program under award DARPA-PA-21-04-02.
 
 ## Participating Institutions
 
