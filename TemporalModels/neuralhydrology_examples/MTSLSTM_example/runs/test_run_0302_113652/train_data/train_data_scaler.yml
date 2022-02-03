@@ -1,0 +1,146 @@
+xarray_feature_scale:
+  coords: {}
+  attrs: {}
+  dims: {}
+  data_vars:
+    convective_fraction_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 0.11997701227664948
+    longwave_radiation_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 59.978416442871094
+    potential_energy_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 189.92457580566406
+    potential_evaporation_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 0.19900745153427124
+    prcp(mm/day)_maurer_extended:
+      dims: []
+      attrs: {}
+      data: 6.348869323730469
+    pressure_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 874.536376953125
+    qobs_mm_per_hour:
+      dims: []
+      attrs: {}
+      data: 0.11968177556991577
+    shortwave_radiation_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 231.48849487304688
+    specific_humidity_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 0.003845483297482133
+    srad(W/m2)_maurer_extended:
+      dims: []
+      attrs: {}
+      data: 117.91242218017578
+    temperature_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 10.26534366607666
+    tmax(C)_maurer_extended:
+      dims: []
+      attrs: {}
+      data: 10.476306915283203
+    tmin(C)_maurer_extended:
+      dims: []
+      attrs: {}
+      data: 10.140398979187012
+    total_precipitation_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 0.6985751390457153
+    vp(Pa)_maurer_extended:
+      dims: []
+      attrs: {}
+      data: 461.8179016113281
+    wind_u_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 3.6301913261413574
+    wind_v_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 3.797258138656616
+xarray_feature_center:
+  coords: {}
+  attrs: {}
+  dims: {}
+  data_vars:
+    convective_fraction_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 0.024773014709353447
+    longwave_radiation_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 298.54046630859375
+    potential_energy_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 44.49455261230469
+    potential_evaporation_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 0.1394994705915451
+    prcp(mm/day)_maurer_extended:
+      dims: []
+      attrs: {}
+      data: 3.3959856033325195
+    pressure_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 100187.7734375
+    qobs_mm_per_hour:
+      dims: []
+      attrs: {}
+      data: 0.09779783338308334
+    shortwave_radiation_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 163.7730712890625
+    specific_humidity_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 0.0059656016528606415
+    srad(W/m2)_maurer_extended:
+      dims: []
+      attrs: {}
+      data: 333.75518798828125
+    temperature_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 7.1929707527160645
+    tmax(C)_maurer_extended:
+      dims: []
+      attrs: {}
+      data: 12.698904991149902
+    tmin(C)_maurer_extended:
+      dims: []
+      attrs: {}
+      data: 0.8096112012863159
+    total_precipitation_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 0.12378223985433578
+    vp(Pa)_maurer_extended:
+      dims: []
+      attrs: {}
+      data: 761.263427734375
+    wind_u_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: 1.5203495025634766
+    wind_v_nldas_hourly:
+      dims: []
+      attrs: {}
+      data: -0.23845775425434113
