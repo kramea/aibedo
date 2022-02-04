@@ -11,6 +11,7 @@ from data_loader import load_ncdf, normalize
 # n_channels=3 for RGB images
 # n_classes is the number of probabilities you want to get per pixel
 model = UNet(n_channels=1, n_classes=1, bilinear=False)
+exit()
 #print model summary
 input_shape = (1, 192, 288) # Input Size: (size of data, number of channels, lat, lon) 
 summary(CNN(), input_shape)

@@ -151,7 +151,7 @@ def interpolate_SphereHealpix(subdivision, neighbors, input_array, lon_list, lat
 
 
 
-
+'''
 import xarray as xr
 path = "/Users/sookim/Desktop/ALBEDO/aibedo/scripts/data/ours/rsut_Amon_CESM2_historical_r1i1p1f1_gn_185001-201412.nc"
 ds = xr.open_dataset(path)
@@ -161,4 +161,5 @@ lat_list = list(np.asarray(ds.rsut[0].lat))
 lon, lat, interpolated_value = interpolate_SphereIcosahedral(8, data, lon_list, lat_list)
 lon, lat, interpolated_value = interpolate_SphereHealpix(4, 8, data, lon_list, lat_list)
 print("done")
+'''
 
