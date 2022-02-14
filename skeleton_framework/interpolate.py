@@ -40,6 +40,17 @@ def bilinear_interpolation(x1,x,x2,y1,y,y2,q11,q21,q12,q22):
     return p
 
 
+
+def resolution_SphereIcosahedral(lon,lat):
+    lat_list = []
+    for i in range(len(lon)):
+        if lon[i] == 0.0:
+            lat_list.append(lat[i])
+    lat_list.sort()
+    j=lat_list.index(0.0)
+    assert((lat_list[j]-lat_list[j-1])==(lat_list[j+1]-lat_list[j]))
+    return (lat_list[j]-lat_list[j-1])*111 # km resolution
+
 #level-0(2**0=1): 12 vertices
 #level-1(2**1=2): 42 vertices
 #level-2(2**2=4): 162 vertices
