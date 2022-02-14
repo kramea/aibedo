@@ -51,6 +51,20 @@ def resolution_SphereIcosahedral(lon,lat):
     assert((lat_list[j]-lat_list[j-1])==(lat_list[j+1]-lat_list[j]))
     return (lat_list[j]-lat_list[j-1])*111 # km resolution
 
+
+def resolution_SphereHealpixl(lon,lat):
+    lon_list = []
+    for i in range(len(lat)):
+        if lat[i] == 0.0:
+            lon_list.append(lon[i])
+    lon_list.sort()
+    resolution = []
+    for j in range(len(lon_list)-1):
+        resolution.append(lon_list[j+1]-lon_list[j])
+    return np.mean(resolution)*111 #km
+
+
+
 #level-0(2**0=1): 12 vertices
 #level-1(2**1=2): 42 vertices
 #level-2(2**2=4): 162 vertices
