@@ -26,19 +26,22 @@ def main(parser_args):
     optimizer = optim.Adam(unet.parameters(), lr=lr)
 
     #print model summary and test
-    out = unet(torch.randn(10, 10242,1))
+    out = unet(torch.randn(10, 10242,5))
     print(unet, out.shape)
     criterion = torch.nn.MSELoss()
     optimizer = optim.Adam(unet.parameters(), lr=lr)
 
     #(2) Load data
     #un-comment below 3 lines if you want to resample spherical data from netcdf.
-    #path = "./data/rsut_Amon_CESM2_historical_r1i1p1f1_gn_185001-201412.nc"
-    #lon_list, lat_list, dataset = load_ncdf_to_SphereIcosahedral(path)
-    #np.save("./data/SphereIcosahedral_rsut_Amon_CESM2_historical_r1i1p1f1_gn_185001-201412.npy",dataset)
-    dataset = np.load("./data/SphereIcosahedral_rsut_Amon_CESM2_historical_r1i1p1f1_gn_185001-201412_1.npy")
-    dataset = normalize(dataset)
-    print(np.shape(dataset))
+    path = "/Users/sookim/aibedo/skeleton_framework/data/"
+    lon_list, lat_list, dataset = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Input.nc")
+    np.save("./data/input.npy",dataset)
+   # dataset = np.load("./data/SphereIcosahedral_rsut_Amon_CESM2_historical_r1i1p1f1_gn_185001-201412_1.npy")
+    dataset = normalize(dataset, "in")
+    lon_list, lat_list, dataset_out = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Output.nc")
+    np.save("./data/output.npy",dataset_out)
+    dataset_out = normalize(dataset_out, "out")
+    print(np.shape(dataset_out))
     #(3) Train
     unet.train()
     # number of epochs to train the model
@@ -51,13 +54,13 @@ def main(parser_args):
             # _ stands in for labels, here
             # no need to flatten images
             images = torch.tensor(dataset[i*batch_size: (i+1)*batch_size])
-
+            gt_outputs = torch.tensor(dataset_out[i*batch_size: (i+1)*batch_size])
             # clear the gradients of all optimized variables
             optimizer.zero_grad()
             # forward pass: compute predicted outputs by passing inputs to the model
             outputs = unet(images.float())
             # calculate the loss
-            loss = criterion(outputs.float(), images.float())
+            loss = criterion(outputs.float(), gt_outputs.float())
             # backward pass: compute gradient of the loss with respect to model parameters
             loss.backward()
             # perform a single optimization step (parameter update)
