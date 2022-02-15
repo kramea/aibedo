@@ -89,7 +89,7 @@ class Encoder(nn.Module):
         super().__init__()
         self.pooling = pooling
         self.kernel_size = kernel_size
-        self.enc_l5 = SphericalChebBN2(1, 32, 64, laps[5], self.kernel_size) #`16-->1`
+        self.enc_l5 = SphericalChebBN2(5, 32, 64, laps[5], self.kernel_size) #`16-->5`
         self.enc_l4 = SphericalChebBNPool(64, 128, laps[4], self.pooling, self.kernel_size)
         self.enc_l3 = SphericalChebBNPool(128, 256, laps[3], self.pooling, self.kernel_size)
         self.enc_l2 = SphericalChebBNPool(256, 512, laps[2], self.pooling, self.kernel_size)
