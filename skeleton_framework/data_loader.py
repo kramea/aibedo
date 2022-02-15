@@ -6,6 +6,8 @@ import xarray as xr
 from interpolate import *
 import copy
 import os
+import time
+
 
 def load_ncdf(path_to_ncdf):
     ds = xr.open_dataset(path_to_ncdf)
@@ -43,24 +45,6 @@ def normalize(data, parameter):
     return data_
 
 
-"""
-def load_ncdf_to_SphereIcosahedral(path_to_ncdf):
-    ds=xr.open_dataset(path_to_ncdf)
-    ours = ds.rsut
-    lon_list = list(np.asarray(ds.rsut[0].lon))
-    lat_list = list(np.asarray(ds.rsut[0].lat))
-    print(np.shape(ours))
-    result = []
-    for i in range(500, 1980): #len(ours)):
-        print(i)
-        da = ds.rsut[i]
-        lon, lat, interpolated_value = interpolate_SphereIcosahedral(5, da, lon_list, lat_list)
-        n = len(interpolated_value)
-        data = np.reshape(interpolated_value, [1,n,1])
-        result.append(data)
-    output = np.concatenate(result, axis=0)
-    return lon, lat, output
-"""
 
 
 def load_ncdf_to_SphereIcosahedral(data_path):
@@ -77,7 +61,10 @@ def load_ncdf_to_SphereIcosahedral(data_path):
             da = ours[i]
             lon_list = list(np.asarray(ds[var][0:10].lon))
             lat_list = list(np.asarray(ds[var][0:10].lat))
+            start = time.time()
             lon, lat, interpolated_value = interpolate_SphereIcosahedral(5, da, lon_list, lat_list)
+            end = time.time()
+            print("elapsed time: "+str(end-start)+" secs")
             data = np.asarray([interpolated_value])
             data_all.append(data)
         data_input = np.reshape(np.concatenate(data_all, axis = 0), [-1,10242,1])
