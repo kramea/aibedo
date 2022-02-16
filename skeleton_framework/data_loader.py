@@ -55,19 +55,19 @@ def load_ncdf_to_SphereIcosahedral(data_path):
     print(var_list)
     for var in var_list:
         print(var)
-        ours = np.asarray(ds[var][0:10])
+        ours = np.asarray(ds[var])
         data_all = []
         for i in range(len(ours)):
             da = ours[i]
-            lon_list = list(np.asarray(ds[var][0:10].lon))
-            lat_list = list(np.asarray(ds[var][0:10].lat))
+            lon_list = list(np.asarray(ds[var].lon))
+            lat_list = list(np.asarray(ds[var].lat))
             start = time.time()
-            lon, lat, interpolated_value = interpolate_SphereIcosahedral(5, da, lon_list, lat_list)
+            lon, lat, interpolated_value = interpolate_SphereIcosahedral(6, da, lon_list, lat_list)
             end = time.time()
             print("elapsed time: "+str(end-start)+" secs")
             data = np.asarray([interpolated_value])
             data_all.append(data)
-        data_input = np.reshape(np.concatenate(data_all, axis = 0), [-1,10242,1])
+        data_input = np.reshape(np.concatenate(data_all, axis = 0), [-1,len(interpolated_value),1])
         file_all.append(data_input)
     data_file=np.concatenate(file_all, 2)
     return lon, lat, data_file

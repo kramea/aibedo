@@ -1,13 +1,13 @@
 IMAGE PARAMS:
   pooling_class: "icosahedron"
-  n_pixels: 10242
+  n_pixels: 40962
   depth: 6
   laplacian_type: "combinatorial"
 
 MODEL PARAMS:
   partition: [0.5,0.3,0.2]
-  batch_size: 1
-  learning_rate: 0.001
+  batch_size: 50
+  learning_rate: 0.0001
   n_epochs: 10
   kernel_size: 3
 

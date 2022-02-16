@@ -26,35 +26,40 @@ def main(parser_args):
     optimizer = optim.Adam(unet.parameters(), lr=lr)
 
     #print model summary and test
-    out = unet(torch.randn(10, 10242,5))
+    out = unet(torch.randn(10, 40962 ,5))
     print(unet, out.shape)
     criterion = torch.nn.MSELoss()
     optimizer = optim.Adam(unet.parameters(), lr=lr)
 
     #(2) Load data
     #un-comment below 3 lines if you want to resample spherical data from netcdf.
-    path = "/Users/sookim/aibedo/skeleton_framework/data/"
+    path = "/Users/sookim/Desktop/aibedo_sunet/aibedo/skeleton_framework/data/"
     lon_list, lat_list, dataset = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Input.nc")
     np.save("./data/input.npy",dataset)
-   # dataset = np.load("./data/SphereIcosahedral_rsut_Amon_CESM2_historical_r1i1p1f1_gn_185001-201412_1.npy")
+    dataset = np.load("./data/input.npy")
     dataset = normalize(dataset, "in")
     lon_list, lat_list, dataset_out = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Output.nc")
     np.save("./data/output.npy",dataset_out)
+    dataset_out = np.load("./data/output.npy")
     dataset_out = normalize(dataset_out, "out")
     print(np.shape(dataset_out))
-    #(3) Train
+    #(3) Train test validation split: 80%/10%/10%
+    n = len(dataset)
+    dataset_tr, dataset_te, dataset_va = dataset[0:int(0.8*n)], dataset[int(0.8*n):int(0.9*n)], dataset[int(0.9*n):]
+    dataset_out_tr, dataset_out_te, dataset_out_va = dataset_out[0:int(0.8*n)], dataset_out[int(0.8*n):int(0.9*n)], dataset_out[int(0.9*n):]
+    #(4) Train
     unet.train()
     # number of epochs to train the model
     n_epochs = 100
-    batch_size = 10
-    for epoch in range(1, n_epochs+1):
+    batch_size = 20
+    for epoch in range(0, n_epochs+1):
         # monitor training loss
         train_loss = 0.0
-        for i in range(int(len(dataset)/batch_size)):
+        for i in range(int(len(dataset_tr)/batch_size)):
             # _ stands in for labels, here
             # no need to flatten images
-            images = torch.tensor(dataset[i*batch_size: (i+1)*batch_size])
-            gt_outputs = torch.tensor(dataset_out[i*batch_size: (i+1)*batch_size])
+            images = torch.tensor(dataset_tr[i*batch_size: (i+1)*batch_size])
+            gt_outputs = torch.tensor(dataset_out_tr[i*batch_size: (i+1)*batch_size])
             # clear the gradients of all optimized variables
             optimizer.zero_grad()
             # forward pass: compute predicted outputs by passing inputs to the model
@@ -70,13 +75,32 @@ def main(parser_args):
             train_loss += loss.item()*images.size(0)
         # print avg training statistics
         train_loss = train_loss/len(dataset)
-        print('Epoch: {} \tTraining Loss: {:.6f}'.format(
+        # validation
+        with torch.no_grad():
+            images = torch.tensor(dataset_va)
+            gt_outputs = torch.tensor(dataset_out_va)
+            outputs = unet(images.float())
+            validation_loss = criterion(outputs.float(), gt_outputs.float())
+        print('Epoch: {} \tTraining Loss: {:.6f}\tValidation Loss: {:.6f}'.format(
             epoch,
-            train_loss
+            train_loss,
+            validation_loss
             ))
-
-
-
+        if epoch%20==0:
+            if epoch == 0:
+                os.mkdir("./saved_model/")
+            #save model
+            torch.save("./saved_model/unet_state_"+str(epoch)+".pt")
+            #test with testset
+            with torch.no_grad():
+                images = torch.tensor(dataset_te)
+                gt_outputs = torch.tensor(dataset_out_te)
+                outputs = unet(images.float())
+                test_loss = criterion(outputs.float(), gt_outputs.float())
+                prediction = outputs.detach().numpy()
+                groundtruth = gt_outputs.detach().numpy()
+            np.save("./saved_model/prediction_"+str(epoch)+"_"+str(test_loss)+".npy", prediction)
+            np.save("./saved_model/groundtruth_"+str(epoch)+"_"+str(test_loss)+".npy", groundtruth)
 
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
