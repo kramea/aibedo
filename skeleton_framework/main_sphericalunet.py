@@ -34,14 +34,16 @@ def main(parser_args):
     #(2) Load data
     #un-comment below 3 lines if you want to resample spherical data from netcdf.
     path = "/Users/sookim/Desktop/aibedo_sunet/aibedo/skeleton_framework/data/"
-    lon_list, lat_list, dataset = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Input.nc")
-    np.save("./data/input.npy",dataset)
+    #lon_list, lat_list, dataset = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Input.nc")
+    #np.save("./data/input.npy",dataset)
     dataset = np.load("./data/input.npy")
     dataset = normalize(dataset, "in")
-    lon_list, lat_list, dataset_out = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Output.nc")
-    np.save("./data/output.npy",dataset_out)
+    #lon_list, lat_list, dataset_out = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Output.nc")
+    #np.save("./data/output.npy",dataset_out)
     dataset_out = np.load("./data/output.npy")
     dataset_out = normalize(dataset_out, "out")
+    channel = 0 #0,1,2
+    dataset_out = dataset_out[:,:,channel:channel+1]
     print(np.shape(dataset_out))
     #(3) Train test validation split: 80%/10%/10%
     n = len(dataset)
@@ -51,7 +53,7 @@ def main(parser_args):
     unet.train()
     # number of epochs to train the model
     n_epochs = 100
-    batch_size = 20
+    batch_size = 10
     for epoch in range(0, n_epochs+1):
         # monitor training loss
         train_loss = 0.0
@@ -90,7 +92,7 @@ def main(parser_args):
             if epoch == 0:
                 os.mkdir("./saved_model/")
             #save model
-            torch.save("./saved_model/unet_state_"+str(epoch)+".pt")
+            torch.save(unet.state_dict(), "./saved_model/unet_state_"+str(epoch)+".pt")
             #test with testset
             with torch.no_grad():
                 images = torch.tensor(dataset_te)

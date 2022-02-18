@@ -98,7 +98,7 @@ class Decoder(nn.Module):
         self.dec_l2 = SphericalChebBNPoolConcat(512, 256, laps[2], self.unpooling, self.kernel_size)
         self.dec_l3 = SphericalChebBNPoolConcat(256, 128, laps[3], self.unpooling, self.kernel_size)
         self.dec_l4 = SphericalChebBNPoolConcat(128, 64, laps[4], self.unpooling, self.kernel_size)
-        self.dec_l5 = SphericalChebBNPoolCheb(64, 32, 3, laps[5], self.unpooling, self.kernel_size)
+        self.dec_l5 = SphericalChebBNPoolCheb(64, 32, 1, laps[5], self.unpooling, self.kernel_size) #3rd para:ch
         # Switch from Logits to Probabilities if evaluating model
 
     def forward(self, x_enc0, x_enc1, x_enc2, x_enc3, x_enc4):
