@@ -1,0 +1,51 @@
+input_size:
+  1D: 5
+  1H: 16
+
+output_dim: 1
+
+hidden_size:
+  1D: 20
+  1H: 20
+
+initial_forget_bias: 3
+
+# select whether to use the MTS-LSTM or sMTS-LSTM
+shared_mtslstm: False
+
+# Dropout applied to the output of the LSTM
+output_dropout: 0.4
+
+# define whether the MTS-LSTM's state transfer layer uses an
+# identity or linear operation for hidden (h) and cell state (c).
+transfer_mtslstm_states:
+  h: linear
+  c: linear
+
+
+use_frequencies:
+  - 1D
+  - 1H
+
+
+# Regression settings
+output_activation: linear
+
+device: cpu
+
+seq_length:
+  1D: 365
+  1H: 336
+
+predict_last_n:
+  1D: 1
+  1H: 24
+
+slice_timestep:
+  1D: 14
+
+frequency_factors:
+  - 24
+
+target_weights:
+  - 1.0
