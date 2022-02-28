@@ -48,10 +48,11 @@ def main(parser_args):
 
     #print model summary and test
     n=parser_args.n_pixels
-    #out = model(torch.randn((16, 5, 1, n)))# B,T,C,N 
+    out = model(torch.randn((16, 5, 1, n)))# B,T,C,N 
     #torch.Size([10, 5, 40962, 1])
-    #print(out.shape())
+    print(out.size())
     print(model)
+    
     criterion = torch.nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
@@ -92,7 +93,7 @@ def main(parser_args):
             # clear the gradients of all optimized variables
             optimizer.zero_grad()
             # forward pass: compute predicted outputs by passing inputs to the model
-            print(np.shape(images.float()))
+            #print(np.shape(images.float()))
             outputs = model(images.float())
             # calculate the loss
             loss = criterion(outputs.float(), gt_outputs.float())

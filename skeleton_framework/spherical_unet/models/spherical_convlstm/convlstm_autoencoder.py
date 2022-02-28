@@ -2,6 +2,7 @@ import torch
 from spherical_unet.models.spherical_convlstm.convlstm import *
 from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
 from spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
+import torch.nn.functional as F
 
 
 class SphericalConvLSTMAutoEncoder(nn.Module):
@@ -31,18 +32,30 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
             raise ValueError("Error: sampling method unknown. Please use icosahedron, healpix or equiangular.")
         #input_dim(channels), hidden_dim, kernel_size, num_layers, lap, batch_first=False, bias=True, return_all_layers=False)
         self.convlstm1 = ConvLSTM(1, 64, 3, 1, self.laps[5], True, True, True)
+        self.batchnorm1 = nn.BatchNorm1d(64)
         self.convlstm2 = ConvLSTM(64, 128, 3, 1, self.laps[4], True, True, True)
+        self.batchnorm2 = nn.BatchNorm1d(128)
         self.convlstm3 = ConvLSTM(128, 256, 3, 1, self.laps[3], True, True, True)
+        self.batchnorm3 = nn.BatchNorm1d(256)
         self.convlstm4 = ConvLSTM(256, 512, 3, 1, self.laps[2], True, True, True)
+        self.batchnorm4 = nn.BatchNorm1d(512)
         self.convlstm5 = ConvLSTM(512, 512, 3, 1, self.laps[1], True, True, True)
+        self.batchnorm5 = nn.BatchNorm1d(512)
         self.convlstm6 = ConvLSTM(512, 512, 3, 1, self.laps[0], True, True, True)
+        self.batchnorm6 = nn.BatchNorm1d(512)
         self.deconvlstm5 = ConvLSTM(512, 512, 3, 1, self.laps[1], True, True, True)
+        self.debatchnorm5 = nn.BatchNorm1d(512)
         self.deconvlstm4 = ConvLSTM(512, 256, 3, 1, self.laps[2], True, True, True)
+        self.debatchnorm4 = nn.BatchNorm1d(256)
         self.deconvlstm3 = ConvLSTM(256, 128, 3, 1, self.laps[3], True, True, True)
+        self.debatchnorm3 = nn.BatchNorm1d(128)
         self.deconvlstm2 = ConvLSTM(128, 64, 3, 1, self.laps[4], True, True, True)
+        self.debatchnorm2 = nn.BatchNorm1d(64)
         self.deconvlstm1 = ConvLSTM(64, 1, 3, 1, self.laps[5], True, True, True)
+        self.debatchnorm1 = nn.BatchNorm1d(1)
         self.pooling = self.pooling_class.pooling
         self.unpooling = self.pooling_class.unpooling
+        #self.batchnorm = nn.BatchNorm1d(out_channels)
 
     def forward(self, x):
         """Forward Pass.
@@ -59,6 +72,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x,_ = self.convlstm1(x)
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
+        x = F.relu(x)
         x = self.pooling(x)
 
         #print(x.size())
@@ -67,26 +81,26 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x,_ = self.convlstm2(x)
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
+        x = F.relu(x)
         x = self.pooling(x)
-
         #print(x.size())
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.convlstm3(x)
         d1, d2, d3,  n = x[-1].size()
-        x = torch.reshape(x[-1], [-1, n, 1]) 
+        x = torch.reshape(x[-1], [-1, n, 1])
+        x = F.relu(x) 
         x = self.pooling(x)
-
         #print(x.size())
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.convlstm4(x)
         d1, d2, d3,  n = x[-1].size()
-        x = torch.reshape(x[-1], [-1, n, 1]) 
+        x = torch.reshape(x[-1], [-1, n, 1])
+        x = F.relu(x) 
         x = self.pooling(x)
-
         #print(x.size())
 
 
@@ -94,15 +108,17 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x,_ = self.convlstm5(x)
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1]) 
-
+        x = F.relu(x)
         #print(x.size())
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm5(x)
         d1, d2, d3,  n = x[-1].size()
-        x = torch.reshape(x[-1], [-1, n, 1]) 
+        x = torch.reshape(x[-1], [-1, n, 1])
+        x = F.relu(x) 
         x = self.unpooling(x)
+        #print(x.size())
 
 
         #print(x.size())
@@ -112,8 +128,8 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x,_ = self.deconvlstm4(x)
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
+        x = F.relu(x)
         x = self.unpooling(x)
-
         #print(x.size())
 
 
@@ -121,24 +137,23 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x,_ = self.deconvlstm3(x)
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
+        x = F.relu(x)
         x = self.unpooling(x)
-
         #print(x.size())
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm2(x)
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
+        x = F.relu(x)
         x = self.unpooling(x)
-
         #print(x.size())
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm1(x)
-        #print(x[-1].size())
-        x = x[-1]
+        d1, d2, d3,  n = x[-1].size()
+        x = torch.reshape(x[-1], [-1, n, 1])
+        x = F.relu(x)
         output = x
-
-
-
+        #print(x.size())
         return output
