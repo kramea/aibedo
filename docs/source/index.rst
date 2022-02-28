@@ -11,4 +11,5 @@ AIBEDO: a hybrid AI framework to capture the effects of cloud properties on glob
    architecture/index
    datasets/index
    dynamics/index
+   mcb/index
    reports/index
