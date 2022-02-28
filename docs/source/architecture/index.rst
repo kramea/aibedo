@@ -41,7 +41,7 @@ Interpolation Module
 We use the PyGSP library in Python to perform the grid transformation. It is commonly used for various graph operations to use in signal processing or social network analysis (e.g., Erdos-Reyni network). We first develop a 'backbone' structure of a spherical coordinate system (icosahedron, healpix, etc.). The properties of the spherical coordinates, such as levels or sub-divisions, are given as input. At this point, the coordinates are simply graph networks. In the next step, we assign latitude and longitude values to the graph network (x, y) so that they can be manifested in a geographical coordinate system. Finally, we use the raw data from reanalysis or ESM output and perform bilinear interpolation to obtain the final spherically-sampled data. 
 
 .. image::
-	images/interpolation.png
+	images/interpolated.png
 
 Model Library Module
 ~~~~~~~~~~~~~~~~~~~~~
@@ -59,7 +59,7 @@ Multi-timescale Long Short-Term Memory (LSTM) Networks
 We use two distinctive LSTM networks to implement this functionality: one for modeling long-term climate impacts at the decadal scale (${LSTM}_d$) and another for modeling shorter-term seasonal changes (${LSTM}_s$). We will run the decadal-scale model ${LSTM}_d$ first, where we will make yearly predictions. The hidden states of ${LSTM}_d$ at every year will then be used by ${LSTM}_s$ as initial states to make monthly predictions. Since the two LSTM branches may have different hidden sizes, we will feed the states through a linear state transfer layer. Figure ** shows an illustration of a multi-time scale LSTM network. 
 
 .. image::
-	images/multilstm.png
+	images/mutilstm.png
 
 PARC team is implementing the temporal model using two training schemes: 
 
