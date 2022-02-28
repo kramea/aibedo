@@ -10,7 +10,6 @@ Contents
 
 .. toctree::
    :maxdepth: 3
-   architecture/index
    datasets/index
    reports/index
    dynamics/index
