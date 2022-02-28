@@ -6,6 +6,10 @@ AIBEDO: a hybrid AI framework to capture the effects of cloud properties on glob
    This project is under active development.
 
 
+.. image::
+	u-net.png
+
+
 .. toctree::
    :maxdepth: 3
 
