@@ -10,6 +10,6 @@ AIBEDO: a hybrid AI framework to capture the effects of cloud properties on glob
    :maxdepth: 3
 
    architecture/index
-   reports/index
    datasets/index
    dynamics/index
+   reports/index
