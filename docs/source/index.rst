@@ -7,7 +7,7 @@ AIBEDO: a hybrid AI framework to capture the effects of cloud properties on glob
 
 
 Hybrid AI Model Architecture
-----------------------------
+============================
 
 Our hybrid model for AIBEDO consists of two data-driven components: spherical-Unet for spatial network modeling and multi-timescale Long Short-Term Memory (LSTM) network for temporal modeling. Both components will be infused with physics-based constraints to ensure the generalizability of spatial and temporal scales. 
 
