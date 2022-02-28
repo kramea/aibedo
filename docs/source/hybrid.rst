@@ -9,11 +9,7 @@ Our hybrid model for AIBEDO consists of two data-driven components: spherical-Un
 Spatial Data-Driven Component
 -----------------------------
 
-The spatial data-driven component in AIBEDO consists of two major sub-modules:
-
-- Sampling Module
-- Model Library Module
-
+The spatial data-driven component in AIBEDO consists of two major sub-modules.
 
 Sampling Module
 ~~~~~~~~~~~~~~~
