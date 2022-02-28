@@ -7,7 +7,9 @@ AIBEDO: a hybrid AI framework to capture the effects of cloud properties on glob
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
+   architecture/index
    reports/index
-   hybrid
+   datasets/index
+   dynamics/index
