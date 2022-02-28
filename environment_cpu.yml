@@ -1,0 +1,33 @@
+name: aibedo
+channels:
+  - pytorch
+  - defaults
+  - anaconda
+dependencies:
+  - bokeh
+  - cpuonly
+  - h5py
+  - hdf5
+  - jupyter
+  - matplotlib
+  - netcdf4
+  - numba
+  - pandas
+  - pip
+  - pytest
+  - pytest-cov
+  - python=3.8
+  - pytorch
+  - ruamel.yaml
+  - scipy
+  - sphinx
+  - tqdm
+  - xarray
+  - yapf
+  - pip:
+    - neuralhydrology
+    - tensorboard
+    - sphinx-rtd-theme
+    - nbsphinx
+    - nbsphinx-link
+    - parso==0.8.0
