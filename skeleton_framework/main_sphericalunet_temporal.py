@@ -1,13 +1,34 @@
 from models.cnn import CNN
 import numpy as np
 import os
-import torch
 import torch.optim as optim
 from torchsummary import summary
 from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral
-from spherical_unet.models.spherical_unet.unet_model import SphericalUNet, SphericalUNetTemporalLSTM
+from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
 from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
+import torch
+from spherical_unet.models.spherical_convlstm.convlstm import *
+from spherical_unet.models.spherical_convlstm.convlstm_autoencoder import *
+from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
+from spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
+from spherical_unet.layers.chebyshev import SphericalChebConv
+
+
+
+def temporal_conversion(data, time):
+    """
+       data: [T, N, C]
+    """
+    data = np.swapaxes(data, 1, 2)
+    t,_,_ =np.shape(data)
+    temporal_data = []
+    for i in range(0, t-time):
+        d1,d2,d3 =np.shape(data[i:i+time])
+        temporal_data.append( np.reshape(data[i:i+time], [1,d1,d2,d3]) )
+    out = np.concatenate(temporal_data, axis=0)
+    return out
+
 
 def main(parser_args):
     """Main function to create model and train, validation model.
@@ -20,38 +41,43 @@ def main(parser_args):
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
     os.mkdir("./output_sunet/")
-    unet = SphericalUNetTemporalLSTM(parser_args.pooling_class, parser_args.n_pixels, parser_args.depth, parser_args.laplacian_type, parser_args.sequence_length, parser_args.kernel_size)
-    unet, device = init_device(parser_args.device, unet)
+    model = SphericalConvLSTMAutoEncoder(parser_args.pooling_class, parser_args.n_pixels, parser_args.depth, parser_args.laplacian_type)
+    model, device = init_device(parser_args.device, model)
     lr = parser_args.learning_rate
-    optimizer = optim.Adam(unet.parameters(), lr=lr)
-    print("round 1")
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+
     #print model summary and test
-    out = unet(torch.randn(10, 5*40962 ,5))
-    print(unet, out.shape)
-    print("round 2")
+    n=parser_args.n_pixels
+    #out = model(torch.randn((16, 5, 1, n)))# B,T,C,N 
+    #torch.Size([10, 5, 40962, 1])
+    #print(out.shape())
+    print(model)
     criterion = torch.nn.MSELoss()
-    optimizer = optim.Adam(unet.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
 
     #(2) Load data
     #un-comment below 3 lines if you want to resample spherical data from netcdf.
-    path = "/Users/sookim/Desktop/aibedo_sunet/aibedo/skeleton_framework/data/"
+    #path = "/Users/sookim/Desktop/aibedo_sunet/aibedo/skeleton_framework/data/"
     #lon_list, lat_list, dataset = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Input.nc")
     #np.save("./data/input.npy",dataset)
-    dataset = np.load("./data/input_level6_icosahedron.npy")
-    dataset = normalize(dataset, "in")
+    #dataset = np.load("./data/input_level6_icosahedron.npy")
+    #dataset = normalize(dataset, "in")
     #lon_list, lat_list, dataset_out = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Output.nc")
     #np.save("./data/output.npy",dataset_out)
     dataset_out = np.load("./data/output_level6_icosahedron.npy")
     dataset_out = normalize(dataset_out, "out")
-    channel = 0 #0,1,2
+    channel = 2 #0,1,2
     dataset_out = dataset_out[:,:,channel:channel+1]
     print(np.shape(dataset_out))
+    #(2-2) Convert to temporal dataset
+    dataset = temporal_conversion(dataset_out, 6)
+    print(np.shape(dataset))
     #(3) Train test validation split: 80%/10%/10%
     n = len(dataset)
-    dataset_tr, dataset_te, dataset_va = dataset[0:int(0.8*n)], dataset[int(0.8*n):int(0.9*n)], dataset[int(0.9*n):]
-    dataset_out_tr, dataset_out_te, dataset_out_va = dataset_out[0:int(0.8*n)], dataset_out[int(0.8*n):int(0.9*n)], dataset_out[int(0.9*n):]
+    dataset_tr, dataset_te, dataset_va = dataset[0:int(0.8*n),0:-1,:,: ], dataset[int(0.8*n):int(0.9*n), 0:-1,:,:], dataset[int(0.9*n):, 0:-1, :,:]
+    dataset_out_tr, dataset_out_te, dataset_out_va = dataset[0:int(0.8*n),1:, :,:], dataset[int(0.8*n):int(0.9*n),1:, :,:], dataset[int(0.9*n):,1:, :,:]
     #(4) Train
-    unet.train()
+    model.train()
     # number of epochs to train the model
     n_epochs = 100
     batch_size = 10
@@ -66,7 +92,8 @@ def main(parser_args):
             # clear the gradients of all optimized variables
             optimizer.zero_grad()
             # forward pass: compute predicted outputs by passing inputs to the model
-            outputs = unet(images.float())
+            print(np.shape(images.float()))
+            outputs = model(images.float())
             # calculate the loss
             loss = criterion(outputs.float(), gt_outputs.float())
             # backward pass: compute gradient of the loss with respect to model parameters
@@ -82,7 +109,7 @@ def main(parser_args):
         with torch.no_grad():
             images = torch.tensor(dataset_va)
             gt_outputs = torch.tensor(dataset_out_va)
-            outputs = unet(images.float())
+            outputs = model(images.float())
             validation_loss = criterion(outputs.float(), gt_outputs.float())
         print('Epoch: {} \tTraining Loss: {:.6f}\tValidation Loss: {:.6f}'.format(
             epoch,
@@ -91,19 +118,20 @@ def main(parser_args):
             ))
         if epoch%20==0:
             if epoch == 0:
-                os.mkdir("./saved_model/")
+                os.mkdir("./saved_model_convlstm/")
             #save model
-            torch.save(unet.state_dict(), "./saved_model/unet_state_"+str(epoch)+".pt")
+            torch.save(model.state_dict(), "./saved_model_convlstm/convlstm_state_"+str(epoch)+".pt")
             #test with testset
             with torch.no_grad():
                 images = torch.tensor(dataset_te)
                 gt_outputs = torch.tensor(dataset_out_te)
-                outputs = unet(images.float())
+                outputs = model(images.float())
                 test_loss = criterion(outputs.float(), gt_outputs.float())
                 prediction = outputs.detach().numpy()
                 groundtruth = gt_outputs.detach().numpy()
-            np.save("./saved_model/prediction_"+str(epoch)+"_"+str(test_loss)+".npy", prediction)
-            np.save("./saved_model/groundtruth_"+str(epoch)+"_"+str(test_loss)+".npy", groundtruth)
+                print(np.shape(prediction), np.shape(groundtruth))
+            np.save("./saved_model_convlstm/prediction_"+str(epoch)+"_"+str(test_loss)+".npy", prediction)
+            np.save("./saved_model_convlstm/groundtruth_"+str(epoch)+"_"+str(test_loss)+".npy", groundtruth)
 
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
