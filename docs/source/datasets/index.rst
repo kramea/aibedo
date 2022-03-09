@@ -42,3 +42,16 @@ The model/reanalysis variables used are divided into three categories: Input, Ou
 | Constraint | rsds     | Surface downward shortwave flux                                    |
 | Constraint | rlus     | Surface upward longwave flux                                       |
 | Constraint | rlds     | Surface downward longwave flux                                     |
+| Constraint | rlut     | Top of Model upward longwave flux                                  |
+| Constraint | rlds     | Top of Model downward shortwave flux                               |
+
+Data required for Physics Constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+To strengthen the generalisability of the AiBEDO model, we include "weak" physics-based constraints on the output to penalize unphysical results from the model.
+
+1. Atmospheric mass balance : global, annual mean sea level pressure (psl) is equal to zero
+2. Atmospheric moisture balance : global, annual mean precipitation minus evaporation (pr - evspsbl) is equal to zero
+3. Precipitation low bound : Precipitation cannot be less zero
+4. Local Tropical Atmosphere moisture budget : Precipitation + sensible heat flux = atmospheric cooling (pr + hfss - (rsus + rlus - rsds - rlds + rsdt - rlut) = 0)
+5. Energy Balance : (forcing = feedbacks + ET convergence + storage)  
