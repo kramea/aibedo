@@ -1,0 +1,5 @@
+{
+    "esbonio.server.enabled": true,
+    "restructuredtext.confPath": "${workspaceFolder}/docs/source",
+    "esbonio.sphinx.confDir": "/Users/harukihirasawa/Research/AiBEDO/aibedo/docs/source"
+}
