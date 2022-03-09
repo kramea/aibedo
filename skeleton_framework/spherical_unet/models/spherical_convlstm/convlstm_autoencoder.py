@@ -154,6 +154,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
+        x = torch.reshape(x, [d1, d2, d3, -1])
         output = x
         #print(x.size())
         return output

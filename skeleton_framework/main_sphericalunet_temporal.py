@@ -67,21 +67,21 @@ def main(parser_args):
     #np.save("./data/output.npy",dataset_out)
     dataset_out = np.load("./data/output_level6_icosahedron.npy")
     dataset_out = normalize(dataset_out, "out")
-    channel = 2 #0,1,2
+    channel = 1 #0,1,2
     dataset_out = dataset_out[:,:,channel:channel+1]
     print(np.shape(dataset_out))
     #(2-2) Convert to temporal dataset
-    dataset = temporal_conversion(dataset_out, 6)
+    dataset = temporal_conversion(dataset_out, 3)
     print(np.shape(dataset))
     #(3) Train test validation split: 80%/10%/10%
     n = len(dataset)
-    dataset_tr, dataset_te, dataset_va = dataset[0:int(0.8*n),0:-1,:,: ], dataset[int(0.8*n):int(0.9*n), 0:-1,:,:], dataset[int(0.9*n):, 0:-1, :,:]
-    dataset_out_tr, dataset_out_te, dataset_out_va = dataset[0:int(0.8*n),1:, :,:], dataset[int(0.8*n):int(0.9*n),1:, :,:], dataset[int(0.9*n):,1:, :,:]
+    dataset_tr, dataset_te, dataset_va = dataset[0:int(0.90*n),0:-1,:,: ], dataset[int(0.90*n):int(0.95*n), 0:-1,:,:], dataset[int(0.95*n):, 0:-1, :,:]
+    dataset_out_tr, dataset_out_te, dataset_out_va = dataset[0:int(0.90*n),1:, :,:], dataset[int(0.90*n):int(0.95*n),1:, :,:], dataset[int(0.95*n):,1:, :,:]
     #(4) Train
     model.train()
     # number of epochs to train the model
     n_epochs = 100
-    batch_size = 10
+    batch_size = 5
     for epoch in range(0, n_epochs+1):
         # monitor training loss
         train_loss = 0.0
@@ -95,6 +95,7 @@ def main(parser_args):
             # forward pass: compute predicted outputs by passing inputs to the model
             #print(np.shape(images.float()))
             outputs = model(images.float())
+            #print(outputs.float().size(),gt_outputs.float().size())
             # calculate the loss
             loss = criterion(outputs.float(), gt_outputs.float())
             # backward pass: compute gradient of the loss with respect to model parameters
@@ -117,7 +118,7 @@ def main(parser_args):
             train_loss,
             validation_loss
             ))
-        if epoch%20==0:
+        if epoch%5==0:
             if epoch == 0:
                 os.mkdir("./saved_model_convlstm/")
             #save model
