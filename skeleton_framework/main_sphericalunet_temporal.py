@@ -13,7 +13,7 @@ from spherical_unet.models.spherical_convlstm.convlstm_autoencoder import *
 from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
 from spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
 from spherical_unet.layers.chebyshev import SphericalChebConv
-
+import random
 
 
 def temporal_conversion(data, time):
@@ -28,6 +28,23 @@ def temporal_conversion(data, time):
         temporal_data.append( np.reshape(data[i:i+time], [1,d1,d2,d3]) )
     out = np.concatenate(temporal_data, axis=0)
     return out
+
+
+def shuffle_data(d1, d2):
+    n,_,_,_ = np.shape(d1)
+    m,_,_,_ = np.shape(d2)
+    assert(n == m)
+    idx = [ i for i in range(m)]
+    random.shuffle(idx)
+    d1_out = []
+    d2_out = []
+    for i in range(n):
+        d1_out.append(d1[i:i+1])
+        d2_out.append(d2[i:i+1])
+    d1_out2 = np.concatenate(d1_out, axis=0)
+    d2_out2 = np.concatenate(d2_out, axis=0)
+    return d1_out2, d2_out2
+
 
 
 def main(parser_args):
@@ -69,16 +86,18 @@ def main(parser_args):
     #np.save("./data/output.npy",dataset_out)
     dataset_out = np.load("./data/output_level6_icosahedron.npy")
     dataset_out = normalize(dataset_out, "out")
-    channel = 1 #0,1,2
-    timelength = 3
+    channel = 2 #0,1,2
+    timelength = 2
     n_epochs = 100
-    batch_size = 4
+    batch_size = 16
     dataset_out = dataset_out[:,:,channel:channel+1]
     print(np.shape(dataset), np.shape(dataset_out))#(1980, 40962, 5) (1980, 40962, 1)
 
     #(2-2) Convert to temporal dataset
     dataset = temporal_conversion(dataset, timelength+1)
     dataset_out = temporal_conversion(dataset_out, timelength+1)
+    # shuffle
+    dataset, dataset_out = shuffle_data(dataset, dataset_out)
     print(np.shape(dataset))
     #(3) Train test validation split: 80%/10%/10%
     n = len(dataset)
