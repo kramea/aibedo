@@ -65,7 +65,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         Returns:
             :obj:`torch.Tensor`: output
         """
-        print(x.size())
+        #print(x.size()) # torch.Size([2, 10, 5, 40962]) #A tensor of size B, T, C, N 
 
         d1, d2, d3, n = x.size()
         ch=d3
@@ -75,7 +75,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = F.relu(x)
         x = self.pooling(x)
 
-        print(x.size())
+        #print(x.size()) #torch.Size([1280, 10242, 1])
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.convlstm2(x)
@@ -83,7 +83,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
         x = self.pooling(x)
-        print(x.size())
+        #print(x.size()) #torch.Size([2560, 2562, 1])
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
@@ -92,7 +92,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x) 
         x = self.pooling(x)
-        print(x.size())
+        #print(x.size()) #torch.Size([5120, 642, 1])
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
@@ -101,7 +101,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x) 
         x = self.pooling(x)
-        print(x.size())
+        #print(x.size()) #torch.Size([10240, 162, 1])
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
@@ -109,7 +109,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1]) 
         x = F.relu(x)
-        print(x.size())
+        #print(x.size()) #torch.Size([10240, 162, 1])
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
@@ -118,7 +118,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x) 
         x = self.unpooling(x)
-        print(x.size())
+        #print(x.size()) #torch.Size([10240, 642, 1])
 
 
         #print(x.size())
@@ -130,7 +130,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
         x = self.unpooling(x)
-        print(x.size())
+        #print(x.size()) #torch.Size([5120, 2562, 1])
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
@@ -139,7 +139,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
         x = self.unpooling(x)
-        print(x.size())
+        #print(x.size()) #torch.Size([2560, 10242, 1])
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm2(x)
@@ -147,7 +147,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
         x = self.unpooling(x)
-        print(x.size())
+        #print(x.size()) #torch.Size([1280, 40962, 1])
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm1(x)
@@ -156,5 +156,5 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = F.relu(x)
         x = torch.reshape(x, [d1, d2, d3, -1])
         output = x
-        print(x.size())
+        #print(x.size()) #torch.Size([2, 10, 1, 40962])
         return output

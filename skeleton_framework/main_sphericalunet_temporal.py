@@ -48,8 +48,9 @@ def main(parser_args):
 
     #print model summary and test
     n=parser_args.n_pixels
-    out = model(torch.randn((16, 5, 1, n)))# B,T,C,N 
-    #torch.Size([10, 5, 40962, 1])
+    # Run example
+    out = model(torch.randn((16, 10, 5, n)))# Batch,Time,Channels,NumberofData
+    
     print(out.size())
     print(model)
     
@@ -69,12 +70,15 @@ def main(parser_args):
     dataset_out = np.load("./data/output_level6_icosahedron.npy")
     dataset_out = normalize(dataset_out, "out")
     channel = 1 #0,1,2
+    timelength = 3
+    n_epochs = 100
+    batch_size = 4
     dataset_out = dataset_out[:,:,channel:channel+1]
     print(np.shape(dataset), np.shape(dataset_out))#(1980, 40962, 5) (1980, 40962, 1)
 
     #(2-2) Convert to temporal dataset
-    dataset = temporal_conversion(dataset_out, 3)
-    dataset_out = temporal_conversion(dataset_out, 3)
+    dataset = temporal_conversion(dataset, timelength+1)
+    dataset_out = temporal_conversion(dataset_out, timelength+1)
     print(np.shape(dataset))
     #(3) Train test validation split: 80%/10%/10%
     n = len(dataset)
@@ -83,8 +87,6 @@ def main(parser_args):
     #(4) Train
     model.train()
     # number of epochs to train the model
-    n_epochs = 100
-    batch_size = 20
     for epoch in range(0, n_epochs+1):
         # monitor training loss
         train_loss = 0.0
