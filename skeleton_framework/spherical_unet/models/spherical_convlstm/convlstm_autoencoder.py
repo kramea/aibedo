@@ -31,7 +31,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         else:
             raise ValueError("Error: sampling method unknown. Please use icosahedron, healpix or equiangular.")
         #input_dim(channels), hidden_dim, kernel_size, num_layers, lap, batch_first=False, bias=True, return_all_layers=False)
-        self.convlstm1 = ConvLSTM(1, 64, 3, 1, self.laps[5], True, True, True)
+        self.convlstm1 = ConvLSTM(5, 64, 3, 1, self.laps[5], True, True, True)
         self.batchnorm1 = nn.BatchNorm1d(64)
         self.convlstm2 = ConvLSTM(64, 128, 3, 1, self.laps[4], True, True, True)
         self.batchnorm2 = nn.BatchNorm1d(128)
@@ -65,7 +65,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         Returns:
             :obj:`torch.Tensor`: output
         """
-        #print(x.size())
+        print(x.size())
 
         d1, d2, d3, n = x.size()
         ch=d3
@@ -75,7 +75,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = F.relu(x)
         x = self.pooling(x)
 
-        #print(x.size())
+        print(x.size())
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.convlstm2(x)
@@ -83,7 +83,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
         x = self.pooling(x)
-        #print(x.size())
+        print(x.size())
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
@@ -92,7 +92,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x) 
         x = self.pooling(x)
-        #print(x.size())
+        print(x.size())
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
@@ -101,7 +101,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x) 
         x = self.pooling(x)
-        #print(x.size())
+        print(x.size())
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
@@ -109,7 +109,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1]) 
         x = F.relu(x)
-        #print(x.size())
+        print(x.size())
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
@@ -118,7 +118,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x) 
         x = self.unpooling(x)
-        #print(x.size())
+        print(x.size())
 
 
         #print(x.size())
@@ -130,7 +130,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
         x = self.unpooling(x)
-        #print(x.size())
+        print(x.size())
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
@@ -139,7 +139,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
         x = self.unpooling(x)
-        #print(x.size())
+        print(x.size())
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm2(x)
@@ -147,7 +147,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
         x = self.unpooling(x)
-        #print(x.size())
+        print(x.size())
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm1(x)
@@ -156,5 +156,5 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = F.relu(x)
         x = torch.reshape(x, [d1, d2, d3, -1])
         output = x
-        #print(x.size())
+        print(x.size())
         return output

@@ -61,27 +61,30 @@ def main(parser_args):
     #path = "/Users/sookim/Desktop/aibedo_sunet/aibedo/skeleton_framework/data/"
     #lon_list, lat_list, dataset = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Input.nc")
     #np.save("./data/input.npy",dataset)
-    #dataset = np.load("./data/input_level6_icosahedron.npy")
-    #dataset = normalize(dataset, "in")
+    dataset = np.load("./data/input_level6_icosahedron.npy")
+    dataset = normalize(dataset, "in")
+    #dataset = dataset[:,:,channel:channel+1]
     #lon_list, lat_list, dataset_out = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Output.nc")
     #np.save("./data/output.npy",dataset_out)
     dataset_out = np.load("./data/output_level6_icosahedron.npy")
     dataset_out = normalize(dataset_out, "out")
     channel = 1 #0,1,2
     dataset_out = dataset_out[:,:,channel:channel+1]
-    print(np.shape(dataset_out))
+    print(np.shape(dataset), np.shape(dataset_out))#(1980, 40962, 5) (1980, 40962, 1)
+
     #(2-2) Convert to temporal dataset
     dataset = temporal_conversion(dataset_out, 3)
+    dataset_out = temporal_conversion(dataset_out, 3)
     print(np.shape(dataset))
     #(3) Train test validation split: 80%/10%/10%
     n = len(dataset)
     dataset_tr, dataset_te, dataset_va = dataset[0:int(0.90*n),0:-1,:,: ], dataset[int(0.90*n):int(0.95*n), 0:-1,:,:], dataset[int(0.95*n):, 0:-1, :,:]
-    dataset_out_tr, dataset_out_te, dataset_out_va = dataset[0:int(0.90*n),1:, :,:], dataset[int(0.90*n):int(0.95*n),1:, :,:], dataset[int(0.95*n):,1:, :,:]
+    dataset_out_tr, dataset_out_te, dataset_out_va = dataset_out[0:int(0.90*n),1:, :,:], dataset_out[int(0.90*n):int(0.95*n),1:, :,:], dataset_out[int(0.95*n):,1:, :,:]
     #(4) Train
     model.train()
     # number of epochs to train the model
     n_epochs = 100
-    batch_size = 5
+    batch_size = 20
     for epoch in range(0, n_epochs+1):
         # monitor training loss
         train_loss = 0.0
