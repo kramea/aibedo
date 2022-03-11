@@ -21,8 +21,8 @@ def temporal_conversion(data, time):
     """
     t,_,_,_=np.shape(data)
     temporal_data = []
-    for i in range(0, t-time):
-        d1,d2,d3,d4 =np.shape(data[i:i+time])
+    for i in range(0, int(t/2)-time):
+        d1,d2,d3,d4 =np.shape(data[2*i:2*i+time])
         temporal_data.append( np.reshape(data[i:i+time], [1,d1,d2,d3, d4]) )
     out = np.concatenate(temporal_data, axis=0)
     return out
@@ -71,7 +71,7 @@ def main(parser_args):
 
     #(2) Load data
     #un-comment below 3 lines if you want to resample spherical data from netcdf.
-    path = "/Users/sookim/Desktop/aibedo_sunet/aibedo/skeleton_framework/data/"
+    path = "./data/"
     dataset = load_ncdf(path+"Processed_CESM2_r1i1p1f1_historical_Input.nc") #(1980, 5, 192, 288)
     dataset = normalize(dataset, "in")
     dataset_out = load_ncdf(path+"Processed_CESM2_r1i1p1f1_historical_Output.nc")
@@ -79,8 +79,8 @@ def main(parser_args):
     channel = 0 #0,1,2
     timelength = 24
     n_epochs = 100
-    batch_size = 1
-    dataset_out = dataset_out[:,:,channel:channel+1]
+    batch_size = 2
+    dataset_out = dataset_out[:,channel:channel+1, :,:]
     print(np.shape(dataset), np.shape(dataset_out))#(1980, 5, 192, 288) (1980, 3, 1, 288)
     #(2-2) Convert to temporal dataset
     dataset = temporal_conversion(dataset, timelength+1)
@@ -92,7 +92,8 @@ def main(parser_args):
     #(3) Train test validation split: 80%/10%/10%
     n = len(dataset)
     dataset_tr, dataset_te, dataset_va = dataset[0:int(0.90*n),0:-1,:,:,: ], dataset[int(0.90*n):int(0.95*n), 0:-1,:,:, :], dataset[int(0.95*n):, 0:-1, :,:,:]
-    dataset_out_tr, dataset_out_te, dataset_out_va = dataset_out[0:int(0.90*n),1:, :,:,:], dataset_out[int(0.90*n):int(0.95*n),1:, :,:,:], dataset_out[int(0.95*n):,1:, :,:,:]
+    dataset_out_tr, dataset_out_te, dataset_out_va = dataset_out[0:int(0.90*n),1:, :,:,:], dataset_out[int(0.90*n):int(0.95*n),-1:, :,:,:], dataset_out[int(0.95*n):,-1:, :,:,:]
+    print(np.shape(dataset_tr),np.shape(dataset_out_tr))
     #(4) Train
     model.train()
     # number of epochs to train the model

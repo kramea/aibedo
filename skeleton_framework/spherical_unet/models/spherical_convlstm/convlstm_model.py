@@ -25,9 +25,10 @@ class ConvLSTM_model(nn.Module):
        """
         super().__init__()
 
-        self.convlstm1 =  ConvLSTM(channels, 8, (3,3), 1, True, True, False )
-        self.convlstm2 =  ConvLSTM(8, 16, (3,3), 1, True, True, False )
-        self.convlstm3 =  ConvLSTM(16, 1, (3,3), 1, True, True, False )
+        self.convlstm1 =  ConvLSTM(channels, 16, (3,3), 1, True, True, False )
+        self.convlstm2 =  ConvLSTM(16, 16, (3,3), 1, True, True, False )
+        self.convlstm3 =  ConvLSTM(16, 24, (3,3), 1, True, True, False )
+        self.convlstm4 =  ConvLSTM(24, 1, (3,3), 1, True, True, False )
 
     def forward(self, x):
         """Forward Pass.
@@ -50,7 +51,11 @@ class ConvLSTM_model(nn.Module):
         x = x[0]
         x = F.relu(x)
         #print(x.size()) #torch.Size([1, 10, 1, 192, 288])
-
+        x, _ = self.convlstm4(x)
+        x = x[0]
+        x = F.softmax(x)
+        #print(x.size()) #torch.Size([1, 10, 1, 192, 288])
+        #x = x[:, -1:, :, :,:]
 
         return x
 
