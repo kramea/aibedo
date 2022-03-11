@@ -73,3 +73,18 @@ def load_ncdf_to_SphereIcosahedral(data_path):
     return lon, lat, data_file
 
 
+def load_ncdf(data_path):
+    #data_path = "/Users/sookim/aibedo/skeleton_framework/data/Processed_CESM2_r1i1p1f1_historical_Input.nc"
+    ds= xr.open_dataset(data_path)
+    var_list = list(ds.data_vars)
+    file_all = []
+    print(var_list)
+    for var in var_list:
+        ours = np.asarray(ds[var]) #(1980, 192, 288)
+        shape = [1]+list(np.shape(ours))
+        ours = np.reshape(ours,shape)
+        file_all.append(ours)
+    data_file = np.concatenate(file_all, 0)
+    data_file = np.swapaxes(data_file, 0,1)
+    print(np.shape(data_file))
+    return data_file

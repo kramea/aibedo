@@ -59,6 +59,7 @@ def main(parser_args):
     # n_classes is the number of probabilities you want to get per pixel
     os.mkdir("./output_sunet/")
     model = SphericalConvLSTMAutoEncoder(parser_args.pooling_class, parser_args.n_pixels, parser_args.depth, parser_args.laplacian_type)
+    print(model)
     model, device = init_device(parser_args.device, model)
     lr = parser_args.learning_rate
     optimizer = optim.Adam(model.parameters(), lr=lr)
