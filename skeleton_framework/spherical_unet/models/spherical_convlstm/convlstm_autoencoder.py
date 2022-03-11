@@ -121,7 +121,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x,_ = self.deconvlstm5(x)
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
-        x = F.relu(x) 
+        x = F.softmax(x) 
         x = self.unpooling(x)
         #print(x.size()) #torch.Size([10240, 642, 1])
 

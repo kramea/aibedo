@@ -65,7 +65,7 @@ def main(parser_args):
     # Run example
     out = model(torch.randn(1, 10, 5, 192, 288))# Batch,Time,Channels,NumberofData, output: last_state_list(h), layer_output (o)
     print(np.shape(out.detach().numpy())) #(1, 10, 1, 192, 288)
-    
+
     criterion = torch.nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
@@ -79,7 +79,7 @@ def main(parser_args):
     channel = 0 #0,1,2
     timelength = 24
     n_epochs = 100
-    batch_size = 2
+    batch_size = 10
     dataset_out = dataset_out[:,channel:channel+1, :,:]
     print(np.shape(dataset), np.shape(dataset_out))#(1980, 5, 192, 288) (1980, 3, 1, 288)
     #(2-2) Convert to temporal dataset
