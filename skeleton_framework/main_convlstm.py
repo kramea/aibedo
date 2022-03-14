@@ -22,7 +22,7 @@ def temporal_conversion(data, time):
     t,_,_,_=np.shape(data)
     temporal_data = []
     for i in range(0, int(t/2)-time):
-        d1,d2,d3,d4 =np.shape(data[2*i:2*i+time])
+        d1,d2,d3,d4 =np.shape(data[i:i+time])
         temporal_data.append( np.reshape(data[i:i+time], [1,d1,d2,d3, d4]) )
     out = np.concatenate(temporal_data, axis=0)
     return out
@@ -76,10 +76,10 @@ def main(parser_args):
     dataset = normalize(dataset, "in")
     dataset_out = load_ncdf(path+"Processed_CESM2_r1i1p1f1_historical_Output.nc")
     dataset_out = normalize(dataset_out, "out")
-    channel = 0 #0,1,2
-    timelength = 24
+    channel = 2 #0,1,2
+    timelength = 1
     n_epochs = 100
-    batch_size = 10
+    batch_size = 2
     dataset_out = dataset_out[:,channel:channel+1, :,:]
     print(np.shape(dataset), np.shape(dataset_out))#(1980, 5, 192, 288) (1980, 3, 1, 288)
     #(2-2) Convert to temporal dataset

@@ -1,3 +1,4 @@
+##WORKS GOOD
 import torch
 from spherical_unet.models.spherical_convlstm.convlstm import *
 from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
