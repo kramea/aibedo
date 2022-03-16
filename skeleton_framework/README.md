@@ -15,3 +15,10 @@ conda install -c conda-forge trimesh
 ```
 python main_sphericalunet.py --config-file config.example.yml
 ```
+
+##Data download
+download data at
+```
+https://parc.sharepoint.com/sites/AIBEDO/Shared%20Documents/Forms/AllItems.aspx?isAscending=false&id=%2Fsites%2FAIBEDO%2FShared%20Documents%2FGeneral%2FPreprocessed%20Data%2FExp%20Runs&sortField=Modified&viewid=91413d38%2D1020%2D42de%2Db861%2Dde367c3c550c
+```
+and save in data folder
