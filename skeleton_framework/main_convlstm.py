@@ -72,9 +72,9 @@ def main(parser_args):
     #(2) Load data
     #un-comment below 3 lines if you want to resample spherical data from netcdf.
     path = "./data/"
-    dataset = load_ncdf(path+"Processed_CESM2_r1i1p1f1_historical_Input.nc") #(1980, 5, 192, 288)
+    dataset = load_ncdf(path+"input_level6_icosahedron.npy") #(1980, 5, 192, 288)
     dataset = normalize(dataset, "in")
-    dataset_out = load_ncdf(path+"Processed_CESM2_r1i1p1f1_historical_Output.nc")
+    dataset_out = load_ncdf(path+"output_level6_icosahedron.npy")
     dataset_out = normalize(dataset_out, "out")
     channel = 2 #0,1,2
     timelength = 1

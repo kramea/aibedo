@@ -32,7 +32,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         else:
             raise ValueError("Error: sampling method unknown. Please use icosahedron, healpix or equiangular.")
         #input_dim(channels), hidden_dim, kernel_size, num_layers, lap, batch_first=False, bias=True, return_all_layers=False)
-        
+      
         self.convlstm1 = ConvLSTM(5, 64, 3, 1, self.laps[5], True, True, False)
         self.batchnorm1 = nn.BatchNorm1d(64)
         self.convlstm2 = ConvLSTM(64, 128, 3, 1, self.laps[4], True, True, False)
@@ -53,7 +53,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         self.debatchnorm3 = nn.BatchNorm1d(128)
         self.deconvlstm2 = ConvLSTM(128, 64, 3, 1, self.laps[4], True, True, False)
         self.debatchnorm2 = nn.BatchNorm1d(64)
-        self.deconvlstm1 = ConvLSTM(64, 1, 3, 1, self.laps[5], True, True, False)
+        self.deconvlstm1 = ConvLSTM(64, 3, 3, 1, self.laps[5], True, True, False)
         self.debatchnorm1 = nn.BatchNorm1d(1)
         self.pooling = self.pooling_class.pooling
         self.unpooling = self.pooling_class.unpooling

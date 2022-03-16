@@ -1,6 +1,6 @@
 IMAGE PARAMS:
   pooling_class: "icosahedron"
-  n_pixels: 40962
+  n_pixels: 10242
   depth: 6
   laplacian_type: "combinatorial"
 

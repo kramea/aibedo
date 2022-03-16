@@ -24,9 +24,10 @@ def temporal_conversion(data, time):
     data = np.swapaxes(data, 1, 2)
     t,_,_ =np.shape(data)
     temporal_data = []
-    for i in range(0, int(t/5)-time):
-        d1,d2,d3 =np.shape(data[i*5:i*5+time])
-        temporal_data.append( np.reshape(data[i*5:i*5+time], [1,d1,d2,d3]) )
+    stride = 1
+    for i in range(0, int(t/stride)-time):
+        d1,d2,d3 =np.shape(data[i*stride:i*stride+time])
+        temporal_data.append( np.reshape(data[i*stride:i*stride+time], [1,d1,d2,d3]) )
     out = np.concatenate(temporal_data, axis=0)
     return out
 
@@ -70,7 +71,7 @@ def main(parser_args):
     # Run example
     out = model(torch.randn((3, 10, 5, n)))# Batch,Time,Channels,NumberofData
     
-    print(out.size())
+    print("output size", out.size())
     print(model)
     
     criterion = torch.nn.MSELoss()
@@ -81,26 +82,26 @@ def main(parser_args):
     #path = "/Users/sookim/Desktop/aibedo_sunet/aibedo/skeleton_framework/data/"
     #lon_list, lat_list, dataset = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Input.nc")
     #np.save("./data/input.npy",dataset)
-    dataset = np.load("./data/input.npy")
+    dataset = np.load("./data/Exp_All_CESM2_r1i1p1f1_historical_Input_5.npy")
     dataset = normalize(dataset, "in")
     #dataset = dataset[:,:,channel:channel+1]
     #lon_list, lat_list, dataset_out = load_ncdf_to_SphereIcosahedral(path+"Processed_CESM2_r1i1p1f1_historical_Output.nc")
     #np.save("./data/output.npy",dataset_out)
-    dataset_out = np.load("./data/output.npy")
+    dataset_out = np.load("./data/Exp_CESM2_r1i1p1f1_historical_Output_5.npy")
     dataset_out = normalize(dataset_out, "out")
-    channel = 0 #0,1,2
+    #channel = 2 #0,1,2
     timelength = 24
     n_epochs = 100
     batch_size = 2
-    dataset_out = dataset_out[:,:,channel:channel+1]
-    print(np.shape(dataset), np.shape(dataset_out))#(1980, 40962, 5) (1980, 40962, 1)
+    #dataset_out = dataset_out[:,:,channel:channel+1]
+    print("input", np.shape(dataset),"output", np.shape(dataset_out))#(1980, 40962, 5) (1980, 40962, 3)
 
     #(2-2) Convert to temporal dataset
     dataset = temporal_conversion(dataset, timelength+1)
     dataset_out = temporal_conversion(dataset_out, timelength+1)
     # shuffle
     dataset, dataset_out = shuffle_data(dataset, dataset_out)
-    print(np.shape(dataset))
+    print(np.shape(dataset), np.shape(dataset_out))
     #(3) Train test validation split: 80%/10%/10%
     n = len(dataset)
     #dataset_tr, dataset_te, dataset_va = dataset[0:int(0.90*n),0:-1,:,: ], dataset[int(0.90*n):int(0.95*n), 0:-1,:,:], dataset[int(0.95*n):, 0:-1, :,:]
