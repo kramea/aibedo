@@ -6,7 +6,10 @@ pip install git+https://github.com/epfl-lts2/pygsp.git@39a0665f637191152605911cf
 conda install pytorch=1.3.1 torchvision=0.4.2 cudatoolkit=10.0 -c pytorch
 pip install git+https://github.com/deepsphere/deepsphere-pytorch
 conda install -c conda-forge cartopy
-conda install trimesh cpandas torchsummary h5py xarray dask netCDF4 bottleneck
+conda install  pandas h5py xarray dask netCDF4 bottleneck
+pip install torchsummary
+conda install -c conda-forge trimesh
+
 ```
 #Execute code
 ```
