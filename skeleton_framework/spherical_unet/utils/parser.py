@@ -22,7 +22,7 @@ def create_parser():
     parser.add_argument("--config-file", dest="config_file", type=argparse.FileType(mode="r"))
 
     parser.add_argument("--pooling_class", default=None, type=str)
-    parser.add_argument("--n_pixels", default=None, type=int)
+    #parser.add_argument("--n_pixels", default=None, type=int)
     parser.add_argument("--depth", default=None, type=int)
     parser.add_argument("--laplacian_type", default=None, type=str)
 
@@ -36,7 +36,9 @@ def create_parser():
     parser.add_argument("--n_epochs", default=None, type=int)
     parser.add_argument("--kernel_size", default=None, type=int)
 
-
+    parser.add_argument("--input_file", default=None, type=str)
+    parser.add_argument("--output_file", default=None, type=str)
+    parser.add_argument("--output_path", default="output_sunet", type=str)
 
     parser.add_argument("--earlystopping_patience", default=None, type=int)
 

@@ -47,7 +47,7 @@ def normalize(data, parameter):
 
 
 
-def load_ncdf_to_SphereIcosahedral(data_path):
+def load_ncdf_to_SphereIcosahedral(data_path, glevel=5):
     #data_path = "/Users/sookim/aibedo/skeleton_framework/data/Processed_CESM2_r1i1p1f1_historical_Input.nc"
     ds= xr.open_dataset(data_path)
     var_list = list(ds.data_vars)
@@ -62,7 +62,7 @@ def load_ncdf_to_SphereIcosahedral(data_path):
             lon_list = list(np.asarray(ds[var].lon))
             lat_list = list(np.asarray(ds[var].lat))
             start = time.time()
-            lon, lat, interpolated_value = interpolate_SphereIcosahedral(5, da, lon_list, lat_list)
+            lon, lat, interpolated_value = interpolate_SphereIcosahedral(glevel, da, lon_list, lat_list)
             end = time.time()
             print("elapsed time: "+str(end-start)+" secs")
             data = np.asarray([interpolated_value])
