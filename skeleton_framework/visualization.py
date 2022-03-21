@@ -3,10 +3,7 @@ import cartopy.crs as ccrs
 import xarray as xr
 from interpolate import *
 import os
-from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.samplings import icosahedron_nodes_calculator
-from argparse import Namespace
-from pathlib import Path
 
 def mse(a1, a2):
     se = np.square(np.subtract(a1,a2))
@@ -102,24 +99,18 @@ def visualization(ncdf_path, glevel, path_gt, path_pre, path_fig, output_channel
 
 
 
-"""
-To execute:
-    python visualization.py  --config-file config_visualization.yml
-"""
-def main(parser_args):
-    print(parser_args)
-
-    glevel = int(parser_args.depth)
-    output_channels  = list(parser_args.output_vars)
-    ncdf_path = parser_args.input_file
-    ground_truth_path = parser_args.ground_truth
-    prediction_path = parser_args.prediction
-    path_to_figures = parser_args.path_to_figures
+def main():
+    # fill those parameters out manually! #
+    glevel = 5
+    output_channels  = ['tas_pre', 'pr_pre', 'psl_pre']
+    ncdf_path = "./data/MPI_ESM1_2_LR_r1i1p1f1_historical_Input.nc"
+    ground_truth_path =  "./results_sunet/exp2_groundtruth_20_tensor(0.0109).npy"  
+    prediction_path =  "./results_sunet/exp2_prediction_20_tensor(0.0109).npy"
+    path_to_figures = "./results_sunet/test_figures/" 
     print(ncdf_path, glevel, ground_truth_path, prediction_path, path_to_figures, output_channels)
 
     visualization(ncdf_path, glevel, ground_truth_path, prediction_path, path_to_figures, output_channels)
 
 
 if __name__ == "__main__":
-    PARSER_ARGS = parse_config(create_parser())
-    main(PARSER_ARGS)
+    main()
