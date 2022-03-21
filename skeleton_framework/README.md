@@ -1,4 +1,5 @@
-#install
+# Installation (for CPU)
+
 ```
 conda create --name deepsphere python=3.7
 source activate deepsphere
@@ -11,7 +12,9 @@ pip install torchsummary
 conda install -c conda-forge trimesh
 
 ```
-#The following list of commands install GPU-enabled code
+
+# Installation (for GPU)
+
 ```
 conda create --name deepsphere python=3.7
 source activate deepsphere
@@ -22,17 +25,14 @@ conda install -c conda-forge cartopy
 conda install  pandas h5py xarray dask netCDF4 bottleneck
 pip install torchsummary
 conda install -c conda-forge trimesh
-
-
-```
-#Execute code
-```
-python main_sphericalunet.py --config-file config.example.yml
 ```
 
-##Data download
-download data at
+# Execute
+
 ```
-https://parc.sharepoint.com/sites/AIBEDO/Shared%20Documents/Forms/AllItems.aspx?isAscending=false&id=%2Fsites%2FAIBEDO%2FShared%20Documents%2FGeneral%2FPreprocessed%20Data%2FExp%20Runs&sortField=Modified&viewid=91413d38%2D1020%2D42de%2Db861%2Dde367c3c550c
+python sphericalunet_endtoend.py --config-file config.example.yml
 ```
-and save in data folder
+
+# Data
+
+Sample data is already available in the AWS instance. Other datasets are located in S3 Bucket.
