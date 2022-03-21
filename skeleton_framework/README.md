@@ -1,14 +1,38 @@
-#install
+## Installation (for CPU)
+
 ```
 conda create --name deepsphere python=3.7
 source activate deepsphere
 pip install git+https://github.com/epfl-lts2/pygsp.git@39a0665f637191152605911cf209fc16a36e5ae9#egg=PyGSP
-conda install pytorch=1.3.1 torchvision=0.4.2 cudatoolkit=10.0 -c pytorch
+conda install pytorch=1.3.1 torchvision=0.4.2 cudatoolkit -c pytorch
 pip install git+https://github.com/deepsphere/deepsphere-pytorch
 conda install -c conda-forge cartopy
-conda install trimesh cpandas torchsummary h5py xarray dask netCDF4 bottleneck
+conda install  pandas h5py xarray dask netCDF4 bottleneck
+pip install torchsummary
+conda install -c conda-forge trimesh
+
 ```
-#Execute code
+
+## Installation (for GPU)
+
 ```
-python main_sphericalunet.py --config-file config.example.yml
+conda create --name deepsphere python=3.7
+source activate deepsphere
+pip install git+https://github.com/epfl-lts2/pygsp.git@39a0665f637191152605911cf209fc16a36e5ae9#egg=PyGSP
+pip3 install torch==1.3.1+cu100 -f https://download.pytorch.org/whl/cu100/torch-1.3.1%2Bcu100-cp37-cp37m-linux_x86_64.whl
+pip install git+https://github.com/deepsphere/deepsphere-pytorch
+conda install -c conda-forge cartopy
+conda install  pandas h5py xarray dask netCDF4 bottleneck
+pip install torchsummary
+conda install -c conda-forge trimesh
 ```
+
+## Execute
+
+```
+python sphericalunet_endtoend.py --config-file config.example.yml
+```
+
+## Data
+
+Sample data is already available in the AWS instance. Other datasets are located in S3 Bucket.

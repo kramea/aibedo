@@ -1,15 +1,22 @@
 IMAGE PARAMS:
   pooling_class: "icosahedron"
-  n_pixels: 10242
-  depth: 6
+  depth: 5
   laplacian_type: "combinatorial"
 
 MODEL PARAMS:
   partition: [0.5,0.3,0.2]
-  batch_size: 50
+  batch_size: 10
   learning_rate: 0.0002
   n_epochs: 10
   kernel_size: 3
+
+INPUT PARAMS:
+  input_file: "/home/ubuntu/Exp_All_CESM2_r1i1p1f1_historical_Input.nc"
+  output_file: "/home/ubuntu/Exp_CESM2_r1i1p1f1_historical_Output.nc"
+  output_path: "output_sunet"
+  input_vars: ['netTOAcs_pre', 'cres_pre', 'crel_pre', 'netSurf_pre']
+  output_vars: ['tas_pre', 'pr_pre', 'psl_pre']
+  generation_only: True
 
 EARLY_STOPPING:
   earlystopping_patience: 30
