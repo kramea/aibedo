@@ -1,4 +1,4 @@
-# Installation (for CPU)
+## Installation (for CPU)
 
 ```
 conda create --name deepsphere python=3.7
@@ -13,7 +13,7 @@ conda install -c conda-forge trimesh
 
 ```
 
-# Installation (for GPU)
+## Installation (for GPU)
 
 ```
 conda create --name deepsphere python=3.7
@@ -27,12 +27,12 @@ pip install torchsummary
 conda install -c conda-forge trimesh
 ```
 
-# Execute
+## Execute
 
 ```
 python sphericalunet_endtoend.py --config-file config.example.yml
 ```
 
-# Data
+## Data
 
 Sample data is already available in the AWS instance. Other datasets are located in S3 Bucket.
