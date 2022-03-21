@@ -20,7 +20,7 @@ def main(parser_args):
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
     os.mkdir("./output_sunet/")
-    unet = SphericalUNet(parser_args.pooling_class, parser_args.n_pixels, parser_args.depth, parser_args.laplacian_type, parser_args.kernel_size)
+    unet = SphericalUNet(parser_args.pooling_class, parser_args.n_pixels, parser_args.depth, parser_args.laplacian_type, parser_args.kernel_size, len(parser_args.input_vars), len(parser_args.output_vars))
     unet, device = init_device(parser_args.device, unet)
     lr = parser_args.learning_rate
     optimizer = optim.Adam(unet.parameters(), lr=lr)

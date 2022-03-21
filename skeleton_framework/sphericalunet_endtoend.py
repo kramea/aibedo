@@ -57,7 +57,10 @@ def main(parser_args):
 
     print(in_temp_npy_file)
     print(out_temp_npy_file)
+    
 
+    in_channels = len(parser_args.input_vars)
+    out_channels = len(parser_args.output_vars)
 
     if os.path.exists(in_temp_npy_file):
         print("Gridded input .npy file exists")
@@ -82,7 +85,7 @@ def main(parser_args):
     
         os.mkdir(output_path)
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, parser_args.kernel_size)
+        unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, parser_args.kernel_size,in_channels, out_channels)
         unet = unet.to(device)
         # It only works for level 6--why? (the above line)<--Kalai come back to this
         unet, device = init_device(parser_args.device, unet)

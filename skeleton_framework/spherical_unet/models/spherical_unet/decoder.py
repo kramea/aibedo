@@ -84,7 +84,7 @@ class Decoder(nn.Module):
     """The decoder of the Spherical UNet.
     """
 
-    def __init__(self, unpooling, laps, kernel_size):
+    def __init__(self, unpooling, laps, kernel_size, out_channels):
         """Initialization.
 
         Args:
@@ -94,11 +94,12 @@ class Decoder(nn.Module):
         super().__init__()
         self.unpooling = unpooling
         self.kernel_size = kernel_size
+        self.out_channels = out_channels
         self.dec_l1 = SphericalChebBNPoolConcat(512, 512, laps[1], self.unpooling, self.kernel_size)
         self.dec_l2 = SphericalChebBNPoolConcat(512, 256, laps[2], self.unpooling, self.kernel_size)
         self.dec_l3 = SphericalChebBNPoolConcat(256, 128, laps[3], self.unpooling, self.kernel_size)
         self.dec_l4 = SphericalChebBNPoolConcat(128, 64, laps[4], self.unpooling, self.kernel_size)
-        self.dec_l5 = SphericalChebBNPoolCheb(64, 32, 3, laps[5], self.unpooling, self.kernel_size) #3rd para:ch
+        self.dec_l5 = SphericalChebBNPoolCheb(64, 32, self.out_channels, laps[5], self.unpooling, self.kernel_size) #3rd para:ch
         # Switch from Logits to Probabilities if evaluating model
 
     def forward(self, x_enc0, x_enc1, x_enc2, x_enc3, x_enc4):

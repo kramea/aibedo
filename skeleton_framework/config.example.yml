@@ -14,7 +14,7 @@ INPUT PARAMS:
   input_file: "/home/ubuntu/Exp_All_CESM2_r1i1p1f1_historical_Input.nc"
   output_file: "/home/ubuntu/Exp_CESM2_r1i1p1f1_historical_Output.nc"
   output_path: "output_sunet"
-  input_vars: ['netTOAcs_pre', 'cres_pre', 'crel_pre', 'netSurf_pre']
+  input_vars: ['cres_pre', 'alpha_pre', 'clivi_pre', 'clwvi_pre', 'rlut_pre']
   output_vars: ['tas_pre', 'pr_pre', 'psl_pre']
   generation_only: True
 

@@ -18,7 +18,7 @@ class SphericalUNet(nn.Module):
     """Spherical GCNN Autoencoder.
     """
 
-    def __init__(self, pooling_class, N, depth, laplacian_type, kernel_size, ratio=1):
+    def __init__(self, pooling_class, N, depth, laplacian_type, kernel_size,in_channels, out_channels, ratio=1):
         """Initialization.
 
         Args:
@@ -31,6 +31,8 @@ class SphericalUNet(nn.Module):
         super().__init__()
         self.ratio = ratio
         self.kernel_size = kernel_size
+        self.in_channels = in_channels
+        self.out_channels = out_channels
         if pooling_class == "icosahedron":
             self.pooling_class = Icosahedron()
             self.laps = get_icosahedron_laplacians(N, depth, laplacian_type)
@@ -43,8 +45,8 @@ class SphericalUNet(nn.Module):
         else:
             raise ValueError("Error: sampling method unknown. Please use icosahedron, healpix or equiangular.")
 
-        self.encoder = Encoder(self.pooling_class.pooling, self.laps, self.kernel_size)
-        self.decoder = Decoder(self.pooling_class.unpooling, self.laps, self.kernel_size)
+        self.encoder = Encoder(self.pooling_class.pooling, self.laps, self.kernel_size, self.in_channels)
+        self.decoder = Decoder(self.pooling_class.unpooling, self.laps, self.kernel_size, self.out_channels)
 
     def forward(self, x):
         """Forward Pass.
