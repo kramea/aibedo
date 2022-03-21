@@ -11,6 +11,7 @@ from spherical_unet.utils.initialization import init_device
 from spherical_unet.utils.samplings import icosahedron_nodes_calculator
 from argparse import Namespace
 from pathlib import Path
+import time
 
 
 def main(parser_args):
@@ -25,6 +26,8 @@ def main(parser_args):
     # n_classes is the number of probabilities you want to get per pixel
    
     print(parser_args)
+
+    start = time.time()
 
     arg_input  = vars(parser_args)
 
@@ -78,7 +81,9 @@ def main(parser_args):
             shutil.rmtree(output_path)
     
         os.mkdir(output_path)
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, parser_args.kernel_size)
+        unet = unet.to(device)
         # It only works for level 6--why? (the above line)<--Kalai come back to this
         unet, device = init_device(parser_args.device, unet)
         lr = parser_args.learning_rate
@@ -98,13 +103,15 @@ def main(parser_args):
         #np.save("./data/input_new_5.npy",dataset)
         #dataset = np.load(parser_args.input_file)
         dataset = np.load(in_temp_npy_file)
-        dataset = normalize(dataset, "in")
+        #dataset = normalize(dataset, "in")--Question to Soo from Kalai: this was uncommented. Are we normalizing again?
+        
         #lon_list, lat_list, dataset_out = load_ncdf_to_SphereIcosahedral(path+"MPI_ESM1_2_LR_r1i1p1f1_historical_Output.nc")
         #np.save("./data/output_new_5.npy",dataset_out)
         #dataset_out = np.load(parser_args.output_file)
     
         dataset_out = np.load(out_temp_npy_file)
-        dataset_out = normalize(dataset_out, "out")
+        #dataset_out = normalize(dataset_out, "out")--Same here?
+        
         #channel = 0 #0,1,2
         #dataset_out = dataset_out[:,:,channel:channel+1]
         print(np.shape(dataset), np.shape(dataset_out)) #(1980, 40962, 5) (1980, 40962, 3)
@@ -116,6 +123,7 @@ def main(parser_args):
         dataset_tr, dataset_te, dataset_va = dataset[0:int(0.8*n)], dataset[int(0.8*n):int(0.9*n)], dataset[int(0.9*n):]
         dataset_out_tr, dataset_out_te, dataset_out_va = dataset_out[0:int(0.8*n)], dataset_out[int(0.8*n):int(0.9*n)], dataset_out[int(0.9*n):]
         #(4) Train
+        
         unet.train()
         # number of epochs to train the model
         n_epochs = parser_args.n_epochs
@@ -170,7 +178,12 @@ def main(parser_args):
                 np.save("./saved_model/prediction_"+str(epoch)+"_"+str(test_loss)+".npy", prediction)
                 np.save("./saved_model/groundtruth_"+str(epoch)+"_"+str(test_loss)+".npy", groundtruth)
 
+        end = time.time()
+        print(f"Runtime of the program is {end - start}")
+
 if __name__ == "__main__":
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
     PARSER_ARGS = parse_config(create_parser())
     main(PARSER_ARGS)
 
