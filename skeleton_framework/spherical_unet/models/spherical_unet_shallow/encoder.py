@@ -90,9 +90,9 @@ class Encoder(nn.Module):
         self.pooling = pooling
         self.kernel_size = kernel_size
         self.in_channels = in_channels
-        self.enc_l2 = SphericalChebBN2(self.in_channels, 64, 128, laps[5], self.kernel_size) #`16-->5`
-        self.enc_l1 = SphericalChebBNPool(128, 256, laps[4], self.pooling, self.kernel_size)
-        self.enc_l0 = SphericalChebBNPool(256, 256, laps[3], self.pooling, self.kernel_size)
+        self.enc_l2 = SphericalChebBN2(self.in_channels, 64, 128, laps[2], self.kernel_size) 
+        self.enc_l1 = SphericalChebBNPool(128, 256, laps[1], self.pooling, self.kernel_size)
+        self.enc_l0 = SphericalChebBNPool(256, 256, laps[0], self.pooling, self.kernel_size)
 
     def forward(self, x):
         """Forward Pass.
@@ -103,9 +103,9 @@ class Encoder(nn.Module):
         Returns:
             x_enc* :obj: `torch.Tensor`: output [batch x vertices x channels/features]
         """
-        x_enc2 = self.enc_l5(x)
-        x_enc1 = self.enc_l4(x_enc5)
-        x_enc0 = self.enc_l3(x_enc4)
+        x_enc2 = self.enc_l2(x)
+        x_enc1 = self.enc_l1(x_enc2)
+        x_enc0 = self.enc_l0(x_enc1)
 
         return x_enc0, x_enc1, x_enc2
 

@@ -96,7 +96,7 @@ class Decoder(nn.Module):
         self.kernel_size = kernel_size
         self.out_channels = out_channels
         self.dec_l1 = SphericalChebBNPoolConcat(256, 128, laps[1], self.unpooling, self.kernel_size)
-        self.dec_l2 = SphericalChebBNPoolConcat(128, 64, self.out_channels, laps[2], self.unpooling, self.kernel_size) 
+        self.dec_l2 = SphericalChebBNPoolCheb(128, 64, self.out_channels, laps[2], self.unpooling, self.kernel_size) 
         # Switch from Logits to Probabilities if evaluating model
 
     def forward(self, x_enc0, x_enc1, x_enc2):
@@ -109,5 +109,5 @@ class Decoder(nn.Module):
             :obj:`torch.Tensor`: output after forward pass.
         """
         x = self.dec_l1(x_enc0, x_enc1)
-        x = self.dec_l2(x, x_enc2)
+        x = self.dec_l2(x)
         return x
