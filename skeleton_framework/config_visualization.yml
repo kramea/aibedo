@@ -1,0 +1,25 @@
+IMAGE PARAMS:
+  pooling_class: "icosahedron"
+  depth: 5 # change this
+  laplacian_type: "combinatorial"
+
+MODEL PARAMS: #dummy
+  partition: [0.5,0.3,0.2]
+  batch_size: 10
+  learning_rate: 0.0002
+  n_epochs: 10
+  kernel_size: 3
+
+EARLY_STOPPING: #dummy
+  earlystopping_patience: 30
+
+INPUT PARAMS:
+  input_file: "./data/MPI_ESM1_2_LR_r1i1p1f1_historical_Input.nc" #change this
+  output_file: "./data/MPI_ESM1_2_LR_r1i1p1f1_historical_Output.nc" #change this
+  input_vars: ['netTOAcs_pre', 'cres_pre', 'crel_pre', 'netSurf_pre'] #dummy
+  output_vars: ['tas_pre', 'pr_pre', 'psl_pre'] #change this
+  ground_truth: "./results_sunet/exp2_groundtruth_20_tensor(0.0109).npy" #change this
+  prediction: "./results_sunet/exp2_prediction_20_tensor(0.0109).npy" #change this
+  
+OUTPUT PARAMS:
+  path_to_figures: "./results_sunet/figures/" #change this

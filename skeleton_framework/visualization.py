@@ -3,6 +3,10 @@ import cartopy.crs as ccrs
 import xarray as xr
 from interpolate import *
 import os
+from spherical_unet.utils.parser import create_parser, parse_config
+from spherical_unet.utils.samplings import icosahedron_nodes_calculator
+from argparse import Namespace
+from pathlib import Path
 
 def mse(a1, a2):
     se = np.square(np.subtract(a1,a2))
@@ -66,27 +70,56 @@ def visualize_2d_all(gt, pr, longitude, latitude, title, export_path=None):
         plt.show()
 
 
-def visualization(path_gt, path_pre, path_fig):
+
+def calculate_interpolated_lon_lat(ncdf_path, glevel):
+    ds= xr.open_dataset(ncdf_path)
+    var = list(ds.data_vars)[0]
+    da = np.asarray(ds[var])[0]
+    lon_list = list(np.asarray(ds[var].lon))
+    lat_list = list(np.asarray(ds[var].lat))
+    lon, lat, interpolated_value = interpolate_SphereIcosahedral(glevel, da, lon_list, lat_list)
+    return lon, lat
+
+
+def visualization(ncdf_path, glevel, path_gt, path_pre, path_fig, output_channels):
+    lon, lat= calculate_interpolated_lon_lat(ncdf_path, glevel)
     gt = np.load(path_gt)
     pr = np.load(path_pre)
-    print(np.shape(gt), np.shape(pr))
     n, _,_ = np.shape(gt)
-    ch = ["psl", "tas", "pr"]
+    ch = output_channels
     os.mkdir(path_fig)
     for c in range(len(ch)):
         error = mse(gt[:,:,c], pr[:,:,c])
-        print(ch[c],error)
+        print("++++++++++++++++++++++++++++++++++++++")
+        print("MSE of "+str(ch[c])+" is : "+str(error))
+        print("++++++++++++++++++++++++++++++++++++++")
         for i in range(n):
             error = mse(gt[i,:,c], pr[i,:,c])
             visualize_2d_all(gt[i,:,c],pr[i,:,c], lon, lat, ch[0]+" "+str(i), export_path=path_fig+str(ch[c])+"_"+str(i)+"_"+str(error)+".png")
 
-lon = np.load("./data/lon.npy")
-lat = np.load("./data/lat.npy")
-visualization("./results_sunet/groundtruth_35_tensor(0.0110).npy","./results_sunet/prediction_35_tensor(0.0110).npy", "./results_sunet/fig_all/")
 
-visualization("./results_sunet/exp1_groundtruth_10_tensor(0.0118).npy","./results_sunet/exp1_prediction_10_tensor(0.0118).npy", "./results_sunet/fig_exp1/")
 
-visualization("./results_sunet/exp2_groundtruth_20_tensor(0.0109).npy","./results_sunet/exp2_prediction_20_tensor(0.0109).npy", "./results_sunet/fig_exp2/")
 
-visualization("./results_sunet/exp3_groundtruth_5_tensor(0.0161).npy","./results_sunet/exp3_prediction_5_tensor(0.0161).npy", "./results_sunet/fig_exp3/")
 
+
+"""
+To execute:
+    python visualization.py  --config-file config_visualization.yml
+"""
+def main(parser_args):
+    print(parser_args)
+
+    glevel = int(parser_args.depth)
+    output_channels  = list(parser_args.output_vars)
+    ncdf_path = parser_args.input_file
+    ground_truth_path = parser_args.ground_truth
+    prediction_path = parser_args.prediction
+    path_to_figures = parser_args.path_to_figures
+    print(ncdf_path, glevel, ground_truth_path, prediction_path, path_to_figures, output_channels)
+
+    visualization(ncdf_path, glevel, ground_truth_path, prediction_path, path_to_figures, output_channels)
+
+
+if __name__ == "__main__":
+    PARSER_ARGS = parse_config(create_parser())
+    main(PARSER_ARGS)

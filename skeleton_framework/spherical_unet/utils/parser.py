@@ -46,6 +46,10 @@ def create_parser():
     parser.add_argument("--earlystopping_patience", default=None, type=int)
 
     parser.add_argument("--gpu", dest="device", nargs="*")
+    parser.add_argument("--ground_truth", default=None, type=str)
+    parser.add_argument("--prediction", default=None, type=str)
+    parser.add_argument("--path_to_figures", default=None, type=str)
+
 
     return parser
 
