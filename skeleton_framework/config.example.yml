@@ -1,6 +1,6 @@
 IMAGE PARAMS:
   pooling_class: "icosahedron"
-  depth: 5
+  depth: 3
   laplacian_type: "combinatorial"
 
 MODEL PARAMS:
@@ -11,10 +11,10 @@ MODEL PARAMS:
   kernel_size: 3
 
 INPUT PARAMS:
-  input_file: "/home/ubuntu/Exp_All_CESM2_r1i1p1f1_historical_Input.nc"
-  output_file: "/home/ubuntu/Exp_CESM2_r1i1p1f1_historical_Output.nc"
+  input_file: "/home/ubuntu/Exp7_CESM2_r1i1p1f1_historical_Input.nc"
+  output_file: "/home/ubuntu/Exp3_CESM2_r1i1p1f1_historical_Output.nc"
   output_path: "output_sunet"
-  input_vars: ['cres_pre', 'alpha_pre', 'clivi_pre', 'clwvi_pre', 'rlut_pre']
+  input_vars: ['cres_pre', 'crel_Pre', 'netTOAcs_Pre', 'clivi_pre', 'clwvi_pre','lcloud_pre', 'cresSurf_Pre', 'crelSurf_Pre', 'netSurfcs_Pre']
   output_vars: ['tas_pre', 'pr_pre', 'psl_pre']
   generation_only: True
 
