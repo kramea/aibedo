@@ -1,4 +1,4 @@
-# Install this one by one
+## Install this one by one
 
 ```
 conda create --name spherical python=3.7
@@ -10,5 +10,9 @@ pip install torchsummary
 pip install tqdm
 conda install -c conda-forge trimesh
 ```
+## Then run this script
 
+```
+python input_generation.py
+```
 
