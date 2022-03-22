@@ -67,7 +67,7 @@ def load_ncdf_to_SphereIcosahedral(data_path, glevel=5, dvar=None):
             start = time.time()
             lon, lat, interpolated_value = interpolate_SphereIcosahedral(glevel, da, lon_list, lat_list)
             end = time.time()
-            print("elapsed time: "+str(end-start)+" secs")
+            #print("elapsed time: "+str(end-start)+" secs")
             data = np.asarray([interpolated_value])
             data_all.append(data)
         data_input = np.reshape(np.concatenate(data_all, axis = 0), [-1,len(interpolated_value),1])
