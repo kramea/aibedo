@@ -10,6 +10,11 @@ pip install torchsummary
 pip install tqdm
 conda install -c conda-forge trimesh
 ```
+
+### Edit the folder paths:
+
+input_generation.py
+
 ## Then run this script
 
 ```
