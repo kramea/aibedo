@@ -35,12 +35,14 @@ def main(parser_args):
 
     glevel = int(parser_args.depth)
     n_pixels = icosahedron_nodes_calculator(glevel)
+    lag = int(parser_args.time_lag)
 
 
     print("Grid level:", glevel)
     print("N pixels:", n_pixels)
-    
-    temp_folder="/home/ubuntu/npy_files/" #Change this to where you want .npy files are saved
+    print("time lag:", lag)
+
+    temp_folder="./npy_files/" #Change this to where you want .npy files are saved
     # We don't want this as part of the github folder as the files can be large
     # Ideally we want to move this to S3 bucket
 
@@ -115,11 +117,10 @@ def main(parser_args):
         dataset_out = np.load(out_temp_npy_file)
         #dataset_out = normalize(dataset_out, "out")--Same here?
         
-        #channel = 0 #0,1,2
-        #dataset_out = dataset_out[:,:,channel:channel+1]
-        print(np.shape(dataset), np.shape(dataset_out)) #(1980, 40962, 5) (1980, 40962, 3)
-        dataset = dataset#[:-24]
-        dataset_out = dataset_out#[24:]
+        print(np.shape(dataset), np.shape(dataset_out))
+        if lag > 0:
+            dataset = dataset[:-lag]
+            dataset_out = dataset_out[lag:]
         print(np.shape(dataset), np.shape(dataset_out))
         #(3) Train test validation split: 80%/10%/10%
         n = len(dataset)

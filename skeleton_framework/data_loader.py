@@ -50,8 +50,9 @@ def normalize(data, parameter):
 def load_ncdf_to_SphereIcosahedral(data_path, glevel=5, dvar=None):
     #data_path = "/Users/sookim/aibedo/skeleton_framework/data/Processed_CESM2_r1i1p1f1_historical_Input.nc"
     ds= xr.open_dataset(data_path)
+    print(list(ds.data_vars))
     if dvar==None:
-        var_list = list(ds.data_vars)
+        var_list = [v for v in list(ds.data_vars) if "_pre" in v or "_Pre" in v] 
     else:
         var_list = dvar
     file_all = []

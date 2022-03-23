@@ -26,7 +26,7 @@ def main(parser_args):
     # n_classes is the number of probabilities you want to get per pixel
    
     print(parser_args)
-
+ 
     start = time.time()
 
     arg_input  = vars(parser_args)
@@ -35,10 +35,11 @@ def main(parser_args):
 
     glevel = int(parser_args.depth)
     n_pixels = icosahedron_nodes_calculator(glevel)
-
+    lag = int(parser_args.time_lag)
 
     print("Grid level:", glevel)
     print("N pixels:", n_pixels)
+    print("time lag:", lag)
     
     temp_folder="./npy_files/" #Change this to where you want .npy files are saved
     # We don't want this as part of the github folder as the files can be large
@@ -117,9 +118,10 @@ def main(parser_args):
         
         #channel = 0 #0,1,2
         #dataset_out = dataset_out[:,:,channel:channel+1]
-        print(np.shape(dataset), np.shape(dataset_out)) #(1980, 40962, 5) (1980, 40962, 3)
-        dataset = dataset#[:-24]
-        dataset_out = dataset_out#[24:]
+        print(np.shape(dataset), np.shape(dataset_out)) 
+        if lag > 0:
+            dataset = dataset[:-lag]
+            dataset_out = dataset_out[lag:]
         print(np.shape(dataset), np.shape(dataset_out))
         #(3) Train test validation split: 80%/10%/10%
         n = len(dataset)
