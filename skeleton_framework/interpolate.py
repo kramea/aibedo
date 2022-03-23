@@ -80,7 +80,7 @@ def interpolate_SphereIcosahedral(level, input_array,lon_list, lat_list):
     graph = pg.graphs.SphereIcosahedral(2**level)
     #(2) extract lon, lat coordinate
     vertices = graph.coords # xyz coordinates
-    print("number of vertices for level "+str(level)+" (2**"+str(level)+")is "+str(graph.n_vertices))
+    #print("number of vertices for level "+str(level)+" (2**"+str(level)+")is "+str(graph.n_vertices))
     lon = []
     lat = []
     radius = 1
@@ -133,7 +133,7 @@ def interpolate_SphereHealpix(subdivision, neighbors, input_array, lon_list, lat
     graph = pg.graphs.SphereHealpix(subdivision, k=neighbors)
     #(2) extract lon, lat coordinate
     vertices = graph.coords # xyz coordinates
-    print("number of vertices for sub-divsion "+str(subdivision)+" neighbor"+str(neighbors)+" is "+str(graph.n_vertices))
+    #print("number of vertices for sub-divsion "+str(subdivision)+" neighbor"+str(neighbors)+" is "+str(graph.n_vertices))
     lon = []
     lat = []
     radius = 1

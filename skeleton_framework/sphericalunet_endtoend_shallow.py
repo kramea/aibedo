@@ -41,7 +41,7 @@ def main(parser_args):
     print("N pixels:", n_pixels)
     print("time lag:", lag)
     
-    temp_folder="./npy_files/" #Change this to where you want .npy files are saved
+    temp_folder="/home/ubuntu/npy_files/" #Change this to where you want .npy files are saved
     # We don't want this as part of the github folder as the files can be large
     # Ideally we want to move this to S3 bucket
 
@@ -107,14 +107,14 @@ def main(parser_args):
         #np.save("./data/input_new_5.npy",dataset)
         #dataset = np.load(parser_args.input_file)
         dataset = np.load(in_temp_npy_file)
-        #dataset = normalize(dataset, "in")--Question to Soo from Kalai: this was uncommented. Are we normalizing again?
+        dataset = normalize(dataset, "in") #Question to Soo from Kalai: this was uncommented. Are we normalizing again?
         
         #lon_list, lat_list, dataset_out = load_ncdf_to_SphereIcosahedral(path+"MPI_ESM1_2_LR_r1i1p1f1_historical_Output.nc")
         #np.save("./data/output_new_5.npy",dataset_out)
         #dataset_out = np.load(parser_args.output_file)
     
         dataset_out = np.load(out_temp_npy_file)
-        #dataset_out = normalize(dataset_out, "out")--Same here?
+        dataset_out = normalize(dataset_out, "out") #Same here?
         
         #channel = 0 #0,1,2
         #dataset_out = dataset_out[:,:,channel:channel+1]

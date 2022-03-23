@@ -101,12 +101,12 @@ def visualization(ncdf_path, glevel, path_gt, path_pre, path_fig, output_channel
 
 def main():
     # fill those parameters out manually! #
-    glevel = 5
+    glevel = 3
     output_channels  = ['tas_pre', 'pr_pre', 'psl_pre']
-    ncdf_path = "./data/MPI_ESM1_2_LR_r1i1p1f1_historical_Input.nc"
-    ground_truth_path =  "./results_sunet/exp2_groundtruth_20_tensor(0.0109).npy"  
-    prediction_path =  "./results_sunet/exp2_prediction_20_tensor(0.0109).npy"
-    path_to_figures = "./results_sunet/test_figures/" 
+    ncdf_path = "/home/ubuntu/Exp7_CESM2_r1i1p1f1_historical_Input.nc"
+    ground_truth_path =  "./saved_model/groundtruth_10_tensor(0.0114).npy"  
+    prediction_path =  "./saved_model/prediction_10_tensor(0.0114).npy"
+    path_to_figures = "./figures/" 
     print(ncdf_path, glevel, ground_truth_path, prediction_path, path_to_figures, output_channels)
 
     visualization(ncdf_path, glevel, ground_truth_path, prediction_path, path_to_figures, output_channels)

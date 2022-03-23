@@ -14,9 +14,9 @@ MODEL PARAMS:
 INPUT PARAMS:
   input_file: "/home/ubuntu/Exp7_CESM2_r1i1p1f1_historical_Input.nc"
   output_file: "/home/ubuntu/Exp3_CESM2_r1i1p1f1_historical_Output.nc"
-  output_path: "./output_sunet" 
+  output_path: "output_sunet"
   input_vars: ['cres_pre', 'crel_Pre', 'netTOAcs_Pre', 'clivi_pre', 'clwvi_pre', 'cresSurf_Pre', 'crelSurf_Pre']
-  output_vars: ['tas_pre']
+  output_vars: ['tas_pre', 'pr_pre', 'psl_pre']
   generation_only: True
 
 EARLY_STOPPING:
