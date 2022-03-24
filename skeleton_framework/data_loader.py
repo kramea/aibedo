@@ -22,7 +22,7 @@ def shuffle_data(d1, d2):
     random.shuffle(idx)
     d1_out = []
     d2_out = []
-    for i in range(n):
+    for i in idx:
         d1_out.append(d1[i:i+1])
         d2_out.append(d2[i:i+1])
     d1_out2 = np.concatenate(d1_out, axis=0)
