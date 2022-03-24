@@ -42,13 +42,6 @@ def main(parser_args):
     print("N pixels:", n_pixels)
     print("time lag:", lag)
 
-    if glevel>4:
-        #for glevel = 5,6 --> use 6-layered unet
-        from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
-
-    else:
-        #for glevel = 1,2,3,4 --> use 3-layered unet (shllow)
-        from spherical_unet.models.spherical_unet_shallow.unet_model import SphericalUNet 
 
     temp_folder="./npy_files/" #Change this to where you want .npy files are saved
     # We don't want this as part of the github folder as the files can be large
@@ -95,10 +88,15 @@ def main(parser_args):
         
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         if glevel>4:
+            print("Generating 6 layered unet")
+            #for glevel = 5,6 --> use 6-layered unet
+            from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
             unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, parser_args.kernel_size,in_channels, out_channels)
-        else:
+        else:     
+            print("Generating 3 layered unet")
+            #for glevel = 1,2,3,4 --> use 3-layered unet (shllow)
+            from spherical_unet.models.spherical_unet_shallow.unet_model import SphericalUNet
             unet = SphericalUNet(parser_args.pooling_class, n_pixels, 3, parser_args.laplacian_type, parser_args.kernel_size,in_channels, out_channels)
- 
         unet = unet.to(device)
         unet, device = init_device(parser_args.device, unet)
         lr = parser_args.learning_rate
