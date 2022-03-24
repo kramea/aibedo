@@ -4,8 +4,8 @@ import os, shutil
 import torch
 import torch.optim as optim
 from torchsummary import summary
-from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral
-from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
+from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral, shuffle_data
+#from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
 from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
 from spherical_unet.utils.samplings import icosahedron_nodes_calculator
@@ -42,13 +42,19 @@ def main(parser_args):
     print("N pixels:", n_pixels)
     print("time lag:", lag)
 
+    if glevel>4:
+        #for glevel = 5,6 --> use 6-layered unet
+        from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
+
+    else:
+        #for glevel = 1,2,3,4 --> use 3-layered unet (shllow)
+        from spherical_unet.models.spherical_unet_shallow.unet_model import SphericalUNet 
+
     temp_folder="./npy_files/" #Change this to where you want .npy files are saved
     # We don't want this as part of the github folder as the files can be large
     # Ideally we want to move this to S3 bucket
 
-    #infile = "/home/ubuntu/Exp2_CESM2_r1i1p1f1_historical_Input.nc"
     infile = parser_args.input_file
-    #outfile = "/home/ubuntu/Exp1_CESM2_r1i1p1f1_historical_Output.nc"
     outfile = parser_args.output_file
     infname = Path(infile).stem
     outfname = Path(outfile).stem
@@ -86,42 +92,36 @@ def main(parser_args):
             shutil.rmtree(output_path)
     
         os.mkdir(output_path)
+        
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, parser_args.kernel_size,in_channels, out_channels)
+        if glevel>4:
+            unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, parser_args.kernel_size,in_channels, out_channels)
+        else:
+            unet = SphericalUNet(parser_args.pooling_class, n_pixels, 3, parser_args.laplacian_type, parser_args.kernel_size,in_channels, out_channels)
+ 
         unet = unet.to(device)
-        # It only works for level 6--why? (the above line)<--Kalai come back to this
         unet, device = init_device(parser_args.device, unet)
         lr = parser_args.learning_rate
         optimizer = optim.Adam(unet.parameters(), lr=lr)
 
         print(unet)
 
-        #print model summary and test
-        #out = unet(torch.randn(10, 10242 ,5))
-        #print(unet, out.shape)
+
         criterion = torch.nn.MSELoss()
         optimizer = optim.Adam(unet.parameters(), lr=lr)
 
         #(2) Load data
-        #un-comment below 3 lines if you want to resample spherical data from netcdf.
-        #lon_list, lat_list, dataset = load_ncdf_to_SphereIcosahedral(path+"MPI_ESM1_2_LR_r1i1p1f1_historical_Input.nc")
-        #np.save("./data/input_new_5.npy",dataset)
-        #dataset = np.load(parser_args.input_file)
         dataset = np.load(in_temp_npy_file)
-        #dataset = normalize(dataset, "in")--Question to Soo from Kalai: this was uncommented. Are we normalizing again?
-        
-        #lon_list, lat_list, dataset_out = load_ncdf_to_SphereIcosahedral(path+"MPI_ESM1_2_LR_r1i1p1f1_historical_Output.nc")
-        #np.save("./data/output_new_5.npy",dataset_out)
-        #dataset_out = np.load(parser_args.output_file)
+      
     
         dataset_out = np.load(out_temp_npy_file)
-        #dataset_out = normalize(dataset_out, "out")--Same here?
         
-        print(np.shape(dataset), np.shape(dataset_out))
+        print("original dataset (1) Train-set ",np.shape(dataset),"(2) Test-set", np.shape(dataset_out))
         if lag > 0:
             dataset = dataset[:-lag]
             dataset_out = dataset_out[lag:]
-        print(np.shape(dataset), np.shape(dataset_out))
+        dataset, dataset_out=shuffle_data(dataset, dataset_out)
+        print("after applying time lag "+str(lag)+" months (1) Train-set ",np.shape(dataset),"(2) Test-set ", np.shape(dataset_out))
         #(3) Train test validation split: 80%/10%/10%
         n = len(dataset)
         dataset_tr, dataset_te, dataset_va = dataset[0:int(0.8*n)], dataset[int(0.8*n):int(0.9*n)], dataset[int(0.9*n):]
@@ -168,9 +168,10 @@ def main(parser_args):
                 ))
             if epoch%5==0:
                 if epoch == 0:
-                    os.mkdir("./saved_model/")
+                    os.mkdir("./saved_model_lag_"+str(lag)+"/")
                 #save model
-                torch.save(unet.state_dict(), "./saved_model/unet_state_"+str(epoch)+".pt")
+                torch.save(unet.state_dict(), "./saved_model_lag_"+str(lag)+"/unet_state_"+str(epoch)+".pt")
+                
                 #test with testset
                 with torch.no_grad():
                     images = torch.tensor(dataset_te)
@@ -179,8 +180,8 @@ def main(parser_args):
                     test_loss = criterion(outputs.float(), gt_outputs.float())
                     prediction = outputs.detach().numpy()
                     groundtruth = gt_outputs.detach().numpy()
-                np.save("./saved_model/prediction_"+str(epoch)+"_"+str(test_loss)+".npy", prediction)
-                np.save("./saved_model/groundtruth_"+str(epoch)+"_"+str(test_loss)+".npy", groundtruth)
+                np.save("./saved_model_lag_"+str(lag)+"/prediction_"+str(epoch)+"_"+str(test_loss)+".npy", prediction)
+                np.save("./saved_model_lag_"+str(lag)+"/groundtruth_"+str(epoch)+"_"+str(test_loss)+".npy", groundtruth)
 
         end = time.time()
         print(f"Runtime of the program is {end - start}")

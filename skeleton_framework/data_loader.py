@@ -4,9 +4,8 @@ import cartopy.crs as ccrs
 import h5py
 import xarray as xr
 from interpolate import *
-import copy
-import os
-import time
+import copy, os, time, random
+
 
 
 def load_ncdf(path_to_ncdf):
@@ -14,6 +13,21 @@ def load_ncdf(path_to_ncdf):
     time, lat, lon = np.shape(ds.rsut) #(1980, 192, 288)
     data = np.reshape(np.asarray(ds.rsut), [time, 1, lat, lon])
     return data
+    
+def shuffle_data(d1, d2):
+    n=len(d1)
+    m=len(d2)
+    assert(n == m)
+    idx = [ i for i in range(m)]
+    random.shuffle(idx)
+    d1_out = []
+    d2_out = []
+    for i in range(n):
+        d1_out.append(d1[i:i+1])
+        d2_out.append(d2[i:i+1])
+    d1_out2 = np.concatenate(d1_out, axis=0)
+    d2_out2 = np.concatenate(d2_out, axis=0)
+    return d1_out2, d2_out2
 
 def normalize(data, parameter):
     data_ = copy.deepcopy(data)
