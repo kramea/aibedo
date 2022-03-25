@@ -60,6 +60,23 @@ def normalize(data, parameter):
 
 
 
+def temporal_conversion(data, time):
+    """
+       data: [T, N, C]
+    """
+    print("start temporal conversion of original data shaped as "+str(np.shape(data)))
+    data = np.swapaxes(data, 1, 2)
+    t,_,_ =np.shape(data)
+    temporal_data = []
+    stride = 1
+    for i in range(0, int(t/stride)-time):
+        d1,d2,d3 =np.shape(data[i*stride:i*stride+time])
+        temporal_data.append( np.reshape(data[i*stride:i*stride+time], [1,d1,d2,d3]) )
+    out = np.concatenate(temporal_data, axis=0)
+    return out
+
+
+
 
 def load_ncdf_to_SphereIcosahedral(data_path, glevel=5, dvar=None):
     #data_path = "/Users/sookim/aibedo/skeleton_framework/data/Processed_CESM2_r1i1p1f1_historical_Input.nc"

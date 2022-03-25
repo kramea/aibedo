@@ -26,6 +26,8 @@ def create_parser():
     parser.add_argument("--depth", default=None, type=int)
     parser.add_argument("--laplacian_type", default=None, type=str)
     parser.add_argument("--time_lag", default=None, type=int)
+    parser.add_argument("--time_length", default=None, type=int)
+    
 
     parser.add_argument("--type", default=None, type=str)
     parser.add_argument("--sequence_length", default=None, type=int)
