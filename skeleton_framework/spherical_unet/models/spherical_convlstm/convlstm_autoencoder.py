@@ -53,7 +53,7 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         self.debatchnorm3 = nn.BatchNorm1d(128)
         self.deconvlstm2 = ConvLSTM(128, 64, 3, 1, self.laps[4], True, True, False)
         self.debatchnorm2 = nn.BatchNorm1d(64)
-        self.deconvlstm1 = ConvLSTM(64, 3, 3, output_channels, self.laps[5], True, True, False)
+        self.deconvlstm1 = ConvLSTM(64,  output_channels,3, 1, self.laps[5], True, True, False)
         self.debatchnorm1 = nn.BatchNorm1d(1)
         self.pooling = self.pooling_class.pooling
         self.unpooling = self.pooling_class.unpooling
