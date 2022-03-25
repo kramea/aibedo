@@ -161,6 +161,6 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
         x = torch.reshape(x, [d1, d2, d3, -1])
-        output = x
+        output = x[:,-1:,:,:]
         #print(x.size()) #torch.Size([2, 10, 1, 40962])
         return output
