@@ -128,7 +128,7 @@ def main(parser_args):
                 optimizer.zero_grad()
                 # forward pass: compute predicted outputs by passing inputs to the model
                 outputs = model(images.float())
-                print(np.shape(outputs.float()),np.shape(gt_outputs.float()))
+                
                 # calculate the loss
                 loss = criterion(outputs.float(), gt_outputs.float())
                 # backward pass: compute gradient of the loss with respect to model parameters
