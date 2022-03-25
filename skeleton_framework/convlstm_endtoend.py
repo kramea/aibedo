@@ -99,10 +99,13 @@ def main(parser_args):
         #(2) Load data
         dataset = np.load(in_temp_npy_file)
         dataset_out = np.load(out_temp_npy_file)
-        dataset = temporal_conversion(dataset, time_length+1)
-        dataset_out = temporal_conversion(dataset_out, time_length+1)
+        dataset = temporal_conversion(dataset, time_length)
+        dataset_out = temporal_conversion(dataset_out, time_length)
         # shuffle
         dataset, dataset_out = shuffle_data(dataset, dataset_out)
+        # collect only last timestep from output
+        dataset_out = dataset_out[:,-1:,:,:]
+        print("Timelength of input: "+str(time_length))
         print("Shape: (1) Train-set ",np.shape(dataset),"(2) Test-set ", np.shape(dataset_out))
         #(3) Train test validation split: 80%/10%/10%
         n = len(dataset)
@@ -125,6 +128,7 @@ def main(parser_args):
                 optimizer.zero_grad()
                 # forward pass: compute predicted outputs by passing inputs to the model
                 outputs = model(images.float())
+                print(np.shape(outputs.float()),np.shape(gt_outputs.float()))
                 # calculate the loss
                 loss = criterion(outputs.float(), gt_outputs.float())
                 # backward pass: compute gradient of the loss with respect to model parameters
