@@ -27,12 +27,16 @@ pip install torchsummary
 conda install -c conda-forge trimesh
 ```
 
-## Execute
+## Execute Spheircal-Unet
 
 ```
 python sphericalunet_endtoend.py --config-file config.example.yml
 ```
+## Execute Spherical-Conv-LSTM
 
+```
+python convlstm_endtoend.py  --config-file config.example.yml
+```
 ## Data
 
 Sample data is already available in the AWS instance. Other datasets are located in S3 Bucket.
