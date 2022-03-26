@@ -175,7 +175,7 @@ def interpolate_SphereHealpix(subdivision, neighbors, input_array, lon_list, lat
         interpolated_result.append(interploated_value)
     # Kalai added Longitudinal shift 
     lon2 = [x+180 for x in lon]
-    return lon, lat, interpolated_result
+    return lon2, lat, interpolated_result
 
 
 
