@@ -48,14 +48,16 @@ def normalize(data, parameter):
         min_val = []
         max_val = []
         for i in range(c):
-            min_val.append(np.amin(data[:, i, :]))
-            max_val.append(np.amax(data[:, i, :]))
+            min_val.append(np.amin(data[:, :, i]))
+            max_val.append(np.amax(data[:, :, i]))
 
         np.save("./output_sunet/min_"+parameter+".npy", min_val)
         np.save("./output_sunet/max_"+parameter+".npy", max_val)
         for i in range(c):
             for j in range(n):
                 data_[j,:,i] = (data[j,:,i]-min_val[i])/(max_val[i]-min_val[i])
+        for i in range(c):
+            print(np.amin(data_[:,:,i]), np.amax(data_[:,:,i]))
     return data_
 
 

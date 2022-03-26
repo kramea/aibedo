@@ -1,6 +1,6 @@
 from models.cnn import CNN
 import numpy as np
-import os, random, time
+import os, random, time, shutil
 import torch
 import torch.optim as optim
 from torchsummary import summary
@@ -98,16 +98,19 @@ def main(parser_args):
         optimizer = optim.Adam(model.parameters(), lr=lr)
         #(2) Load data
         dataset = np.load(in_temp_npy_file)
+        print(np.shape(dataset))
         dataset = normalize(dataset, "in")
         dataset_out = np.load(out_temp_npy_file)
         dataset_out = normalize(dataset_out, "out")
+        
 
         dataset = temporal_conversion(dataset, time_length)
         dataset_out = temporal_conversion(dataset_out, time_length)
         # shuffle
         dataset, dataset_out = shuffle_data(dataset, dataset_out)
         # collect only last timestep from output
-        #dataset_out = dataset_out[:,-1:,:,:]
+        dataset_out = dataset_out[:,-1:,:,:]
+
         print("Timelength of input: "+str(time_length))
         print("Shape: (1) Input ",np.shape(dataset),"(2) Output ", np.shape(dataset_out))
         #(3) Train test validation split: 80%/10%/10%
