@@ -35,25 +35,29 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
       
         self.convlstm1 = ConvLSTM(input_channels, 64, 3, 1, self.laps[5], True, True, False)
         self.batchnorm1 = nn.BatchNorm1d(64)
-        self.convlstm2 = ConvLSTM(64, 128, 3, 1, self.laps[4], True, True, False)
+        self.convlstm2 = ConvLSTM(64, 128, 3, 2, self.laps[4], True, True, False)
         self.batchnorm2 = nn.BatchNorm1d(128)
-        self.convlstm3 = ConvLSTM(128, 256, 3, 1, self.laps[3], True, True, False)
+        self.convlstm3 = ConvLSTM(128, 256, 3, 2, self.laps[3], True, True, False)
         self.batchnorm3 = nn.BatchNorm1d(256)
-        self.convlstm4 = ConvLSTM(256, 512, 3, 1, self.laps[2], True, True, False)
+        self.convlstm4 = ConvLSTM(256, 512, 3, 2, self.laps[2], True, True, False)
         self.batchnorm4 = nn.BatchNorm1d(512)
-        self.convlstm5 = ConvLSTM(512, 512, 3, 1, self.laps[1], True, True, False)
+        self.convlstm5 = ConvLSTM(512, 512, 3, 2, self.laps[1], True, True, False)
         self.batchnorm5 = nn.BatchNorm1d(512)
-        self.convlstm6 = ConvLSTM(512, 512, 3, 1, self.laps[0], True, True, False)
+        self.convlstm6 = ConvLSTM(512, 512, 3, 2, self.laps[0], True, True, False)
         self.batchnorm6 = nn.BatchNorm1d(512)
-        self.deconvlstm5 = ConvLSTM(512, 512, 3, 1, self.laps[1], True, True, False)
+        self.deconvlstm5 = ConvLSTM(512, 512, 3, 2, self.laps[1], True, True, False)
         self.debatchnorm5 = nn.BatchNorm1d(512)
-        self.deconvlstm4 = ConvLSTM(512, 256, 3, 1, self.laps[2], True, True, False)
+        self.deconvlstm4 = ConvLSTM(512, 256, 3, 2, self.laps[2], True, True, False)
         self.debatchnorm4 = nn.BatchNorm1d(256)
-        self.deconvlstm3 = ConvLSTM(256, 128, 3, 1, self.laps[3], True, True, False)
+        self.deconvlstm3 = ConvLSTM(256, 128, 3, 2, self.laps[3], True, True, False)
         self.debatchnorm3 = nn.BatchNorm1d(128)
-        self.deconvlstm2 = ConvLSTM(128, 64, 3, 1, self.laps[4], True, True, False)
+        self.deconvlstm2 = ConvLSTM(128, 64, 3, 2, self.laps[4], True, True, False)
         self.debatchnorm2 = nn.BatchNorm1d(64)
+<<<<<<< HEAD
         self.deconvlstm1 = ConvLSTM(64,  output_channels, 3, 1, self.laps[5], True, True, False)
+=======
+        self.deconvlstm1 = ConvLSTM(64,  output_channels,3, 2, self.laps[5], True, True, False)
+>>>>>>> 52f51e88b29e19dbcf31bc3297e03922afe4e32d
         self.debatchnorm1 = nn.BatchNorm1d(1)
         self.pooling = self.pooling_class.pooling
         self.unpooling = self.pooling_class.unpooling
@@ -67,101 +71,109 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         Returns:
             :obj:`torch.Tensor`: output
         """
-        #print(x.size()) # torch.Size([2, 10, 5, 40962]) #A tensor of size B, T, C, N 
+        #print(x.size()) # #A tensor of size B, T, C, N 
 
-        d1, d2, d3, n = x.size()
+        d1, d2, d3, n = x.size() 
         ch=d3
         x,_ = self.convlstm1(x)
-        d1, d2, d3,  n = x[-1].size()
+        #print(x[-1].size()) 
+        d1, d2, d3,  n = x[-1].size() 
         x = torch.reshape(x[-1], [-1, n, 1])
         #x = torch.reshape(x[-1], [d1, d2*d3, n])
         #x = self.batchnorm1(x)
         #x = torch.reshape(x, [-1, n, 1])
         #
         x = F.relu(x)
+
         x = self.pooling(x)
-
-        #print(x.size()) #torch.Size([1280, 10242, 1])
-
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.convlstm2(x)
+        #print(x[-1].size()) 
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
+        
+        
         x = self.pooling(x)
-        #print(x.size()) #torch.Size([2560, 2562, 1])
-
-
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.convlstm3(x)
+        #print(x[-1].size())
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x) 
+        
+        
         x = self.pooling(x)
-        #print(x.size()) #torch.Size([5120, 642, 1])
-
-
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.convlstm4(x)
+        #print(x[-1].size())
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x) 
+        
+        
         x = self.pooling(x)
-        #print(x.size()) #torch.Size([10240, 162, 1])
-
-
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.convlstm5(x)
+        #print(x[-1].size())
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1]) 
         x = F.relu(x)
-        #print(x.size()) #torch.Size([10240, 162, 1])
+        
+        
+        x = self.pooling(x)
+        x = torch.reshape(x, [d1, d2, d3, -1])
+        x,_ = self.convlstm6(x)
+        #print(x[-1].size())
+        d1, d2, d3,  n = x[-1].size()
+        x = torch.reshape(x[-1], [-1, n, 1]) 
+        x = F.relu(x)
 
 
+        ######DECODER ####################
+        x = self.unpooling(x)
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm5(x)
+        #print(x[-1].size())
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x) 
+        
+        
         x = self.unpooling(x)
-        #print(x.size()) #torch.Size([10240, 642, 1])
-
-
-        #print(x.size())
-
-
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm4(x)
+        #print(x[-1].size())
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
+        
+        
         x = self.unpooling(x)
-        #print(x.size()) #torch.Size([5120, 2562, 1])
-
-
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm3(x)
+        #print(x[-1].size())
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
+        
+        
         x = self.unpooling(x)
-        #print(x.size()) #torch.Size([2560, 10242, 1])
-
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm2(x)
+        #print(x[-1].size())
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
+        
+        
         x = self.unpooling(x)
-        #print(x.size()) #torch.Size([1280, 40962, 1])
-
         x = torch.reshape(x, [d1, d2, d3, -1])
         x,_ = self.deconvlstm1(x)
+        #print(x[-1].size())
         d1, d2, d3,  n = x[-1].size()
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
         x = torch.reshape(x, [d1, d2, d3, -1])
-        #print(x.size())
-        output = x[:,-1:,:,:] # take only last timestep
-        #print(output.size()) #torch.Size([2, 1, 1, 40962])
+        output = x[:,-1:,:,:]
         return output
