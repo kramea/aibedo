@@ -3,13 +3,13 @@ IMAGE PARAMS:
   depth: 6
   laplacian_type: "combinatorial"
   time_lag: 0 #dummy for s-convlstm
-  time_length: 1 #>=1 for s-convlstm
+  time_length: 2 #>=1 for s-convlstm
 
 MODEL PARAMS:
   partition: [0.5,0.3,0.2]
   batch_size: 10
-  learning_rate: 0.0002
-  n_epochs: 10
+  learning_rate: 0.001
+  n_epochs: 5
   kernel_size: 3
 
 INPUT PARAMS:
