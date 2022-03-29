@@ -159,9 +159,9 @@ def main(parser_args):
                 ))
             if epoch%5==0:
                 if epoch == 0:
-                    os.mkdir("./saved_model_convlstm_"+str(time_length)+"/")
+                    os.mkdir("./saved_model_convlstmunet_"+str(time_length)+"/")
                 #save model
-                torch.save(model.state_dict(), "./saved_model_convlstm_"+str(time_length)+"/convlstm_state_"+str(epoch)+".pt")
+                torch.save(model.state_dict(), "./saved_model_convlstmunet_"+str(time_length)+"/convlstm_state_"+str(epoch)+".pt")
                 
                 #test with testset
                 with torch.no_grad():
@@ -171,8 +171,8 @@ def main(parser_args):
                     test_loss = criterion(outputs.float(), gt_outputs.float())
                     prediction = outputs.detach().numpy()
                     groundtruth = gt_outputs.detach().numpy()
-                np.save("./saved_model_convlstm_"+str(time_length)+"/prediction_"+str(epoch)+"_"+str(test_loss)+".npy", prediction)
-                np.save("./saved_model_convlstm_"+str(time_length)+"/groundtruth_"+str(epoch)+"_"+str(test_loss)+".npy", groundtruth)
+                np.save("./saved_model_convlstmunet_"+str(time_length)+"/prediction_"+str(epoch)+"_"+str(test_loss)+".npy", prediction)
+                np.save("./saved_model_convlstmunet_"+str(time_length)+"/groundtruth_"+str(epoch)+"_"+str(test_loss)+".npy", groundtruth)
 
         end = time.time()
         print(f"Runtime of the program is {end - start}")
