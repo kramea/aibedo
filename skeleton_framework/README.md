@@ -19,12 +19,13 @@ conda install -c conda-forge trimesh
 conda create --name deepsphere python=3.7
 source activate deepsphere
 pip install git+https://github.com/epfl-lts2/pygsp.git@39a0665f637191152605911cf209fc16a36e5ae9#egg=PyGSP
-pip3 install torch==1.3.1+cu100 -f https://download.pytorch.org/whl/cu100/torch-1.3.1%2Bcu100-cp37-cp37m-linux_x86_64.whl
+pip install torch==1.5.1+cu101 -f https://download.pytorch.org/whl/cu101/torch-1.5.1%2Bcu101-cp37-cp37m-linux_x86_64.whl
 pip install git+https://github.com/deepsphere/deepsphere-pytorch
 conda install -c conda-forge cartopy
 conda install  pandas h5py xarray dask netCDF4 bottleneck
 pip install torchsummary
 conda install -c conda-forge trimesh
+pip install pillow==6.1
 ```
 
 ## Execute Spheircal-Unet
