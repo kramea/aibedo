@@ -54,8 +54,8 @@ class SphericalConvLSTMUnet(nn.Module):
         self.debatchnorm3 = nn.BatchNorm1d(128)
         self.deconvlstm2 = ConvLSTM(128, 64, 3, 2, self.laps[4], True, True, False)
         self.debatchnorm2 = nn.BatchNorm1d(64)
-        self.deconvlstm1 = ConvLSTM(64,  output_channels,3, 2, self.laps[5], True, True, False)
-        self.debatchnorm1 = nn.BatchNorm1d(1)
+        self.deconvlstm1 = ConvLSTM(64, output_channels,3, 2, self.laps[5], True, True, False)
+        self.debatchnorm1 = nn.BatchNorm1d(output_channels)
         self.pooling = self.pooling_class.pooling
         self.unpooling = self.pooling_class.unpooling
         #self.batchnorm = nn.BatchNorm1d(out_channels)
