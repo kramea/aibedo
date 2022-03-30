@@ -118,7 +118,9 @@ def interpolate_SphereIcosahedral(level, input_array,lon_list, lat_list):
             print("ERROR", lat_idx, lon_idx)
             exit()
         interpolated_result.append(interploated_value)
-    return lon, lat, interpolated_result
+    # Kalai added Longitudinal shift 
+    lon2 = [x+180 for x in lon]
+    return lon2, lat, interpolated_result
 
 
 
@@ -171,7 +173,9 @@ def interpolate_SphereHealpix(subdivision, neighbors, input_array, lon_list, lat
             print("ERROR", lat_idx, lon_idx)
             exit()
         interpolated_result.append(interploated_value)
-    return lon, lat, interpolated_result
+    # Kalai added Longitudinal shift 
+    lon2 = [x+180 for x in lon]
+    return lon2, lat, interpolated_result
 
 
 
