@@ -85,7 +85,7 @@ def get_dataloader(parser_args):
     print("Timelength of input: " + str(time_length))
     print("Shape: (1) Input ", np.shape(dataset), "(2) Output ", np.shape(dataset_out))
 
-    combined_data = np.concatenate((dataset, dataset_out), axis=2)
+    combined_data = np.concatenate((dataset, dataset_out), axis=3)
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
     val_data, _ = train_test_split(temp, test_size=parser_args.partition[2] / (
