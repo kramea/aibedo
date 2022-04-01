@@ -26,29 +26,6 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
-def average_precision_compute_fn(y_pred, y_true):
-    """Attached function to the custom ignite metric AveragePrecisionMultiLabel
-
-    Args:
-        y_pred (:obj:`torch.Tensor`): model predictions
-        y_true (:obj:`torch.Tensor`): ground truths
-
-    Raises:
-        RuntimeError: Indicates that sklearn should be installed by the user.
-
-    Returns:
-        :obj:`numpy.array`: average precision vector.
-                            Of the same length as the number of labels present in the data
-    """
-    try:
-        from sklearn.metrics import mean_squared_error
-    except ImportError:
-        raise RuntimeError("This metric requires sklearn to be installed.")
-
-    mse = mean_squared_error(y_true.numpy(), y_pred.numpy())
-    return mse
-
-
 def sunet_collate(batch):
 
     data_in = torch.Tensor([item[:, 0:8] for item in batch])
