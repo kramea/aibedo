@@ -40,7 +40,7 @@ def get_dataloader(parser_args):
     print("N pixels:", n_pixels)
     print("time length:", time_length)
 
-    temp_folder="./npy_files/" #Change this to where you want .npy files are saved
+    temp_folder="/data/kramea/npy_files/" #Change this to where you want .npy files are saved
     # We don't want this as part of the github folder as the files can be large
     # Ideally we want to move this to S3 bucket
 
