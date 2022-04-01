@@ -148,9 +148,8 @@ def main(parser_args):
 
     n_pixels = icosahedron_nodes_calculator(parser_args.depth)
 
-    model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, in_channels,
-                                  out_channels)
-    unet, device = init_device(parser_args.device, unet)
+    model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, len(parser_args.input_vars), len(parser_args.output_vars))
+    model, device = init_device(parser_args.device, model)
     lr = parser_args.learning_rate
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
@@ -160,7 +159,7 @@ def main(parser_args):
         data_in = data_in.to(device)
         data_out = data_out.to(device)
         optimizer.zero_grad()
-        outputs = unet(data_in)
+        outputs = model(data_in)
 
         loss = criterion(outputs.float(), data_out)
         optimizer.zero_grad()
