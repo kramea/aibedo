@@ -48,7 +48,7 @@ def temporal_conversion(data, time):
 
 def convlstm_collate(batch):
 
-    data_in = torch.Tensor([item[:,:, 0:8] for item in batch])
+    data_in = torch.Tensor([item[:,:, 0:8,] for item in batch])
     data_out = torch.Tensor([item[-1,:, 8:] for item in batch])
     return [data_in, data_out]
 
@@ -151,7 +151,7 @@ def main(parser_args):
     model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, len(parser_args.input_vars), len(parser_args.output_vars))
     model, device = init_device(parser_args.device, model)
     print("Device", device)
-    model = model.to(device)
+    #model = model.to(device)
     lr = parser_args.learning_rate
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
@@ -168,6 +168,7 @@ def main(parser_args):
         loss.backward()
         optimizer.step()
 
+        return loss.item()
 
     engine_train = Engine(trainer)
 
