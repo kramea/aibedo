@@ -44,9 +44,12 @@ class ConvLSTMCell(nn.Module):
         #                      bias=self.bias)
 
     def forward(self, input_tensor, cur_state):
+        device = input_tensor.device
+
         h_cur, c_cur = cur_state
 
-        combined = torch.cat([input_tensor, h_cur], dim=1)  # concatenate along channel axis
+        #combined = torch.cat([input_tensor, h_cur], dim=1)  # concatenate along channel axis
+        combined = torch.cat([input_tensor, h_cur], dim=1).to(device)
         combined = combined.permute((0, 2, 1))
         combined_conv = self.conv(combined)
         combined_conv = combined_conv.permute((0, 2, 1)) #put back

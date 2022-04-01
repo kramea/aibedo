@@ -150,6 +150,7 @@ def main(parser_args):
 
     model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, len(parser_args.input_vars), len(parser_args.output_vars))
     model, device = init_device(parser_args.device, model)
+    print("Device", device)
     model = model.to(device)
     lr = parser_args.learning_rate
     optimizer = optim.Adam(model.parameters(), lr=lr)
