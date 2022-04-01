@@ -43,9 +43,14 @@ def temporal_conversion(data, time):
     for i in range(0, int(t/stride)-time):
         d1,d2,d3 =np.shape(data[i*stride:i*stride+time])
         temporal_data.append( np.reshape(data[i*stride:i*stride+time], [1,d1,d2,d3]) )
-    #out = np.concatenate(temporal_data, axis=0)
-    #return out
-    return temporal_data
+    out = np.concatenate(temporal_data, axis=0)
+    return out
+
+def convlstm_collate(batch):
+
+    data_in = torch.Tensor([item[:,:, 0:8] for item in batch])
+    data_out = torch.Tensor([item[-1,:, 8:] for item in batch])
+    return [data_in, data_out]
 
 def get_dataloader(parser_args):
 
@@ -105,20 +110,19 @@ def get_dataloader(parser_args):
 
     dataset, dataset_out = shuffle_data(dataset, dataset_out)
     # collect only last timestep from output
-    dataset_out = dataset_out[:, -1:, :, :]
+    #dataset_out = dataset_out[:, -1:, :, :] #Kalai this needs to be added
     print("Timelength of input: " + str(time_length))
     print("Shape: (1) Input ", np.shape(dataset), "(2) Output ", np.shape(dataset_out))
 
-    #combined_data = np.concatenate((dataset, dataset_out), axis=2)
+    combined_data = np.concatenate((dataset, dataset_out), axis=2)
 
-    combined_data = [dataset, dataset_out]
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
     val_data, _ = train_test_split(temp, test_size=parser_args.partition[2] / (
                 parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
-    dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12, collate_fn=sunet_collate)
-    dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=sunet_collate)
+    dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12, collate_fn=convlstm_collate)
+    dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=convlstm_collate)
 
     return dataloader_train, dataloader_validation
 
