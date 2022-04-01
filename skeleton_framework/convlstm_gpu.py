@@ -4,7 +4,7 @@ import os, random, time, shutil
 import torch
 import torch.optim as optim
 from torchsummary import summary
-from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral, temporal_conversion, shuffle_data
+from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral, shuffle_data
 from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
 
@@ -29,6 +29,23 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
+
+
+def temporal_conversion(data, time):
+    """
+       data: [T, N, C]
+    """
+    print("start temporal conversion of original data shaped as "+str(np.shape(data)))
+    data = np.swapaxes(data, 1, 2)
+    t,_,_ =np.shape(data)
+    temporal_data = []
+    stride = 1
+    for i in range(0, int(t/stride)-time):
+        d1,d2,d3 =np.shape(data[i*stride:i*stride+time])
+        temporal_data.append( np.reshape(data[i*stride:i*stride+time], [1,d1,d2,d3]) )
+    #out = np.concatenate(temporal_data, axis=0)
+    #return out
+    return temporal_data
 
 def get_dataloader(parser_args):
 
@@ -79,6 +96,9 @@ def get_dataloader(parser_args):
     dataset = temporal_conversion(dataset, time_length)
     dataset_out = temporal_conversion(dataset_out, time_length)
     # shuffle
+
+    print(dataset_out.shape)
+
     dataset, dataset_out = shuffle_data(dataset, dataset_out)
     # collect only last timestep from output
     dataset_out = dataset_out[:, -1:, :, :]
