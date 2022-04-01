@@ -97,7 +97,8 @@ def get_dataloader(parser_args):
     dataset_out = temporal_conversion(dataset_out, time_length)
     # shuffle
 
-    print(dataset_out[0].shape)
+    print("Length of dataset in", len(dataset))
+    print("Length of dataset out", len(dataset_out))
 
     dataset, dataset_out = shuffle_data(dataset, dataset_out)
     # collect only last timestep from output
