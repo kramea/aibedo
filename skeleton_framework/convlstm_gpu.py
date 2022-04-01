@@ -144,12 +144,13 @@ def main(parser_args):
 
     os.mkdir(output_path)
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     n_pixels = icosahedron_nodes_calculator(parser_args.depth)
 
     model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, len(parser_args.input_vars), len(parser_args.output_vars))
     model, device = init_device(parser_args.device, model)
+    model = model.to(device)
     lr = parser_args.learning_rate
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
