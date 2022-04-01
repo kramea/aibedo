@@ -65,7 +65,7 @@ def get_dataloader(parser_args):
     print("N pixels:", n_pixels)
     print("time lag:", lag)
 
-    temp_folder = "/data/kramea/npy_files/"  # Change this to where you want .npy files are saved
+    temp_folder = "./npy_files/"  # Change this to where you want .npy files are saved
     # We don't want this as part of the github folder as the files can be large
     # Ideally we want to move this to S3 bucket
 
@@ -207,6 +207,7 @@ def main(parser_args):
     saved_model_path = "./saved_model_lag_" + str(parser_args.time_lag)
     if os.path.isdir(saved_model_path):
         shutil.rmtree(saved_model_path)
+        os.mkdir(saved_model_path)
     else:
         os.mkdir(saved_model_path)
 
