@@ -100,6 +100,9 @@ def get_dataloader(parser_args):
     print("Length of dataset in", len(dataset))
     print("Length of dataset out", len(dataset_out))
 
+    print("dataset in shape", dataset[0].shape)
+    print("dataset out shape", dataset_out[0].shape)
+
     dataset, dataset_out = shuffle_data(dataset, dataset_out)
     # collect only last timestep from output
     dataset_out = dataset_out[:, -1:, :, :]
