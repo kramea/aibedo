@@ -104,7 +104,7 @@ def get_dataloader(parser_args):
 
     dataset, dataset_out = shuffle_data(dataset, dataset_out)
     # collect only last timestep from output
-    #dataset_out = dataset_out[:, -1:, :, :] #Kalai this needs to be added
+
     print("Timelength of input: " + str(time_length))
     print("Shape: (1) Input ", np.shape(dataset), "(2) Output ", np.shape(dataset_out))
 
