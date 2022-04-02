@@ -50,8 +50,6 @@ def convlstm_collate(batch):
 
     data_in = torch.Tensor([item[:,0:8, :] for item in batch])
     data_out = torch.Tensor([item[:1,8:, :] for item in batch])
-    print("data in", data_in.shape)
-    print("data_out", data_out.shape)
     return [data_in, data_out]
 
 def get_dataloader(parser_args):
