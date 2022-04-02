@@ -102,12 +102,6 @@ def get_dataloader(parser_args):
     dataset_out = temporal_conversion(dataset_out, time_length)
     # shuffle
 
-    print("Length of dataset in", len(dataset))
-    print("Length of dataset out", len(dataset_out))
-
-    print("dataset in shape", dataset[0].shape)
-    print("dataset out shape", dataset_out[0].shape)
-
     dataset, dataset_out = shuffle_data(dataset, dataset_out)
     # collect only last timestep from output
     #dataset_out = dataset_out[:, -1:, :, :] #Kalai this needs to be added
@@ -144,8 +138,6 @@ def main(parser_args):
 
     os.mkdir(output_path)
 
-    #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
     n_pixels = icosahedron_nodes_calculator(parser_args.depth)
 
     model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, len(parser_args.input_vars), len(parser_args.output_vars))
@@ -156,10 +148,10 @@ def main(parser_args):
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     def trainer(engine, batch):
-        model.train()
         data_in, data_out = batch
         data_in = data_in.to(device)
         data_out = data_out.to(device)
+        model.train()
         optimizer.zero_grad()
         outputs = model(data_in)
 
