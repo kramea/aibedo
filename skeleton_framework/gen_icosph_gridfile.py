@@ -11,7 +11,7 @@ def gen_icosphere(level,radius = 6371.0e6):
     graph = pg.graphs.SphereIcosahedral(2**level)
     #(2) extract lon, lat coordinate
     vertices = graph.coords # xyz coordinates
-    #print("number of vertices for level "+str(level)+" (2**"+str(level)+")is "+str(graph.n_vertices))
+    print("number of vertices for level "+str(level)+" (2**"+str(level)+")is "+str(graph.n_vertices))
     lon = []
     lat = []
     radius = 1
@@ -19,7 +19,7 @@ def gen_icosphere(level,radius = 6371.0e6):
         tmp_lon, tmp_lat = xyz2lonlat(tmp_xyz[0],tmp_xyz[1],tmp_xyz[2], radius=radius)
         lon.append(tmp_lon)
         lat.append(tmp_lat)
-        return (lon, lat)
+    return (lon, lat)
 sphlevel = 5
 f = open("isosphere_{0}.txt".format(sphlevel), "a")
 lon, lat = gen_icosphere(sphlevel,radius = 6371.0e6)
