@@ -165,12 +165,20 @@ def main(parser_args):
 
     engine_train.add_event_handler(Events.EPOCH_STARTED, lambda x: print("Starting Epoch: {}".format(x.state.epoch)))
 
+    @engine_train.on(Events.ITERATION_COMPLETED(every=10))
+    def log_training_results_iteration(engine):
+        evaluator.run(dataloader_train)
+        metrics = evaluator.state.metrics
+        print(
+            f"Training Results - Iteratoin: {engine_train.state.iteration}  Avg loss: {metrics['mse']:.2f}")
+
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_training_results(engine):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
         print(
             f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.2f}")
+
 
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_validation_results(engine):
