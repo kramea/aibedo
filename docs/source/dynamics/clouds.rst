@@ -10,7 +10,7 @@ As defined in the AMS Glossary of Meteorology, a cloud is a visible aggregate of
 Clouds exhibit both spatial and temporal variability. Tropical regions of ascending motion are dominated by high-level clouds while subtropical regions of descending motion are dominated by low-level clouds3. Figure 1 shows the observed climatological spatial pattern of cloud amount and cloud top pressure from the ISCCP dataset. Cloud cover is most substantial over tropical convective regions as well as mid-latitude storm tracks (Figure 1, left panel). Deserts regions generally have fewer clouds, and oceans have more cloud cover than nearby land regions.  The annual mean climatology of cloud top pressure (Figure 1, right panel) reveals that thick clouds with high tops are observed over convergence zones in the deep tropics and storm tracks over the midlatitudes, while subtropical regions of descent are characterized by low-level clouds. 
 
 .. figure:: images/CloudAmount_CloudTop.png
-   :scale: 50 %
+   :scale: 75 %
    :alt: map to buried treasure
 
    Figure 1 Annual climatology of cloud amount (\%, left panel) and cloud top pressure (mb, right panel) using ISCCP-D2 data (1983-2009).
@@ -50,7 +50,7 @@ Coupling between clouds and the circulation
 The large-scale circulation drives the formation and distribution of clouds, and clouds affect the large-scale circulation through CREs. This cloud - large-scale circulation coupling (Figure 3) is a less understood part of the climate system, and is an area of ongoing research in the climate science community. 
  
 .. figure:: images/CloudFeedbacks.png
-   :scale: 25 %
+   :scale: 50 %
    :alt: map to buried treasure
 
    Figure 3 Schematic representing cloud circulation coupling.
