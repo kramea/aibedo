@@ -50,7 +50,7 @@ Coupling between clouds and the circulation
 The large-scale circulation drives the formation and distribution of clouds, and clouds affect the large-scale circulation through CREs. This cloud - large-scale circulation coupling (Figure 3) is a less understood part of the climate system, and is an area of ongoing research in the climate science community. 
  
 .. figure:: images/CloudFeedbacks.png
-   :scale: 50 %
+   :scale: 65 %
    :alt: map to buried treasure
 
    Figure 3 Schematic representing cloud circulation coupling.
