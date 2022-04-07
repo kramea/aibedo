@@ -28,8 +28,13 @@ from torchvision import transforms
 
 def sunet_collate(batch):
 
-    data_in = torch.Tensor([item[:, 0:8] for item in batch])
-    data_out = torch.Tensor([item[:, 8:] for item in batch])
+
+    data_in_array = np.array([item[:, 0:8] for item in batch])
+    data_out_array = np.array([item[:, 8:] for item in batch])
+    #data_in = torch.Tensor([item[:, 0:8] for item in batch])
+    data_in = torch.Tensor(data_in_array)
+    #data_out = torch.Tensor([item[:, 8:] for item in batch])
+    data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
 
 def get_dataloader(parser_args):
@@ -42,7 +47,7 @@ def get_dataloader(parser_args):
     print("N pixels:", n_pixels)
     print("time lag:", lag)
 
-    temp_folder = "./npy_files/"  # Change this to where you want .npy files are saved
+    temp_folder = "/data/kramea/npy_files/"  # Change this to where you want .npy files are saved
     # We don't want this as part of the github folder as the files can be large
     # Ideally we want to move this to S3 bucket
 
@@ -170,7 +175,7 @@ def main(parser_args):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
         print(
-            f"Training Results - Iteratoin: {engine_train.state.iteration}  Avg loss: {metrics['mse']:.2f}")
+            f"Training Results - Iteration: {engine_train.state.iteration}  Avg loss: {metrics['mse']:.2f}")
 
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_training_results(engine):
