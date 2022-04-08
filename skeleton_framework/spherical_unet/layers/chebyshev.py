@@ -3,10 +3,10 @@
 # pylint: disable=W0221
 
 import math
+import os
 
 import torch
 from torch import nn
-
 
 def cheb_conv(laplacian, inputs, weight):
     """Chebyshev convolution.
@@ -19,6 +19,11 @@ def cheb_conv(laplacian, inputs, weight):
     Returns:
         :obj:`torch.Tensor`: Inputs after applying Chebyshev convolution.
     """
+    device = laplacian.device
+    #print("Laplacian device", device)
+    laplacian = laplacian.to(device)
+    inputs = inputs.to(device)
+    weight = weight.to(device)
     B, V, Fin = inputs.shape
     K, Fin, Fout = weight.shape
     # B = batch size

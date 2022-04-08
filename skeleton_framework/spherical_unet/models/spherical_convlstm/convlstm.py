@@ -1,8 +1,9 @@
 import torch.nn as nn
 import torch
+import os
+#torch.set_default_tensor_type(torch.cuda.FloatTensor)
 from spherical_unet.layers.chebyshev import SphericalChebConv
 from spherical_unet.models.spherical_unet.utils import SphericalChebBN, SphericalChebBNPool
-
 class ConvLSTMCell(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, kernel_size, lap, bias):
@@ -36,16 +37,20 @@ class ConvLSTMCell(nn.Module):
                                       out_channels=4 * self.hidden_dim,
                                       lap=self.lap,
                                       kernel_size=self.kernel_size)
-
         #self.conv = nn.Conv2d(in_channels=self.input_dim + self.hidden_dim,
         #                      out_channels=4 * self.hidden_dim,
         #                      kernel_size=self.kernel_size,
         #                      padding=self.padding,
         #                      bias=self.bias)
-
+         
     def forward(self, input_tensor, cur_state):
+        #print("chev device", self.conv.chebconv.weight.device)
+        device = self.conv.chebconv.weight.device
+        input_tensor = input_tensor.to(device)
         h_cur, c_cur = cur_state
-
+        #print("input device", device) 
+        h_cur = h_cur.to(device)
+        c_cur = c_cur.to(device)
         combined = torch.cat([input_tensor, h_cur], dim=1)  # concatenate along channel axis
         combined = combined.permute((0, 2, 1))
         combined_conv = self.conv(combined)
@@ -63,8 +68,8 @@ class ConvLSTMCell(nn.Module):
 
     def init_hidden(self, batch_size, image_size):
         N = image_size
-        return (torch.zeros(batch_size, self.hidden_dim, N),# device=self.conv.weight.device),
-                torch.zeros(batch_size, self.hidden_dim, N))# device=self.conv.weight.device))
+        return (torch.zeros(batch_size, self.hidden_dim, N),#, device=self.conv.chebconv.weight.device),
+                torch.zeros(batch_size, self.hidden_dim, N))#, device=self.conv.chebconv.weight.device))
 
 
 class ConvLSTM(nn.Module):
