@@ -49,9 +49,13 @@ def temporal_conversion(data, time):
 
 def convlstm_collate(batch):
 
-    data_in_array = np.array([item[:,0:8, :] for item in batch])
-    data_out_array = np.array([item[:1,8:, :] for item in batch])
-
+    batchShape = batch[0].shape
+    varlimit = batchShape[1] - 1
+    timelimit = batchShape[0]-1
+     
+    data_in_array = np.array([item[:,0:varlimit, :] for item in batch])
+    data_out_array = np.array([item[timelimit:,varlimit:, :] for item in batch])
+    
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
@@ -78,14 +82,14 @@ def get_dataloader(parser_args):
     #Input data
     data_all = []
     for var in parser_args.input_vars:
-        temp_data = np.reshape(np.concatenate(inDS[var].data, axis = 0), [-1,40962,1])
+        temp_data = np.reshape(np.concatenate(inDS[var].data, axis = 0), [-1,n_pixels,1])
         data_all.append(temp_data)
     dataset_in = np.concatenate(data_all, axis=2)
 
     #Output data
     data_all = []
     for var in parser_args.output_vars:
-        temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1,40962,1])
+        temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1,n_pixels,1])
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
 
