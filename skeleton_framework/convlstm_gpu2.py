@@ -65,7 +65,7 @@ def get_dataloader(parser_args):
     print("N pixels:", n_pixels)
     print("time length:", time_length)
 
-    temp_folder="./npy_files/" #Change this to where you want .npy files are saved
+    temp_folder="/data/kramea/npy_files/" #Change this to where you want .npy files are saved
     # We don't want this as part of the github folder as the files can be large
     # Ideally we want to move this to S3 bucket
 
@@ -177,10 +177,10 @@ def main(parser_args):
 
     @engine_train.on(Events.ITERATION_COMPLETED(every=10))
     def log_training_results_iteration(engine):
-        evaluator.run(dataloader_train)
+        evaluator.run(dataloader_validation)
         metrics = evaluator.state.metrics
         print(
-            f"Training Results - Iteration: {engine_train.state.iteration}  Avg loss: {metrics['mse']:.2f}")
+            f"Validation Results - Iteration: {engine_train.state.iteration}  Avg loss: {metrics['mse']:.4f}")
 
 
     @engine_train.on(Events.EPOCH_COMPLETED)
@@ -188,14 +188,14 @@ def main(parser_args):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
         print(
-            f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.2f}")
+            f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.4f}")
 
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_validation_results(engine):
         evaluator.run(dataloader_validation)
         metrics = evaluator.state.metrics
         print(
-            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.2f}")
+            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
 
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
