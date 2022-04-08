@@ -1,5 +1,6 @@
 from models.cnn import CNN
 import numpy as np
+import xarray as xr
 import os, random, time, shutil
 import torch
 import torch.optim as optim
@@ -65,63 +66,50 @@ def get_dataloader(parser_args):
     print("N pixels:", n_pixels)
     print("time length:", time_length)
 
-    temp_folder="/data/kramea/npy_files/" #Change this to where you want .npy files are saved
-    # We don't want this as part of the github folder as the files can be large
-    # Ideally we want to move this to S3 bucket
+    inDS = xr.open_dataset(parser_args.input_file)
+    outDS = xr.open_dataset(parser_args.output_file)
 
-    infile = parser_args.input_file
-    outfile = parser_args.output_file
-    infname = Path(infile).stem
-    outfname = Path(outfile).stem
-
-    in_temp_npy_file = temp_folder + infname + "_" + str(glevel) + ".npy"
-    out_temp_npy_file = temp_folder + outfname + "_" + str(glevel) + ".npy"
-    print(in_temp_npy_file)
-    print(out_temp_npy_file)
+    lon_list = inDS.lon.data
+    lat_list = inDS.lat.data
 
     in_channels = len(parser_args.input_vars)
     out_channels = len(parser_args.output_vars)
 
-    if os.path.exists(in_temp_npy_file):
-        print("Gridded input .npy file exists")
-    else:
-        print("Generating input .npy file ", in_temp_npy_file, "at grid level", glevel, "...")
-        lon_list, lat_list, dset = load_ncdf_to_SphereIcosahedral(infile, glevel, parser_args.input_vars)
-        np.save(in_temp_npy_file, dset)
+    #Input data
+    data_all = []
+    for var in parser_args.input_vars:
+        temp_data = np.reshape(np.concatenate(inDS[var].data, axis = 0), [-1,40962,1])
+        data_all.append(temp_data)
+    dataset_in = np.concatenate(data_all, axis=2)
 
-    if os.path.exists(out_temp_npy_file):
-        print("Gridded output .npy file exists")
-    else:
-        print("Generating output .npy file ", out_temp_npy_file, "at grid level", glevel, "...")
-        lon_list, lat_list, dset = load_ncdf_to_SphereIcosahedral(outfile, glevel, parser_args.output_vars)
-        np.save(out_temp_npy_file, dset)
+    #Output data
+    data_all = []
+    for var in parser_args.output_vars:
+        temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1,40962,1])
+        data_all.append(temp_data)
+    dataset_out = np.concatenate(data_all, axis=2)
 
-    dataset = np.load(in_temp_npy_file)
-    dataset = normalize(dataset, "in")
-    dataset_out = np.load(out_temp_npy_file)
-    dataset_out = normalize(dataset_out, "out")
 
-    dataset = temporal_conversion(dataset, time_length)
+    dataset_in = temporal_conversion(dataset_in, time_length)
     dataset_out = temporal_conversion(dataset_out, time_length)
     # shuffle
+    dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
 
-    dataset, dataset_out = shuffle_data(dataset, dataset_out)
-    # collect only last timestep from output
 
     print("Timelength of input: " + str(time_length))
-    print("Shape: (1) Input ", np.shape(dataset), "(2) Output ", np.shape(dataset_out))
+    print("Shape: (1) Input ", np.shape(dataset_in), "(2) Output ", np.shape(dataset_out))
 
-    combined_data = np.concatenate((dataset, dataset_out), axis=2)
+    combined_data = np.concatenate((dataset_in, dataset_out), axis=2)
 
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
-    val_data, _ = train_test_split(temp, test_size=parser_args.partition[2] / (
+    val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
                 parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12, collate_fn=convlstm_collate)
     dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=convlstm_collate)
-
-    return dataloader_train, dataloader_validation
+    dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=convlstm_collate)
+    return dataloader_train, dataloader_validation, dataloader_test
 
 
 def main(parser_args):
@@ -131,7 +119,7 @@ def main(parser_args):
         parser_args (dict): parsed arguments
     """
 
-    dataloader_train, dataloader_validation = get_dataloader(parser_args)
+    dataloader_train, dataloader_validation, dataloader_test = get_dataloader(parser_args)
     criterion = torch.nn.MSELoss()
 
     output_path = parser_args.output_path
