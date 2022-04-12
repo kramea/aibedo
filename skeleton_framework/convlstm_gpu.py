@@ -57,7 +57,7 @@ def convlstm_collate(batch):
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
-    
+
 
 def get_dataloader(parser_args):
 
