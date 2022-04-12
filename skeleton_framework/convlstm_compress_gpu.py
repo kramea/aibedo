@@ -205,13 +205,15 @@ def main(parser_args):
     #model.load_state_dict(model.state_dict())
     model.eval()
 
-    predictions = []
+    predictions = np.empty((10,1,3,10242))
     for batch in dataloader_test:
         data_in, data_out = batch
         preds = model(data_in)
         pred_numpy = preds.detach().cpu().numpy()
-        predictions = np.concatenate([predictions, pred_numpy])
-    np.save('./saved_model_convlstmunet_gpu/preds.npy' , predictions )
+        print(pred_numpy.shape)
+        predictions = np.concatenate((predictions, pred_numpy), axis=0)
+    print(predictions.shape)
+    np.save('preds.npy' , predictions )
 
 if __name__ == "__main__":
 
