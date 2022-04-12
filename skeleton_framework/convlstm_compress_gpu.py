@@ -1,5 +1,6 @@
 from models.cnn import CNN
 import numpy as np
+import xarray as xr
 import os, random, time, shutil
 import torch
 import torch.optim as optim
@@ -47,17 +48,17 @@ def temporal_conversion(data, time):
     return out
 
 def convlstm_collate(batch):
+
     batchShape = batch[0].shape
-    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
-    timelimit = batchShape[0] - 1
-
-    data_in_array = np.array([item[:, 0:varlimit, :] for item in batch])
-    data_out_array = np.array([item[timelimit:, varlimit:, :] for item in batch])
-
+    varlimit = batchShape[1] - 3 # 3 output variables: tas, psl, pr
+    timelimit = batchShape[0]-1
+     
+    data_in_array = np.array([item[:,0:varlimit, :] for item in batch])
+    data_out_array = np.array([item[timelimit:,varlimit:, :] for item in batch])
+    
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
-
 
 def get_dataloader(parser_args):
 
@@ -69,53 +70,40 @@ def get_dataloader(parser_args):
     print("N pixels:", n_pixels)
     print("time length:", time_length)
 
-    temp_folder="/data/kramea/npy_files/" #Change this to where you want .npy files are saved
-    # We don't want this as part of the github folder as the files can be large
-    # Ideally we want to move this to S3 bucket
+    inDS = xr.open_dataset(parser_args.input_file)
+    outDS = xr.open_dataset(parser_args.output_file)
 
-    infile = parser_args.input_file
-    outfile = parser_args.output_file
-    infname = Path(infile).stem
-    outfname = Path(outfile).stem
-
-    in_temp_npy_file = temp_folder + infname + "_" + str(glevel) + ".npy"
-    out_temp_npy_file = temp_folder + outfname + "_" + str(glevel) + ".npy"
-    print(in_temp_npy_file)
-    print(out_temp_npy_file)
+    lon_list = inDS.lon.data
+    lat_list = inDS.lat.data
 
     in_channels = len(parser_args.input_vars)
     out_channels = len(parser_args.output_vars)
 
-    if os.path.exists(in_temp_npy_file):
-        print("Gridded input .npy file exists")
-    else:
-        print("Generating input .npy file ", in_temp_npy_file, "at grid level", glevel, "...")
-        lon_list, lat_list, dset = load_ncdf_to_SphereIcosahedral(infile, glevel, parser_args.input_vars)
-        np.save(in_temp_npy_file, dset)
+    #Input data
+    data_all = []
+    for var in parser_args.input_vars:
+        temp_data = np.reshape(np.concatenate(inDS[var].data, axis = 0), [-1,n_pixels,1])
+        data_all.append(temp_data)
+    dataset_in = np.concatenate(data_all, axis=2)
 
-    if os.path.exists(out_temp_npy_file):
-        print("Gridded output .npy file exists")
-    else:
-        print("Generating output .npy file ", out_temp_npy_file, "at grid level", glevel, "...")
-        lon_list, lat_list, dset = load_ncdf_to_SphereIcosahedral(outfile, glevel, parser_args.output_vars)
-        np.save(out_temp_npy_file, dset)
+    #Output data
+    data_all = []
+    for var in parser_args.output_vars:
+        temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1,n_pixels,1])
+        data_all.append(temp_data)
+    dataset_out = np.concatenate(data_all, axis=2)
 
-    dataset = np.load(in_temp_npy_file)
-    dataset = normalize(dataset, "in")
-    dataset_out = np.load(out_temp_npy_file)
-    dataset_out = normalize(dataset_out, "out")
 
-    dataset = temporal_conversion(dataset, time_length)
+    dataset_in = temporal_conversion(dataset_in, time_length)
     dataset_out = temporal_conversion(dataset_out, time_length)
     # shuffle
+    dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
 
-    dataset, dataset_out = shuffle_data(dataset, dataset_out)
-    # collect only last timestep from output
 
     print("Timelength of input: " + str(time_length))
-    print("Shape: (1) Input ", np.shape(dataset), "(2) Output ", np.shape(dataset_out))
+    print("Shape: (1) Input ", np.shape(dataset_in), "(2) Output ", np.shape(dataset_out))
 
-    combined_data = np.concatenate((dataset, dataset_out), axis=2)
+    combined_data = np.concatenate((dataset_in, dataset_out), axis=2)
 
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
@@ -179,19 +167,27 @@ def main(parser_args):
 
     engine_train.add_event_handler(Events.EPOCH_STARTED, lambda x: print("Starting Epoch: {}".format(x.state.epoch)))
 
+    @engine_train.on(Events.ITERATION_COMPLETED(every=10))
+    def log_training_results_iteration(engine):
+        evaluator.run(dataloader_validation)
+        metrics = evaluator.state.metrics
+        print(
+            f"Validation Results - Iteration: {engine_train.state.iteration}  Avg loss: {metrics['mse']:.4f}")
+
+
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_training_results(engine):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
         print(
-            f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.2f}")
+            f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.4f}")
 
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_validation_results(engine):
         evaluator.run(dataloader_validation)
         metrics = evaluator.state.metrics
         print(
-            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.2f}")
+            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
 
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
@@ -206,6 +202,7 @@ def main(parser_args):
 
     # Prediction code
 
+    #model.load_state_dict(model.state_dict())
     model.eval()
 
     predictions = np.empty((parser_args.batch_size,1,len(parser_args.output_vars),n_pixels))
@@ -219,7 +216,6 @@ def main(parser_args):
 
     np.save("./saved_model_convlstmunet_"+str(parser_args.time_length)+"/prediction_"+str(parser_args.n_epochs)+".npy", predictions)
     np.save("./saved_model_convlstmunet_"+str(parser_args.time_length)+"/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
-
 
 
 if __name__ == "__main__":

@@ -47,17 +47,13 @@ def temporal_conversion(data, time):
     return out
 
 def convlstm_collate(batch):
-    batchShape = batch[0].shape
-    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
-    timelimit = batchShape[0] - 1
 
-    data_in_array = np.array([item[:, 0:varlimit, :] for item in batch])
-    data_out_array = np.array([item[timelimit:, varlimit:, :] for item in batch])
+    data_in_array = np.array([item[:,0:8, :] for item in batch])
+    data_out_array = np.array([item[:1,8:, :] for item in batch])
 
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
-
 
 def get_dataloader(parser_args):
 
@@ -119,13 +115,13 @@ def get_dataloader(parser_args):
 
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
-    val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
+    val_data, _ = train_test_split(temp, test_size=parser_args.partition[2] / (
                 parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12, collate_fn=convlstm_collate)
     dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=convlstm_collate)
-    dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=convlstm_collate)
-    return dataloader_train, dataloader_validation, dataloader_test
+
+    return dataloader_train, dataloader_validation
 
 
 def main(parser_args):
@@ -135,7 +131,7 @@ def main(parser_args):
         parser_args (dict): parsed arguments
     """
 
-    dataloader_train, dataloader_validation, dataloader_test = get_dataloader(parser_args)
+    dataloader_train, dataloader_validation = get_dataloader(parser_args)
     criterion = torch.nn.MSELoss()
 
     output_path = parser_args.output_path
@@ -179,19 +175,27 @@ def main(parser_args):
 
     engine_train.add_event_handler(Events.EPOCH_STARTED, lambda x: print("Starting Epoch: {}".format(x.state.epoch)))
 
+    @engine_train.on(Events.ITERATION_COMPLETED(every=10))
+    def log_training_results_iteration(engine):
+        evaluator.run(dataloader_validation)
+        metrics = evaluator.state.metrics
+        print(
+            f"Validation Results - Iteration: {engine_train.state.iteration}  Avg loss: {metrics['mse']:.4f}")
+
+
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_training_results(engine):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
         print(
-            f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.2f}")
+            f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.4f}")
 
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_validation_results(engine):
         evaluator.run(dataloader_validation)
         metrics = evaluator.state.metrics
         print(
-            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.2f}")
+            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
 
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
@@ -203,22 +207,6 @@ def main(parser_args):
 
     torch.save(model.state_dict(),
                "./saved_model_convlstmunet_" + str(parser_args.time_length) + "/convlstm_state_" + str(parser_args.n_epochs) + ".pt")
-
-    # Prediction code
-
-    model.eval()
-
-    predictions = np.empty((parser_args.batch_size,1,len(parser_args.output_vars),n_pixels))
-    groundtruth = np.empty((parser_args.batch_size,1,len(parser_args.output_vars),n_pixels))
-    for batch in dataloader_test:
-        data_in, data_out = batch
-        preds = model(data_in)
-        pred_numpy = preds.detach().cpu().numpy()
-        predictions = np.concatenate((predictions, pred_numpy), axis=0)
-        groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
-
-    np.save("./saved_model_convlstmunet_"+str(parser_args.time_length)+"/prediction_"+str(parser_args.n_epochs)+".npy", predictions)
-    np.save("./saved_model_convlstmunet_"+str(parser_args.time_length)+"/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
 
 
 
