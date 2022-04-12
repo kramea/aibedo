@@ -200,7 +200,18 @@ def main(parser_args):
     torch.save(model.state_dict(),
                "./saved_model_convlstmunet_" + str(parser_args.time_length) + "/convlstm_state_" + str(parser_args.n_epochs) + ".pt")
 
+    # Prediction code
 
+    model.load_state_dict(model.state_dict())
+    model.eval()
+
+    predictions = []
+    for batch in dataloader_test:
+        data_in, data_out = batch
+        preds = model(data_in)
+        pred_numpy = preds.cpu().numpy()
+        predictions = np.concatenate([predictions, pred_numpy])
+    np.save('./saved_model_convlstmunet_gpu/preds.npy' , predictions )
 
 if __name__ == "__main__":
 
