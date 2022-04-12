@@ -205,15 +205,18 @@ def main(parser_args):
     #model.load_state_dict(model.state_dict())
     model.eval()
 
-    predictions = np.empty((10,1,3,10242))
+    predictions = np.empty((parser_args.batch_size,1,len(parser_args.output_vars),n_pixels))
+    groundtruth = np.empty((parser_args.batch_size,1,len(parser_args.output_vars),n_pixels))
     for batch in dataloader_test:
         data_in, data_out = batch
         preds = model(data_in)
         pred_numpy = preds.detach().cpu().numpy()
-        print(pred_numpy.shape)
         predictions = np.concatenate((predictions, pred_numpy), axis=0)
-    print(predictions.shape)
-    np.save('preds.npy' , predictions )
+        groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
+
+    np.save("./saved_model_convlstmunet_gpu_"+str(parser_args.time_length)+"/prediction_"+str(parser_args.n_epochs)+".npy", predictions)
+    np.save("./saved_model_convlstmunet_gpu_"+str(parser_args.time_length)+"/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
+
 
 if __name__ == "__main__":
 
