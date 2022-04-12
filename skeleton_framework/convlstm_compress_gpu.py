@@ -209,7 +209,7 @@ def main(parser_args):
     for batch in dataloader_test:
         data_in, data_out = batch
         preds = model(data_in)
-        pred_numpy = preds.cpu().numpy()
+        pred_numpy = preds.detach().numpy()
         predictions = np.concatenate([predictions, pred_numpy])
     np.save('./saved_model_convlstmunet_gpu/preds.npy' , predictions )
 
