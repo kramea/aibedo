@@ -202,7 +202,7 @@ def main(parser_args):
 
     # Prediction code
 
-    model.load_state_dict(model.state_dict())
+    #model.load_state_dict(model.state_dict())
     model.eval()
 
     predictions = []
