@@ -47,10 +47,17 @@ def temporal_conversion(data, time):
     return out
 
 def convlstm_collate(batch):
+    batchShape = batch[0].shape
+    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
+    timelimit = batchShape[0] - 1
 
-    data_in = torch.Tensor([item[:,0:8, :] for item in batch])
-    data_out = torch.Tensor([item[:1,8:, :] for item in batch])
+    data_in_array = np.array([item[:, 0:varlimit, :] for item in batch])
+    data_out_array = np.array([item[timelimit:, varlimit:, :] for item in batch])
+
+    data_in = torch.Tensor(data_in_array)
+    data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
+    
 
 def get_dataloader(parser_args):
 
