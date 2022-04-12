@@ -1,5 +1,6 @@
 from models.cnn import CNN
 import numpy as np
+import xarray as xr
 import os, shutil
 import torch
 import torch.optim as optim
