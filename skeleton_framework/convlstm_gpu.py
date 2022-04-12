@@ -112,13 +112,13 @@ def get_dataloader(parser_args):
 
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
-    val_data, _ = train_test_split(temp, test_size=parser_args.partition[2] / (
+    val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
                 parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12, collate_fn=convlstm_collate)
     dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=convlstm_collate)
-
-    return dataloader_train, dataloader_validation
+    dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=convlstm_collate)
+    return dataloader_train, dataloader_validation, dataloader_test
 
 
 def main(parser_args):
@@ -128,7 +128,7 @@ def main(parser_args):
         parser_args (dict): parsed arguments
     """
 
-    dataloader_train, dataloader_validation = get_dataloader(parser_args)
+    dataloader_train, dataloader_validation, dataloader_test = get_dataloader(parser_args)
     criterion = torch.nn.MSELoss()
 
     output_path = parser_args.output_path
@@ -197,6 +197,18 @@ def main(parser_args):
     torch.save(model.state_dict(),
                "./saved_model_convlstmunet_" + str(parser_args.time_length) + "/convlstm_state_" + str(parser_args.n_epochs) + ".pt")
 
+    # Prediction code
+
+    model.load_state_dict(model.state_dict())
+    model.eval()
+
+    predictions = []
+    for batch in dataloader_test:
+        data_in, data_out = batch
+        preds = model(data_in)
+        pred_numpy = preds.cpu().numpy()
+        predictions = np.concatenate([predictions, pred_numpy])
+    np.save('./saved_model_convlstmunet_gpu/preds.npy' , predictions )
 
 
 if __name__ == "__main__":
