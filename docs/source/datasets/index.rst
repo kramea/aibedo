@@ -25,7 +25,7 @@ We utilize monthly averaged data and preprocess it in three steps:
 The model/reanalysis variables used are divided into three categories: Input, Output, and Constraints (see [CMIP6 variables codes](http://clipc-services.ceda.ac.uk/dreq/mipVars.html)).
 
 .. list-table:: Variable list and descriptions
-   :widths: 25 25 50
+   :widths: 20 20 60
    :header-rows: 1
 
    * - Category
@@ -64,6 +64,24 @@ The model/reanalysis variables used are divided into three categories: Input, Ou
    * - Input
      - lcloud
      - Cloud fraction averaged between 1000 hPa and 700 hPa
+   * - Output
+     - tas
+     - 2-metre air temperature
+   * - Output
+     - psl
+     - Sea level pressure
+   * - Output
+     - pr
+     - Precipitation
+   * - Constraint
+     - ps 
+     - Surface pressure
+   * - Constraint
+     - evspsbl
+     - Evaporation
+   * - Constraint
+     - heatconv
+     - Convergence of vertically integrated heat flux
 
 Data required for Physics Constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
