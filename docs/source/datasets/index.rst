@@ -4,6 +4,10 @@
 Datasets
 ========
 
+
+Training data
+~~~~~~~~~~~~~~
+
 Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (ESM) outputs which had sufficient data availability on AWS to calculate the requisite input variables for our analysis (shown in Table 1. For each ESM, there are three sets of data hyper-cubes: (a) input, (b) output, and (c) data for enforcing physics constraints. Based on the initial results from our alpha hybrid model, we revised and increased the list of input variables to achieve better hybrid model performance. The updated list of input, output, and constraint variables is shown in Table 2.
 
 
@@ -169,6 +173,21 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
 
 
 The ESM data are pooled together to form the training and testing datasets for our hybrid model. However, it is important to note there are substantial differences in the climatologies and variability of some of the chosen input variables across models (Figure 1). In particular, global average cloud liquid water content, cloud ice water content, and net top of atmosphere radiation vary more across ESMs than other variables. The former two are the result of differences in cloud parameterizations between ESMs, while the latter is likely due to uncertainties in the overall magnitude of anthropogenic forcing over the historical period. Comparing spatial correlation scores (Figure 2), shows net TOA radiation fields are very similar across models while the spatial pattern of cloud ice and water content varies substantially. Such variations represent the inter-ESM uncertainty in the representation of the climate. However, many of these ESM differences are largely removed during preprocessing described below.
+
+.. images::
+	box_mm_spread_1.png
+
+.. images::
+	model_var_spatcorr_1.png
+
+Preprocessing
+~~~~~~~~~~~~~
+
+Each of the above data hyper-cubes are preprocessed before ingestion into the hybrid model as follows:
+
+#. Remove seasonal cycle or "Deseasonalizing": We perform this process to remove any trends in the season to prepare a seasonal stationary time series data. 
+#. Remove trend or Detrend: We fit a third degree polynomial to remove any trend in data over time. This removes secular trends (for example, rising temperatures as atmospheric CO$_2$ increases) and allows the model to be trained on fluctuations due to internal variability, rather than the forced response. 
+#. Normalized anomalies: The anomaly at each grid point is calculated relative to a running mean that is computed over a centered 30-year window for that grid point and month. Anomalies are normalized by dividing by the standard deviation of the anomaly over the same 30-year window for that grid point and month.
 
 Data required for Physics Constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
