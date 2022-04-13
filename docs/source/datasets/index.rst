@@ -22,7 +22,7 @@ We utilize monthly averaged data and preprocess it in three steps:
 2. Detrend data using a order-3 polynomial fit separately for each month
 3. Calculate the anomaly and normalize (divide by standard deviation) in a 31-year rolling window for each month separately
 
-The model/reanalysis variables used are divided into three categories: Input, Output, and Constraints (see [CMIP6 variables codes](http://clipc-services.ceda.ac.uk/dreq/mipVars.html)).
+The model/reanalysis variables used are divided into three categories: Input, Output, and Constraints (see `CMIP6 variables codes <http://clipc-services.ceda.ac.uk/dreq/mipVars.html>`
 
 .. list-table:: Variable list and descriptions
    :widths: 20 20 60
