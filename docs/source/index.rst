@@ -1,6 +1,14 @@
 AIBEDO: a hybrid AI framework to capture the effects of cloud properties on global circulation and regional climate patterns.
 ===================================
 
+
+Concept
+-------
+
+Clouds play a vital role both in modulating Earth's radiation budget and shaping the coupled circulation of the atmosphere and ocean, driving regional changes in temperature and precipitation. The climate response to clouds is one of the largest uncertainties in state-of-the-art Earth System Models (ESMs) when producing decadal climate projections. This limitation becomes apparent when handling scenarios with large changes in cloud properties, e.g., 1) presence of greenhouse gases->loss of clouds or 2) engineered intervention like cloud brightening->increased cloud reflectivity.
+
+Climate intervention techniques—like marine cloud brightening—that need to be fine-tuned spatiotemporally require thousands of hypothetical scenarios to find optimal strategies. Current ESMs need millions of core hours to complete a single simulation. AIBEDO is a hybrid AI model framework developed to resolve the weaknesses of ESMs by generating rapid and robust multi-decadal climate projections. We will demonstrate its utility using marine cloud brightening scenarios—to avoid climate tipping points and produce optimal intervention strategies.
+
 .. note::
 
    This project is under active development.
