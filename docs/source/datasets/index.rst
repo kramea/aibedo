@@ -4,27 +4,111 @@
 Datasets
 ========
 
-We will be training on selected Global Circulation Model (GCM) data from the Coupled Model Intercomparison Project Phase 6 (CMIP6). The training is performed on normalized anomalies for historical (1850 to 2015) and SSP5-8.5 (2016 to 2100) simulations from the following GCMs:
+Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (ESM) outputs which had sufficient data availability on AWS to calculate the requisite input variables for our analysis (shown in Table 1. For each ESM, there are three sets of data hyper-cubes: (a) input, (b) output, and (c) data for enforcing physics constraints. Based on the initial results from our alpha hybrid model, we revised and increased the list of input variables to achieve better hybrid model performance. The updated list of input, output, and constraint variables is shown in Table 2.
 
-- NCC NorESM1-MM
-- IPSL IPSL-CM6A-LR
-- NCAR CESM2
-- NCAR CESM2-WACCM
-- MOHC UKESM1-0-LL
-- E3SM-Project E3SM-1-0
-- MPI MPI-ESM1-2-LR
-- MIROC MIROC6
 
-Validation and testing is performed using reanalysis data such as the [ERA5](https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era5) and [MERRA](https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/).
+.. list-table:: Table 1. Earth System Model datasets for Phase 1 training
+   :widths: 20 20 20 20 20
+   :header-rows: 1
 
-We utilize monthly averaged data and preprocess it in three steps:
-1. Remove seasonal cycle
-2. Detrend data using a order-3 polynomial fit separately for each month
-3. Calculate the anomaly and normalize (divide by standard deviation) in a 31-year rolling window for each month separately
+   * - CESM2
+     - 1 
+     - 0 
+     - 0.942 
+     - 1.2500
+   * - CESM2-FV2 
+     - 1 
+     - 0 
+     - 1.895
+     - 2.5000
+   * - CESM2-WACCM
+     - 1 
+     - 0 
+     - 0.942 
+     - 1.2500
+   * - CESM2-WACCM-FV2
+     - 1
+     - 0
+     - 1.895
+     - 2.5000
+   * - CMCC-CM2-SR5
+     - 1
+     - 0
+     - 0.942
+     - 1.2500
+   * - CanESM5
+     - 5
+     - 0
+     - 2.789
+     - 2.8125
+   * - E3SM-1-1
+     - 1
+     - 0
+     - 1.000
+     - 1.0000
+   * - E3SM-1-1-ECA
+     - 1
+     - 0
+     - 1.000
+     - 1.0000
+   * - FGOALS-g3
+     - 2
+     - 1
+     - 2.278
+     - 2.0000
+   * - GFDL-CM4
+     - 1 
+     - 1
+     - 1.000
+     - 1.2500
+   * - GFDL-ESM4
+     - 1
+     - 1
+     - 1.000
+     - 1.2500
+   * - GISS-E2-1-H
+     - 1
+     - 0
+     - 2.000
+     - 2.5000
+   * - MIROC-ES2L
+     - 3
+     - 0
+     - 2.789
+     - 2.8125
+   * - MIROC6
+     - 1
+     - 0
+     - 1.400
+     - 1.4062
+   * - MPI-ESM-1-2-HAM
+     - 1
+     - 0
+     - 1.865
+     - 1.8750
+   * - MPI-ESM1-2-HR
+     - 1
+     - 0
+     - 0.935
+     - 0.9375
+   * - MPI-ESM1-2-LR
+     - 1
+     - 0
+     - 1.865
+     - 1.8750
+   * - MRI-ESM2-0
+     - 1
+     - 0
+     - 1.121
+     - 1.1250
+   * - SAM0-UNICON
+     - 1
+     - 0
+     - 0.942
+     - 1.2500
 
-The model/reanalysis variables used are divided into three categories: Input, Output, and Constraints (see `CMIP6 variables codes <http://clipc-services.ceda.ac.uk/dreq/mipVars.html>`
 
-.. list-table:: Variable list and descriptions
+.. list-table:: Table 2. Variable list and descriptions
    :widths: 20 20 60
    :header-rows: 1
 
@@ -82,6 +166,9 @@ The model/reanalysis variables used are divided into three categories: Input, Ou
    * - Constraint
      - heatconv
      - Convergence of vertically integrated heat flux
+
+
+The ESM data are pooled together to form the training and testing datasets for our hybrid model. However, it is important to note there are substantial differences in the climatologies and variability of some of the chosen input variables across models (Figure 1). In particular, global average cloud liquid water content, cloud ice water content, and net top of atmosphere radiation vary more across ESMs than other variables. The former two are the result of differences in cloud parameterizations between ESMs, while the latter is likely due to uncertainties in the overall magnitude of anthropogenic forcing over the historical period. Comparing spatial correlation scores (Figure 2), shows net TOA radiation fields are very similar across models while the spatial pattern of cloud ice and water content varies substantially. Such variations represent the inter-ESM uncertainty in the representation of the climate. However, many of these ESM differences are largely removed during preprocessing described below.
 
 Data required for Physics Constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
