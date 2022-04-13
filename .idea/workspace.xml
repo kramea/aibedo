@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="aa46e4e0-515c-4655-af3b-53baa24c4cb8" name="Changes" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectId" id="26iycWU1LtQKG614RTLnimZDazZ" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/skeleton_framework" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/skeleton_framework" />
+    </key>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="aa46e4e0-515c-4655-af3b-53baa24c4cb8" name="Changes" comment="" />
+      <created>1647920781784</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1647920781784</updated>
+      <workItem from="1647920784974" duration="21000" />
+      <workItem from="1648508124959" duration="3556000" />
+      <workItem from="1648699790348" duration="38680000" />
+      <workItem from="1648916469643" duration="874000" />
+      <workItem from="1648926519104" duration="2150000" />
+      <workItem from="1648935512671" duration="979000" />
+      <workItem from="1648939598320" duration="69000" />
+      <workItem from="1649263487112" duration="983000" />
+      <workItem from="1649369640809" duration="7000" />
+      <workItem from="1649369884858" duration="981000" />
+      <workItem from="1649382140701" duration="1505000" />
+      <workItem from="1649458813960" duration="1007000" />
+      <workItem from="1649726990575" duration="6894000" />
+      <workItem from="1649788316228" duration="1095000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
