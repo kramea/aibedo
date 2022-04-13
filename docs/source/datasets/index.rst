@@ -24,26 +24,46 @@ We utilize monthly averaged data and preprocess it in three steps:
 
 The model/reanalysis variables used are divided into three categories: Input, Output, and Constraints (see [CMIP6 variables codes](http://clipc-services.ceda.ac.uk/dreq/mipVars.html)).
 
-| Category   | Variable | Description                                                        |
-| ---------- | -------- | ------------------------------------------------------------------ |
-| Input      | alpha    | Atmospheric Albedo (rsut/rsdt)                                     |
-| Input      | cres     | Shortwave cloud Radiative effect ((rsdt - rsut) - (rsdt - rsutcs)) |
-| Input      | clivi    | Mass of cloud ice water in a column                                |
-| Input      | clwvi    | Mass of cloud condensed water in a column                          |
-| Input      | lowcloud | Cloud concentrations integrated between 1000hPa and 700hPa         |
-| Output     | tas      | 2-meter air temperature                                            |
-| Output     | pr       | Precipitation                                                      |
-| Output     | psl      | Sea level pressure                                                 |
-| Constraint | evspsbl  | Evaporation                                                        |
-| Constraint | huss     | Surface specific humidity                                          |
-| Constraint | hfls     | Surface Latent heat flux                                           |
-| Constraint | hfss     | Surface Sensible heat flux                                         |
-| Constraint | rsus     | Surface upward shortwave flux                                      |
-| Constraint | rsds     | Surface downward shortwave flux                                    |
-| Constraint | rlus     | Surface upward longwave flux                                       |
-| Constraint | rlds     | Surface downward longwave flux                                     |
-| Constraint | rlut     | Top of Model upward longwave flux                                  |
-| Constraint | rlds     | Top of Model downward shortwave flux                               |
+.. list-table:: Variable list and descriptions
+   :widths: 25 25 50
+   :header-rows: 1
+
+   * - Category
+     - Variable
+     - Description
+   * - Input
+     - clwvi
+     - Mass of cloud liquid water in a column
+   * - Input
+     - clivi
+     - Mass of cloud ice water in a column 
+   * - Input
+     - cres
+     - TOA Cloud radiative effect in shortwave
+   * - Input
+     - cresSurf
+     - Surface Cloud radiative effect in shortwave
+   * - Input
+     - crel
+     - TOA Cloud radiative effect in longwave
+   * - Input
+     - crelSurf
+     - Surface Cloud radiative effect in longwave
+   * - Input
+     - netTOA
+     - Net TOA radiation (all-sky) 
+   * - Input
+     - netTOAcs 
+     - TOA radiation without clouds (clear-sky)
+   * - Input
+     - netSurf
+     - Net Surface radiation
+   * - Input
+     - netSurfcs
+     - Net Clearsky Surface radiation
+   * - Input
+     - lcloud
+     - Cloud fraction averaged between 1000 hPa and 700 hPa
 
 Data required for Physics Constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
