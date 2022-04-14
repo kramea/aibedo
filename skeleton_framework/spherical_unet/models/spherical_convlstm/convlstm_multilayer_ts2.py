@@ -33,12 +33,10 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
             raise ValueError("Error: sampling method unknown. Please use icosahedron, healpix or equiangular.")
         #input_dim(channels), hidden_dim, kernel_size, num_layers, lap, batch_first=False, bias=True, return_all_layers=False)
       
-        self.convlstm11 = ConvLSTM(input_channels, 64, 3,  self.laps[5], True, True, False)
-        self.convlstm12 = ConvLSTM(64, 128, 3,  self.laps[5], True, True, False)
-        self.convlstm13 = ConvLSTM(128, 256, 3,  self.laps[5], True, True, False)
-        self.convlstm14 = ConvLSTM(256, 512, 3,  self.laps[5], True, True, False)
-        self.convlstm15 = ConvLSTM(512, 512, 3,  self.laps[5], True, True, False)
-        self.convlstm16 = ConvLSTM(512, output_channels, 3,  self.laps[5], True, True, False)
+        self.convlstm11 = ConvLSTM(input_channels, 128, 3,  self.laps[5], True, True, False)
+        self.convlstm12 = ConvLSTM(128, 256, 3,  self.laps[5], True, True, False)
+        self.convlstm13 = ConvLSTM(256, 256, 3,  self.laps[5], True, True, False)
+        self.convlstm14 = ConvLSTM(256, output_channels, 3,  self.laps[5], True, True, False)
 
 
 
@@ -80,17 +78,6 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x, [-1, n, 1])
         x = F.relu(x)
 
-        x = torch.reshape(x, [d1, d2, d3, -1])
-        x = self.convlstm15(x)
-        d1, d2, d3,  n = np.shape(x.float())
-        x = torch.reshape(x, [-1, n, 1])
-        x = F.relu(x)
-
-        x = torch.reshape(x, [d1, d2, d3, -1])
-        x = self.convlstm16(x)
-        d1, d2, d3,  n = np.shape(x.float())
-        x = torch.reshape(x, [-1, n, 1])
-        x = F.relu(x)
 
         x = torch.reshape(x, [d1, d2, d3, -1])
         output = x
