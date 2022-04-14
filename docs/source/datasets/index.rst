@@ -177,8 +177,12 @@ The ESM data are pooled together to form the training and testing datasets for o
 .. image::
 	images/box_mm_spread_1.png
 
+	Figure 1. Box plot of spread of ESM global and time means of selected input, output, and constraint variables divided by their respective multi-model ensemble mean. Ensemble mean values shown in parentheses in the x-labels
+
 .. image::
 	images/model_var_spatcorr_1.png
+
+	Figure 2. Pearson-R spatial correlations between ESM time average and ESM ensemble mean fields (for data remapped to level 5 Sphere-Icosahedral grid) across the models (rows) and variables (columns), showing the inter-ESM uncertainty in the climatologies of the selected input, output, and constraint variables
 
 Preprocessing
 ~~~~~~~~~~~~~
