@@ -1,5 +1,8 @@
 .. _aibedo_tutorial:
 
+Code usage and tutorials
+========================
+
 This section provides directions on:
 
 #. generating preproecessed datasets
