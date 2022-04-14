@@ -19,8 +19,10 @@ Climate intervention techniques—like marine cloud brightening—that need to b
 .. toctree::
    :maxdepth: 3
 
-   architecture/index
+   
    datasets/index
+   architecture/index
    dynamics/index
    mcb/index
+   tutorial/index
    reports/index
