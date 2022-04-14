@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hybrid AI Model Architecture &mdash; AIBEDO 0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Datasets" href="../datasets/index.html" />
+    <link rel="prev" title="AIBEDO: a hybrid AI framework to capture the effects of cloud properties on global circulation and regional climate patterns." href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> AIBEDO
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Hybrid AI Model Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#spatial-data-driven-component">Spatial Data-Driven Component</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#spherical-u-net-architecture">Spherical U-Net Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sampling-module">Sampling Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#interpolation-module">Interpolation Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#model-library-module">Model Library Module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#temporal-data-driven-component">Temporal Data-Driven Component</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#multi-timescale-long-short-term-memory-lstm-networks">Multi-timescale Long Short-Term Memory (LSTM) Networks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets/index.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dynamics/index.html">Climate dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcb/index.html">Marine Cloud Brightening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reports/index.html">AIBEDO Reports</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">AIBEDO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Hybrid AI Model Architecture</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/architecture/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hybrid-ai-model-architecture">
+<span id="aibedo-architecture"></span><h1>Hybrid AI Model Architecture<a class="headerlink" href="#hybrid-ai-model-architecture" title="Permalink to this headline"></a></h1>
+<p>Our hybrid model for AIBEDO consists of two data-driven components: spherical-Unet for spatial network modeling and multi-timescale Long Short-Term Memory (LSTM) network for temporal modeling. Both components will be infused with physics-based constraints to ensure the generalizability of spatial and temporal scales.</p>
+<section id="spatial-data-driven-component">
+<h2>Spatial Data-Driven Component<a class="headerlink" href="#spatial-data-driven-component" title="Permalink to this headline"></a></h2>
+<section id="spherical-u-net-architecture">
+<h3>Spherical U-Net Architecture<a class="headerlink" href="#spherical-u-net-architecture" title="Permalink to this headline"></a></h3>
+<p>Our model framework will specifically focus on “Spherical U-net architecture”. U-net is a specific form of convolutional neural network (CNN) architecture that consists of pairs of downsampling and upsampling convolutional layers with pooling operations. Unlike regular CNNs, the upsampling feature channels help the model learn the global location and context simultaneously. This technique has been proven extremely useful for biomedical applications and recently has been adopted in the earth sciences. While this is a more effective technique, one of the limitations of U-net architecture when applied to earth sciences is the inability to capture the spherical topology of data. Typically they are resolved by including boundary layer conditions/constraints. In our approach, we adopt a variant of U-net called “spherical U-net” for modeling the spatial component of AIBEDO, which is a <strong>geodesy-aware</strong> architecture and hence accounts for the spherical topology of Earth System data alleviating the need for external architectural constraints.</p>
+<img alt="../_images/u-net.png" src="../_images/u-net.png" />
+<p>The model uses special convolutional and pooling operations for representing spherical topology through Direct Neighbor (DiNe) convolution and spherical surface pooling operations. Also, the model takes input in the icosahedral surface for the better representation of the earth surface by resampling from the original 2-dimensional NetCDF grid data.</p>
+<img alt="../_images/sphericalunet.png" src="../_images/sphericalunet.png" />
+</section>
+<section id="sampling-module">
+<h3>Sampling Module<a class="headerlink" href="#sampling-module" title="Permalink to this headline"></a></h3>
+<p>Typically, models use climate data in a uniform 2D rectangular gridded pattern. While this may suffice local/regional modeling attributes, they do not capture the physical/geodesy properties of the Earth, particularly as the focus moves away from the equator. For this reason, we developed a geodesy-aware sampling that converts 2D rectangular gridded coordinates to a geodesic grid type. There are several ways a geodesic grid can be manifested. Our method allows the modeler to choose the target gridding type between two such mesh types: (a) Icosahedral, (b) Healpix.</p>
+<p><em>Icosahedral Grids:</em> Icosahedral grids consist of a certain number of equiangular triangles to form a convex polygon, called Icosahedron. The triangles are formed by equally spaced grid points to form a sphere. The number of grid points are defined by their <strong>levels</strong>.</p>
+<p><em>Healpix Grids:</em> Healpix is a curvilinear partition grid type made up of equal area quadrilaterals. Unlike icosahedral grids, they are manifested as pixels, and the total number of pixels in a Healpix grid is calculated as follows:</p>
+</section>
+<section id="interpolation-module">
+<h3>Interpolation Module<a class="headerlink" href="#interpolation-module" title="Permalink to this headline"></a></h3>
+<p>We use the PyGSP library in Python to perform the grid transformation. It is commonly used for various graph operations to use in signal processing or social network analysis (e.g., Erdos-Reyni network). We first develop a ‘backbone’ structure of a spherical coordinate system (icosahedron, healpix, etc.). The properties of the spherical coordinates, such as levels or sub-divisions, are given as input. At this point, the coordinates are simply graph networks. In the next step, we assign latitude and longitude values to the graph network (x, y) so that they can be manifested in a geographical coordinate system. Finally, we use the raw data from reanalysis or ESM output and perform bilinear interpolation to obtain the final spherically-sampled data.</p>
+<img alt="../_images/interpolated.png" src="../_images/interpolated.png" />
+</section>
+<section id="model-library-module">
+<h3>Model Library Module<a class="headerlink" href="#model-library-module" title="Permalink to this headline"></a></h3>
+<p>We have created a library of models, ranging from regular Convolutional Neural Network (CNN), CNN-Autoencoder, <strong>Vanilla</strong> U-net to Spherical U-net architectures.This allows the modeler to explore the model performance and computational needs of different types of deep learning architectures. The sampling module is independent of the model library. There exists a function that combines the interpolated dataset obtained from the sampling module with the desired model architecture chosen by the modeler as shown in Figure.</p>
+</section>
+</section>
+<section id="temporal-data-driven-component">
+<h2>Temporal Data-Driven Component<a class="headerlink" href="#temporal-data-driven-component" title="Permalink to this headline"></a></h2>
+<p>While the spatial model maps cloud properties with circulation and regional climate variables for a given step, the temporal component aims to predict the output for the next time step for a set of input conditions. Our goal to model temporal component is to initially understand how the circulation, precipitation, and temperature could change over time and subsequently observe if there are any patterns of climate tipping points. The tipping point characterization in our model does not intend to model the dynamics of nonlinear feedback loops in the earth system, but we would look at the large-scale trends over time at the decadal scale first, and then narrow down to any changing trends in seasonal scale to identify “early-onset” of tipping points.</p>
+<section id="multi-timescale-long-short-term-memory-lstm-networks">
+<h3>Multi-timescale Long Short-Term Memory (LSTM) Networks<a class="headerlink" href="#multi-timescale-long-short-term-memory-lstm-networks" title="Permalink to this headline"></a></h3>
+<p>We use two distinctive LSTM networks to implement this functionality: one for modeling long-term climate impacts at the decadal scale (${LSTM}_d$) and another for modeling shorter-term seasonal changes (${LSTM}_s$). We will run the decadal-scale model ${LSTM}_d$ first, where we will make yearly predictions. The hidden states of ${LSTM}_d$ at every year will then be used by ${LSTM}_s$ as initial states to make monthly predictions. Since the two LSTM branches may have different hidden sizes, we will feed the states through a linear state transfer layer. Figure ** shows an illustration of a multi-time scale LSTM network.</p>
+<img alt="../_images/mutilstm.png" src="../_images/mutilstm.png" />
+<p>PARC team is implementing the temporal model using two training schemes:</p>
+<ol class="arabic simple">
+<li><p><em>Teacher forcing strategy</em>: we are designing the both LSTM approaches as feed-forward networks, where the ground truth from a prior time step will be used as input</p></li>
+<li><p><em>Curriculum learning strategy</em>: we will increment the task difficulty by gradually increasing the rate of using predicted value from current time step by feeding to the input of next time step prediction.</p></li>
+</ol>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="AIBEDO: a hybrid AI framework to capture the effects of cloud properties on global circulation and regional climate patterns." accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../datasets/index.html" class="btn btn-neutral float-right" title="Datasets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Ramea.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

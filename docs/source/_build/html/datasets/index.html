@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datasets &mdash; AIBEDO 0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Climate dynamics" href="../dynamics/index.html" />
+    <link rel="prev" title="Hybrid AI Model Architecture" href="../architecture/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> AIBEDO
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../architecture/index.html">Hybrid AI Model Architecture</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cmip6-models-used">CMIP6 models used</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#physical-constraints">Physical Constraints</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dynamics/index.html">Climate dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcb/index.html">Marine Cloud Brightening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reports/index.html">AIBEDO Reports</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">AIBEDO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Datasets</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/datasets/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="datasets">
+<span id="aibedo-datasets"></span><h1>Datasets<a class="headerlink" href="#datasets" title="Permalink to this headline"></a></h1>
+<section id="cmip6-models-used">
+<h2>CMIP6 models used<a class="headerlink" href="#cmip6-models-used" title="Permalink to this headline"></a></h2>
+<p>Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (ESM) historical and SSP5-8.5 (Shared Socioeconomic Pathway 5) outputs which had sufficient data availability on AWS to calculate the requisite input variables for our analysis (shown in Table 1). For each ESM, there are three sets of data hyper-cubes: (a) input, (b) output, and (c) data for enforcing physics constraints. Based on the initial results from our alpha hybrid model, we revised and increased the list of input variables to achieve better hybrid model performance. The updated list of input, output, and constraint variables is shown in Table 2.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 21%" />
+<col style="width: 18%" />
+<col style="width: 24%" />
+<col style="width: 24%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>Model</p></td>
+<td><p><span class="math notranslate nohighlight">\(N_{ens}\)</span> Historical</p></td>
+<td><p><span class="math notranslate nohighlight">\(N_{ens}\)</span> SSP585</p></td>
+<td><p>lat spacing (<span class="math notranslate nohighlight">\(^{\circ}\)</span>)</p></td>
+<td><p>lon spacing (<span class="math notranslate nohighlight">\(^{\circ}\)</span>)</p></td>
+</tr>
+<tr class="row-even"><td><p>CESM2</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0.942</p></td>
+<td><p>1.2500</p></td>
+</tr>
+<tr class="row-odd"><td><p>CESM2-FV2</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1.895</p></td>
+<td><p>2.5000</p></td>
+</tr>
+<tr class="row-even"><td><p>CESM2-WACCM</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0.942</p></td>
+<td><p>1.2500</p></td>
+</tr>
+<tr class="row-odd"><td><p>CESM2-WACCM-FV2</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1.895</p></td>
+<td><p>2.5000</p></td>
+</tr>
+<tr class="row-even"><td><p>CMCC-CM2-SR5</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0.942</p></td>
+<td><p>1.2500</p></td>
+</tr>
+<tr class="row-odd"><td><p>CanESM5</p></td>
+<td><p>5</p></td>
+<td><p>0</p></td>
+<td><p>2.789</p></td>
+<td><p>2.8125</p></td>
+</tr>
+<tr class="row-even"><td><p>E3SM-1-1</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1.000</p></td>
+<td><p>1.0000</p></td>
+</tr>
+<tr class="row-odd"><td><p>E3SM-1-1-ECA</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1.000</p></td>
+<td><p>1.0000</p></td>
+</tr>
+<tr class="row-even"><td><p>FGOALS-g3</p></td>
+<td><p>2</p></td>
+<td><p>1</p></td>
+<td><p>2.278</p></td>
+<td><p>2.0000</p></td>
+</tr>
+<tr class="row-odd"><td><p>GFDL-CM4</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1.000</p></td>
+<td><p>1.2500</p></td>
+</tr>
+<tr class="row-even"><td><p>GFDL-ESM4</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1.000</p></td>
+<td><p>1.2500</p></td>
+</tr>
+<tr class="row-odd"><td><p>GISS-E2-1-H</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>2.000</p></td>
+<td><p>2.5000</p></td>
+</tr>
+<tr class="row-even"><td><p>MIROC-ES2L</p></td>
+<td><p>3</p></td>
+<td><p>0</p></td>
+<td><p>2.789</p></td>
+<td><p>2.8125</p></td>
+</tr>
+<tr class="row-odd"><td><p>MIROC6</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1.400</p></td>
+<td><p>1.4062</p></td>
+</tr>
+<tr class="row-even"><td><p>MPI-ESM-1-2-HAM</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1.865</p></td>
+<td><p>1.8750</p></td>
+</tr>
+<tr class="row-odd"><td><p>MPI-ESM1-2-HR</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0.935</p></td>
+<td><p>0.9375</p></td>
+</tr>
+<tr class="row-even"><td><p>MPI-ESM1-2-LR</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1.865</p></td>
+<td><p>1.8750</p></td>
+</tr>
+<tr class="row-odd"><td><p>MRI-ESM2-0</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1.121</p></td>
+<td><p>1.1250</p></td>
+</tr>
+<tr class="row-even"><td><p>SAM0-UNICON</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0.942</p></td>
+<td><p>1.2500</p></td>
+</tr>
+</tbody>
+</table>
+<p>Table 1. Earth System Model datasets for Phase 1 training.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 10%" />
+<col style="width: 79%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Category</p></th>
+<th class="head"><p>Variable</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Input</p></td>
+<td><p>cres</p></td>
+<td><p>TOA Cloud radiative effect in shortwave (Wm-2) (rsutcs - rsut)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Input</p></td>
+<td><p>cresSurf</p></td>
+<td><p>Surface Cloud radiative effect in shortwave (rsds - rsus - rsdscs + rsuscs)</p></td>
+</tr>
+<tr class="row-even"><td><p>Input</p></td>
+<td><p>crel</p></td>
+<td><p>TOA Cloud radiative effect in longwave (Wm-2) (rlutcs - rlut)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Input</p></td>
+<td><p>crelSurf</p></td>
+<td><p>Surface Cloud radiative effect in longwave (Wm-2) (rlds - rldscs)</p></td>
+</tr>
+<tr class="row-even"><td><p>Input</p></td>
+<td><p>netTOAcs</p></td>
+<td><p>Net TOA radiation without clouds (clear-sky) (Wm-2) (rsdt - rsutcs - rlutcs)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Input</p></td>
+<td><p>netTOA</p></td>
+<td><p>Net TOA radiation (all-sky) (Wm-2) (rsdt - rsut - rlut)</p></td>
+</tr>
+<tr class="row-even"><td><p>Input</p></td>
+<td><p>netSurf</p></td>
+<td><p>Net Surface radiation (Wm-2) (rsds - rsus + rlds - rlus - hfss - hfls)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Input</p></td>
+<td><p>netSurfcs</p></td>
+<td><p>Net Clearsky Surface radiation (Wm-2) (rsdscs - rsuscs + rldscs - rlus - hfss - hfls)</p></td>
+</tr>
+<tr class="row-even"><td><p>Input</p></td>
+<td><p>lcloud</p></td>
+<td><p>Cloud fraction averaged between 1000hPa and 700hPa(%)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Input</p></td>
+<td><p>clivi</p></td>
+<td><p>Mass of cloud ice water in a column (kg/m2)</p></td>
+</tr>
+<tr class="row-even"><td><p>Input</p></td>
+<td><p>clwvi</p></td>
+<td><p>Mass of cloud liquid water in a column (kg/m2)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Output</p></td>
+<td><p>tas</p></td>
+<td><p>2-metre air temperature (K)</p></td>
+</tr>
+<tr class="row-even"><td><p>Output</p></td>
+<td><p>psl</p></td>
+<td><p>Sea Level pressure (hPa)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Output</p></td>
+<td><p>pr</p></td>
+<td><p>Precipitation (mm/day)</p></td>
+</tr>
+<tr class="row-even"><td><p>Constraint</p></td>
+<td><p>ps</p></td>
+<td><p>Surface Pressure (hPa)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Constraint</p></td>
+<td><p>evspsbl</p></td>
+<td><p>Evaporation (m/s)</p></td>
+</tr>
+<tr class="row-even"><td><p>Constraint</p></td>
+<td><p>heatconv</p></td>
+<td><p>Convergence of vertically integrates heat flux (Wm-2)</p></td>
+</tr>
+</tbody>
+</table>
+<p>Table 2. Variable list and descriptions (see <a class="reference external" href="http://clipc-services.ceda.ac.uk/dreq/mipVars.html">CMIP6 variables codes</a> for abbreviation descriptions).</p>
+<p>The ESM data are pooled together to form the training and testing datasets for our hybrid model. However, it is important to note there are substantial differences in the climatologies and variability of some of the chosen input variables across models (Fig. 1). In particular, global average cloud liquid water content, cloud ice water content, and net top of atmosphere radiation vary more across ESMs than other variables. The former two are the result of differences in cloud parameterizations between ESMs, while the latter is likely due to uncertainties in the overall magnitude of anthropogenic forcing over the historical period. Comparing spatial correlation scores (Fig. 2), shows net TOA radiation fields are very similar across models while the spatial pattern of cloud ice and water content varies substantially. Such variations represent the inter-ESM uncertainty in the representation of the climate. However, many of these ESM differences are largely removed during preprocessing described below.</p>
+<figure class="align-default" id="id1">
+<img alt="../_images/box_mm_spread_1.png" src="../_images/box_mm_spread_1.png" />
+<figcaption>
+<p><span class="caption-text">Figure 1. Box plot of spread of ESM global and time means of selected input, output, and constraint variables divided by their respective multi-model ensemble mean. Ensemble mean values shown in parentheses in the x-labels.</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id2">
+<img alt="../_images/model_var_spatcorr_1.png" src="../_images/model_var_spatcorr_1.png" />
+<figcaption>
+<p><span class="caption-text">Figure 2. Pearson-R spatial correlations between ESM time average and ESM ensemble mean fields (for data remapped to level 5 Sphere-Icosahedral grid) across the models (rows) and variables (columns), showing the inter-ESM uncertainty in the climatologies of the selected input, output, and constraint variables.</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Validation and testing is performed using reanalysis data from <a class="reference external" href="https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era5/">ERA5</a> and <a class="reference external" href="https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/">MERRA-2</a>.</p>
+</section>
+<section id="preprocessing">
+<h2>Preprocessing<a class="headerlink" href="#preprocessing" title="Permalink to this headline"></a></h2>
+<p>We utilize monthly averaged data and preprocess it in three steps:</p>
+<ol class="arabic simple">
+<li><p><strong>Remove seasonal cycle or “Deseasonalizing”</strong>: We perform this process to remove any trends in the season to prepare a seasonal stationary time series data</p></li>
+<li><p><strong>Remove trend or “Detrend”</strong>: We fit a third degree polynomial to remove any trend in data over time. This removes secular trends (for example, rising temperatures as atmospheric CO$_2$ increases) and allows the model to be trained on fluctuations due to internal variability, rather than the forced response.</p></li>
+<li><p><strong>Normalized anomalies</strong>: The anomaly at each grid point is calculated relative to a running mean that is computed over a centered 30-year window for that grid point and month. Anomalies are normalized by dividing by the standard deviation of the anomaly over the same 30-year window for that grid point and month.</p></li>
+<li><p><strong>Remapping to Sphere-Icosahedral Grid</strong>: Using <a class="reference external" href="https://code.mpimet.mpg.de/projects/cdo/embedded/index.html#x1-6460002.12.1">Climate Data Operator (cdo) bilinear remapping</a>, remap disparate model horizontal grids to a unified level-6 Sphere-Icosahedral grid.</p></li>
+</ol>
+<blockquote class="epigraph">
+<div><p><strong>Data Deliverable</strong></p>
+<p>All the preprocessed datasets are currently available on AWS S3 cloud storage. The total size of the preprocessed and compressed datasets is around 150 GB. Datasets of specific models, or sub-selection of climate variables from our input and output hyper-cubes can be made available upon request.</p>
+</div></blockquote>
+<blockquote class="epigraph">
+<div><p><strong>Ongoing Work</strong></p>
+<p>We continue to preprocess observational reanalysis datasets to assess the hybrid model performance and finetune the same to produce realistic simulations of the climate system response. In addition, we are developing scenarios with targeted cloud perturbations to generate tailored ESM runs. These datasets will be used to test and further fine-tune the model in Phase 2.</p>
+</div></blockquote>
+</section>
+<section id="physical-constraints">
+<h2>Physical Constraints<a class="headerlink" href="#physical-constraints" title="Permalink to this headline"></a></h2>
+<p>To strengthen the generalisability of the AiBEDO model, we include “weak” physics-based constraints on the output to penalize unphysical results from the model.</p>
+<ol class="arabic simple">
+<li><p>Atmospheric mass balance : global, annual mean surface pressure (ps) is equal to zero</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} P_{s,lon,lat} \Delta A_{lon,lat} = 0\]</div>
+<ol class="arabic simple" start="2">
+<li><p>Atmospheric moisture balance : global, annual mean precipitation (P) minus evaporation (E) (pr - evspsbl) is equal to zero</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} P_{lon,lat} - E_{lon,lat} \Delta A_{lon,lat} = 0\]</div>
+<ol class="arabic simple" start="3">
+<li><p>Precipitation low bound : Precipitation cannot be less zero</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[P_{lon,lat} \geq 0, lat \in [90S, 90N], lon \in [180E, 180W)\]</div>
+<ol class="arabic simple" start="4">
+<li><p>Local Tropical Atmosphere moisture budget : Precipitation + sensible heat flux = atmospheric cooling (pr + hfss - (rsus + rlus - rsds - rlds + rsdt - rlut) = 0)</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[\sum_{lat=30S}^{30N} \sum_{lon=180W}^{180E} (L P - R_{TOA} + R_{SFC} + SH + Q)_{lat,lon} \Delta A_{lat,lon} = 0\]</div>
+<ol class="arabic simple" start="5">
+<li><p>Energy Balance : (forcing = feedbacks + ET convergence + storage)</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[\sum_{t}^{&gt;1 yr}\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (\Delta R^{TOA}_{lat,lon} - \lambda_{ECS} T_{lat,lon}) \Delta A_{lat,lon} = 0\]</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../architecture/index.html" class="btn btn-neutral float-left" title="Hybrid AI Model Architecture" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../dynamics/index.html" class="btn btn-neutral float-right" title="Climate dynamics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Ramea.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
