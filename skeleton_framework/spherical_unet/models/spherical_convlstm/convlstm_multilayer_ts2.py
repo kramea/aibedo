@@ -33,10 +33,10 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
             raise ValueError("Error: sampling method unknown. Please use icosahedron, healpix or equiangular.")
         #input_dim(channels), hidden_dim, kernel_size, num_layers, lap, batch_first=False, bias=True, return_all_layers=False)
       
-        self.convlstm11 = ConvLSTM(input_channels, 64, 3, 2, self.laps[5], True, True, False)
-        self.convlstm12 = ConvLSTM(64, 256, 3, 2, self.laps[5], True, True, False)
-        self.convlstm13 = ConvLSTM(256, 512, 3, 2, self.laps[5], True, True, False)
-        self.convlstm14 = ConvLSTM(512, output_channels, 3, 2, self.laps[5], True, True, False)
+        self.convlstm11 = ConvLSTM(input_channels, 64, 3,  self.laps[5], True, True, False)
+        self.convlstm12 = ConvLSTM(64, 128, 3,  self.laps[5], True, True, False)
+        self.convlstm13 = ConvLSTM(128, 128, 3,  self.laps[5], True, True, False)
+        self.convlstm14 = ConvLSTM(128, output_channels, 3,  self.laps[5], True, True, False)
 
 
 
@@ -51,40 +51,33 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         #for i in range(len(self.laps)):
         #    print(i, len(self.laps[i]))
 
-        
-        #print(x.size()) # #A tensor of size B, T, C, N         
-        #print(len(x), len(x[0]), len(x[1])) #2, 1
-        #print(np.shape(x[0][0]), np.shape(x[1][0]))
-        #print(np.shape(x[1][0][0]), np.shape(x[1][0][1]))
 
         d1, d2, d3, n = x.size() 
         ch=d3
-        x,xx = self.convlstm11(x)
-        #print(x[-1].size()) 
-        d1, d2, d3,  n = x[-1].size() 
-        x = torch.reshape(x[-1], [-1, n, 1])
+        x = self.convlstm11(x)
+        #print(np.shape(x.float())) #torch.Size([10, 64, 1, 2562]) #batch output timelength N 
+        d1, d2, d3,  n = np.shape(x.float())
+        x = torch.reshape(x, [-1, n, 1])
         x = F.relu(x)
 
         x = torch.reshape(x, [d1, d2, d3, -1])
-        x,_ = self.convlstm12(x)
-        #print(x[-1].size())
-        d1, d2, d3,  n = x[-1].size()
-        x = torch.reshape(x[-1], [-1, n, 1])
+        x = self.convlstm12(x)
+        d1, d2, d3,  n = np.shape(x.float())
+        x = torch.reshape(x, [-1, n, 1])
         x = F.relu(x)
 
         x = torch.reshape(x, [d1, d2, d3, -1])
-        x,_ = self.convlstm13(x)
-        #print(x[-1].size())
-        d1, d2, d3,  n = x[-1].size()
-        x = torch.reshape(x[-1], [-1, n, 1])
+        x = self.convlstm13(x)
+        d1, d2, d3,  n = np.shape(x.float())
+        x = torch.reshape(x, [-1, n, 1])
         x = F.relu(x)
 
         x = torch.reshape(x, [d1, d2, d3, -1])
-        x,_ = self.convlstm14(x)
-        #print(x[-1].size())
-        d1, d2, d3,  n = x[-1].size()
-        x = torch.reshape(x[-1], [-1, n, 1])
+        x = self.convlstm14(x)
+        d1, d2, d3,  n = np.shape(x.float())
+        x = torch.reshape(x, [-1, n, 1])
         x = F.relu(x)
+
         x = torch.reshape(x, [d1, d2, d3, -1])
         output = x
         
