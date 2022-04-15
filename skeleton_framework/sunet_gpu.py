@@ -28,14 +28,18 @@ from torchvision import transforms
 
 def sunet_collate(batch):
 
+    batchShape = batch[0].shape
+    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
+    timelimit = batchShape[0] - 1
 
-    data_in_array = np.array([item[:, 0:8] for item in batch])
-    data_out_array = np.array([item[:, 8:] for item in batch])
-    #data_in = torch.Tensor([item[:, 0:8] for item in batch])
+    data_in_array = np.array([item[:, 0:varlimit] for item in batch])
+    data_out_array = np.array([item[timelimit:, varlimit:] for item in batch])
+
     data_in = torch.Tensor(data_in_array)
-    #data_out = torch.Tensor([item[:, 8:] for item in batch])
     data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
+
+
 
 def get_dataloader(parser_args):
     glevel = int(parser_args.depth)
@@ -89,13 +93,14 @@ def get_dataloader(parser_args):
     combined_data = np.concatenate((dataset, dataset_out), axis=2)
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
-    val_data, _ = train_test_split(temp, test_size=parser_args.partition[2] / (
+    val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
                 parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12, collate_fn=sunet_collate)
     dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=sunet_collate)
-
-    return dataloader_train, dataloader_validation
+    dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12,
+                                       collate_fn=sunet_collate)
+    return dataloader_train, dataloader_validation, dataloader_test
 
 
 def main(parser_args):
@@ -109,7 +114,7 @@ def main(parser_args):
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
 
-    dataloader_train, dataloader_validation = get_dataloader(parser_args)
+    dataloader_train, dataloader_validation, dataloader_test = get_dataloader(parser_args)
 
     criterion = torch.nn.MSELoss()
 
@@ -202,6 +207,26 @@ def main(parser_args):
         os.mkdir(saved_model_path)
 
     torch.save(unet.state_dict(), "./saved_model_lag_" + str(parser_args.time_lag) + "/unet_state_" + str(parser_args.n_epochs) + ".pt")
+
+    # Prediction code
+
+    #model.load_state_dict(model.state_dict())
+    unet.eval()
+
+    predictions = np.empty((parser_args.batch_size, len(parser_args.output_vars),n_pixels))
+    groundtruth = np.empty((parser_args.batch_size, len(parser_args.output_vars),n_pixels))
+    for batch in dataloader_test:
+        data_in, data_out = batch
+        preds = unet(data_in)
+        test_loss = criterion(preds.float(), data_out)
+        print("Test loss", test_loss)
+        pred_numpy = preds.detach().cpu().numpy()
+        predictions = np.concatenate((predictions, pred_numpy), axis=0)
+        groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
+
+    np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/prediction_"+str(parser_args.n_epochs)+"_"+str(test_loss)+".npy", predictions)
+    np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
+
 
 
 if __name__ == "__main__":
