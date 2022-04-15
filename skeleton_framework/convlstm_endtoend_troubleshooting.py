@@ -7,7 +7,7 @@ from torchsummary import summary
 from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral, temporal_conversion, shuffle_data
 from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
-from spherical_unet.models.spherical_convlstm.convlstm import *
+from spherical_unet.models.spherical_convlstm.convlstm2 import *
 from spherical_unet.models.spherical_convlstm.convlstm_multilayer_ts2 import *
 from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
 from spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
@@ -86,7 +86,7 @@ def main(parser_args):
         os.mkdir(output_path)
         
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model = SphericalConvLSTMAutoEncoder(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,8,3)
+        model = SphericalConvLSTMAutoEncoder(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,3,3)
         #SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6 , parser_args.laplacian_type, in_channels, out_channels)
         model = model.to(device)
         model, device = init_device(parser_args.device, model)
@@ -111,6 +111,13 @@ def main(parser_args):
         # collect only last timestep from output
         #dataset = dataset[:,-1:,:,:]
         #dataset_out = dataset_out[:,-1:,:,:]
+        dataset = dataset_out
+        #d1,d2,d3,d4 = np.shape(dataset)
+        #dataset = np.reshape(dataset, [d1,d2,d3,42,61])
+        #d1,d2,d3,d4 = np.shape(dataset_out)
+        #dataset_out = np.reshape(dataset_out, [d1,d2,d3,42,61])
+        
+
         #Shape: (1) Input  (1978, 2, 8, 2562) (2) Output  (1978, 2, 3, 2562)
         print("Timelength of input: "+str(time_length))
         print("Shape: (1) Input ",np.shape(dataset),"(2) Output ", np.shape(dataset_out))
