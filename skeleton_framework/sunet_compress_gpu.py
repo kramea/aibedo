@@ -31,11 +31,10 @@ def sunet_collate(batch):
 
     batchShape = batch[0].shape
     varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
-    timelimit = batchShape[0] - 1
-
+    
     data_in_array = np.array([item[:, 0:varlimit] for item in batch])
-    data_out_array = np.array([item[timelimit:, varlimit:] for item in batch])
-
+    data_out_array = np.array([item[:, varlimit:] for item in batch])
+    
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
@@ -172,14 +171,14 @@ def main(parser_args):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
         print(
-            f"Training Results - Iteration: {engine_train.state.iteration}  Avg loss: {metrics['mse']:.2f}")
+            f"Training Results - Iteration: {engine_train.state.iteration}  Avg loss: {metrics['mse']:.4f}")
 
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_training_results(engine):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
         print(
-            f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.2f}")
+            f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.4f}")
 
 
     @engine_train.on(Events.EPOCH_COMPLETED)
@@ -187,7 +186,7 @@ def main(parser_args):
         evaluator.run(dataloader_validation)
         metrics = evaluator.state.metrics
         print(
-            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.2f}")
+            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
 
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
@@ -205,8 +204,8 @@ def main(parser_args):
     #model.load_state_dict(model.state_dict())
     unet.eval()
 
-    predictions = np.empty((parser_args.batch_size, len(parser_args.output_vars),n_pixels))
-    groundtruth = np.empty((parser_args.batch_size, len(parser_args.output_vars),n_pixels))
+    predictions = np.empty((parser_args.batch_size, n_pixels, len(parser_args.output_vars)))
+    groundtruth = np.empty((parser_args.batch_size, n_pixels, len(parser_args.output_vars)))
     for batch in dataloader_test:
         data_in, data_out = batch
         preds = unet(data_in)
