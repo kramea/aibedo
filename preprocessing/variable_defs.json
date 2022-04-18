@@ -1,0 +1,20 @@
+{
+    "cres":{"long_name":"Cloud radiative effect in shortwave", "units" :"W m-2", "Description":"rsutcs - rsut",
+        "variables":["rsutcs","rsut"],"signs":[1,-1],"positive":"down"},
+    "crel":{"long_name":"Cloud radiative effect in longwave", "units" :"W m-2", "Description":"rlutcs - rlut",
+        "variables":["rlutcs","rlut"],"signs":[1,-1],"positive":"down"},
+    "netTOAcs":{"long_name":"Net TOA radiation without clouds (clear sky)", "units" :"W m-2", "Description":"rsdt - rsutcs - rlutcs",
+        "variables":["rsdt","rsutcs","rlutcs"],"signs":[1,-1,-1],"positive":"down"},
+    "netSurf":{"long_name":"Net Surface radiation", "units" :"W m-2", "Description":"rsds - rsus + rlds - rlus - hfss - hfls",
+        "variables":["rsds","rsus","rlds","rlus","hfss","hfls"],"signs":[1,-1,1,-1,-1,-1],"positive":"down"},
+    "netTOA":{"long_name":"Net TOA radiation", "units" :"W m-2", "Description":"rsdt - rsut - rlut",
+        "variables":["rsdt","rsut","rlut"],"signs":[1,-1,-1],"positive":"down"},
+    "netSurfcs":{"long_name":"Clearsky Net Surface radiation", "units" :"W m-2", "Description":"rsdscs - rsuscs + rldscs - rlus - hfss - hfls",
+                "variables":["rsdscs","rsuscs","rldscs","rlus","hfss","hfls"],"signs":[1,-1,1,-1,-1,-1],"positive":"down"},
+    "cresSurf":{"long_name":"Cloud radiative effect in shortwave", "units" :"W m-2", "Description":"rsds - rsus - rsdscs + rsuscs",
+        "variables":["rsds","rsus","rsdscs","rsuscs"],"signs":[1,-1,-1,1],"positive":"down"},
+    "crelSurf":{"long_name":"Cloud radiative effect in longwave", "units" :"W m-2", "Description":"rlds - rldscs",
+        "variables":["rlds","rldscs"],"signs":[1,-1],"positive":"down"},
+    "lcloud":{"long_name":"Low cloud fraction", "units":"%", "Description":"Cloud fraction integrated below 700hPa",
+        "variables":["cl"],"minlevel":700e2, "maxlevel":1000e2, "integral":"vertical","signs":[1]}
+}
