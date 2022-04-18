@@ -10,6 +10,7 @@ from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
 
 from spherical_unet.models.spherical_convlstm.convlstm import *
+from spherical_unet.models.spherical_convlstm.convlstm_multilayer_ts2 import *
 from spherical_unet.models.spherical_convlstm.convlstm_unet import *
 from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
 from spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
