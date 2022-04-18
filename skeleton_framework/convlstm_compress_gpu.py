@@ -135,7 +135,8 @@ def main(parser_args):
 
     n_pixels = icosahedron_nodes_calculator(parser_args.depth)
 
-    model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, len(parser_args.input_vars), len(parser_args.output_vars))
+    model = SphericalConvLSTMAutoEncoder(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,len(parser_args.input_vars), len(parser_args.output_vars))
+    #model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, len(parser_args.input_vars), len(parser_args.output_vars))
     model, device = init_device(parser_args.device, model)
     print("Device", device)
     #model = model.to(device)
