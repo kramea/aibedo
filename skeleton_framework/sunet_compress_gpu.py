@@ -1,5 +1,6 @@
 from models.cnn import CNN
 import numpy as np
+import xarray as xr
 import os, shutil
 import torch
 import torch.optim as optim
@@ -30,67 +31,57 @@ def sunet_collate(batch):
 
     batchShape = batch[0].shape
     varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
-    timelimit = batchShape[0] - 1
-
+    
     data_in_array = np.array([item[:, 0:varlimit] for item in batch])
-    data_out_array = np.array([item[timelimit:, varlimit:] for item in batch])
-
+    data_out_array = np.array([item[:, varlimit:] for item in batch])
+    
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
 
 
-
 def get_dataloader(parser_args):
+
     glevel = int(parser_args.depth)
     n_pixels = icosahedron_nodes_calculator(glevel)
-    lag = int(parser_args.time_lag)
-
+    time_length = int(parser_args.time_length)
 
     print("Grid level:", glevel)
     print("N pixels:", n_pixels)
-    print("time lag:", lag)
+    print("time length:", time_length)
 
-    temp_folder = "/data/kramea/npy_files/"  # Change this to where you want .npy files are saved
-    # We don't want this as part of the github folder as the files can be large
-    # Ideally we want to move this to S3 bucket
+    inDS = xr.open_dataset(parser_args.input_file)
+    outDS = xr.open_dataset(parser_args.output_file)
 
-    infile = parser_args.input_file
-    outfile = parser_args.output_file
-    infname = Path(infile).stem
-    outfname = Path(outfile).stem
-
-    in_temp_npy_file = temp_folder + infname + "_" + str(glevel) + ".npy"
-    out_temp_npy_file = temp_folder + outfname + "_" + str(glevel) + ".npy"
-
-    print(in_temp_npy_file)
-    print(out_temp_npy_file)
+    lon_list = inDS.lon.data
+    lat_list = inDS.lat.data
 
     in_channels = len(parser_args.input_vars)
     out_channels = len(parser_args.output_vars)
 
-    if os.path.exists(in_temp_npy_file):
-        print("Gridded input .npy file exists")
-    else:
-        print("Generating input .npy file ", in_temp_npy_file, "at grid level", glevel, "...")
-        lon_list, lat_list, dset = load_ncdf_to_SphereIcosahedral(infile, glevel, parser_args.input_vars)
-        np.save(in_temp_npy_file, dset)
+    #Input data
+    data_all = []
+    for var in parser_args.input_vars:
+        temp_data = np.reshape(np.concatenate(inDS[var].data, axis = 0), [-1,n_pixels,1])
+        data_all.append(temp_data)
+    dataset_in = np.concatenate(data_all, axis=2)
 
-    if os.path.exists(out_temp_npy_file):
-        print("Gridded output .npy file exists")
-    else:
-        print("Generating output .npy file ", out_temp_npy_file, "at grid level", glevel, "...")
-        lon_list, lat_list, dset = load_ncdf_to_SphereIcosahedral(outfile, glevel, parser_args.output_vars)
-        np.save(out_temp_npy_file, dset)
+    #Output data
+    data_all = []
+    for var in parser_args.output_vars:
+        temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1,n_pixels,1])
+        data_all.append(temp_data)
+    dataset_out = np.concatenate(data_all, axis=2)
 
-    dataset = np.load(in_temp_npy_file)
-    dataset_out = np.load(out_temp_npy_file)
+    dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
+
+
 
     if parser_args.time_lag > 0:
-        dataset = dataset[:-parser_args.time_lag]
+        dataset_in = dataset_in[:-parser_args.time_lag]
         dataset_out = dataset_out[parser_args.time_lag:]
 
-    combined_data = np.concatenate((dataset, dataset_out), axis=2)
+    combined_data = np.concatenate((dataset_in, dataset_out), axis=2)
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
@@ -98,9 +89,9 @@ def get_dataloader(parser_args):
 
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12, collate_fn=sunet_collate)
     dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=sunet_collate)
-    dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12,
-                                       collate_fn=sunet_collate)
+    dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=sunet_collate)
     return dataloader_train, dataloader_validation, dataloader_test
+
 
 
 def main(parser_args):
@@ -180,14 +171,14 @@ def main(parser_args):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
         print(
-            f"Training Results - Iteration: {engine_train.state.iteration}  Avg loss: {metrics['mse']:.2f}")
+            f"Training Results - Iteration: {engine_train.state.iteration}  Avg loss: {metrics['mse']:.4f}")
 
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_training_results(engine):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
         print(
-            f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.2f}")
+            f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.4f}")
 
 
     @engine_train.on(Events.EPOCH_COMPLETED)
@@ -195,7 +186,7 @@ def main(parser_args):
         evaluator.run(dataloader_validation)
         metrics = evaluator.state.metrics
         print(
-            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.2f}")
+            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
 
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
@@ -213,18 +204,16 @@ def main(parser_args):
     #model.load_state_dict(model.state_dict())
     unet.eval()
 
-    predictions = np.empty((parser_args.batch_size, len(parser_args.output_vars),n_pixels))
-    groundtruth = np.empty((parser_args.batch_size, len(parser_args.output_vars),n_pixels))
+    predictions = np.empty((parser_args.batch_size, n_pixels, len(parser_args.output_vars)))
+    groundtruth = np.empty((parser_args.batch_size, n_pixels, len(parser_args.output_vars)))
     for batch in dataloader_test:
         data_in, data_out = batch
         preds = unet(data_in)
-        test_loss = criterion(preds.float(), data_out)
-        print("Test loss", test_loss)
         pred_numpy = preds.detach().cpu().numpy()
         predictions = np.concatenate((predictions, pred_numpy), axis=0)
         groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
 
-    np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/prediction_"+str(parser_args.n_epochs)+"_"+str(test_loss)+".npy", predictions)
+    np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/prediction_"+str(parser_args.n_epochs)+".npy", predictions)
     np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
 
 
@@ -232,7 +221,6 @@ def main(parser_args):
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
     main(PARSER_ARGS)
-
 
 
 

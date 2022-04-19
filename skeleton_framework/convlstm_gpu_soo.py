@@ -9,7 +9,7 @@ from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
 
 from spherical_unet.models.spherical_convlstm.convlstm import *
-from spherical_unet.models.spherical_convlstm.convlstm_unet import *
+from spherical_unet.models.spherical_convlstm.convlstm_unet2 import *
 from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
 from spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
 from spherical_unet.layers.chebyshev import SphericalChebConv
@@ -47,17 +47,10 @@ def temporal_conversion(data, time):
     return out
 
 def convlstm_collate(batch):
-    batchShape = batch[0].shape
-    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
-    timelimit = batchShape[0] - 1
 
-    data_in_array = np.array([item[:, 0:varlimit, :] for item in batch])
-    data_out_array = np.array([item[timelimit:, varlimit:, :] for item in batch])
-
-    data_in = torch.Tensor(data_in_array)
-    data_out = torch.Tensor(data_out_array)
+    data_in = torch.Tensor([item[:,0:10, :] for item in batch])
+    data_out = torch.Tensor([item[-1:,10:, :] for item in batch])
     return [data_in, data_out]
-
 
 def get_dataloader(parser_args):
 
@@ -69,7 +62,7 @@ def get_dataloader(parser_args):
     print("N pixels:", n_pixels)
     print("time length:", time_length)
 
-    temp_folder="/data/kramea/npy_files/" #Change this to where you want .npy files are saved
+    temp_folder="./npy_files/" #Change this to where you want .npy files are saved
     # We don't want this as part of the github folder as the files can be large
     # Ideally we want to move this to S3 bucket
 
@@ -113,19 +106,26 @@ def get_dataloader(parser_args):
     # collect only last timestep from output
 
     print("Timelength of input: " + str(time_length))
-    print("Shape: (1) Input ", np.shape(dataset), "(2) Output ", np.shape(dataset_out))
+    #Take last 100 data as testset
+    dataset, dataset_test = dataset[100:], dataset[:100]
+    dataset_out, dataset_out_test = dataset_out[100:], dataset_out[:100]
+
+    print("Train Shape: (1) Input ", np.shape(dataset), "(2) Output ", np.shape(dataset_out))
+    #Shape: (1) Input  (1978, 2, 10, 40962) (2) Output  (1978, 2, 3, 40962)
+    print("Test Shape: (1) Input ", np.shape(dataset_test), "(2) Output ", np.shape(dataset_out_test))
+
 
     combined_data = np.concatenate((dataset, dataset_out), axis=2)
 
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
-    val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
+    val_data, _ = train_test_split(temp, test_size=parser_args.partition[2] / (
                 parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12, collate_fn=convlstm_collate)
     dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=convlstm_collate)
-    dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=convlstm_collate)
-    return dataloader_train, dataloader_validation, dataloader_test
+
+    return dataloader_train, dataloader_validation, dataset_test, dataset_out_test
 
 
 def main(parser_args):
@@ -135,7 +135,7 @@ def main(parser_args):
         parser_args (dict): parsed arguments
     """
 
-    dataloader_train, dataloader_validation, dataloader_test = get_dataloader(parser_args)
+    dataloader_train, dataloader_validation, dataset_test, dataset_out_test  = get_dataloader(parser_args)
     criterion = torch.nn.MSELoss()
 
     output_path = parser_args.output_path
@@ -195,32 +195,24 @@ def main(parser_args):
 
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
-    saved_model_path = "./saved_model_convlstmunet_" + str(parser_args.time_length)
+    saved_model_path = "./saved_model_convlstmunet_gpu_" + str(parser_args.time_length)
     if os.path.isdir(saved_model_path):
         shutil.rmtree(saved_model_path)
 
     os.mkdir(saved_model_path)
 
+    
     torch.save(model.state_dict(),
-               "./saved_model_convlstmunet_" + str(parser_args.time_length) + "/convlstm_state_" + str(parser_args.n_epochs) + ".pt")
-
-    # Prediction code
-
-    model.eval()
-
-    predictions = np.empty((parser_args.batch_size,1,len(parser_args.output_vars),n_pixels))
-    groundtruth = np.empty((parser_args.batch_size,1,len(parser_args.output_vars),n_pixels))
-    for batch in dataloader_test:
-        data_in, data_out = batch
-        preds = model(data_in)
-        pred_numpy = preds.detach().cpu().numpy()
-        predictions = np.concatenate((predictions, pred_numpy), axis=0)
-        groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
-
-    np.save("./saved_model_convlstmunet_"+str(parser_args.time_length)+"/prediction_"+str(parser_args.n_epochs)+".npy", predictions)
-    np.save("./saved_model_convlstmunet_"+str(parser_args.time_length)+"/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
-
-
+            "./saved_model_convlstmunet_gpu_" + str(parser_args.time_length) + "/convlstm_state_" + str(parser_args.n_epochs) + ".pt")
+    #with torch.no_grad():
+    images = torch.tensor(dataset_test)
+    gt_outputs = torch.tensor(dataset_out_test)
+    outputs = model(images.float())
+    test_loss = criterion(outputs.float(), gt_outputs.float())
+    prediction = outputs.detach().numpy()
+    groundtruth = gt_outputs.detach().numpy()
+    np.save("./saved_model_convlstmunet_gpu_"+str(parser_args.time_length)+"/prediction_"+str(parser_args.n_epochs)+"_"+str(test_loss)+".npy", prediction)
+    np.save("./saved_model_convlstmunet_gpu_"+str(parser_args.time_length)+"/groundtruth_"+str(parser_args.n_epochs)+"_"+str(test_loss)+".npy", groundtruth)
 
 if __name__ == "__main__":
 

@@ -53,7 +53,11 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         self.debatchnorm3 = nn.BatchNorm1d(128)
         self.deconvlstm2 = ConvLSTM(128, 64, 3, 2, self.laps[4], True, True, False)
         self.debatchnorm2 = nn.BatchNorm1d(64)
+<<<<<<< HEAD
+        self.deconvlstm1 = ConvLSTM(64,  output_channels, 3, 1, self.laps[5], True, True, False)
+=======
         self.deconvlstm1 = ConvLSTM(64,  output_channels,3, 2, self.laps[5], True, True, False)
+>>>>>>> 52f51e88b29e19dbcf31bc3297e03922afe4e32d
         self.debatchnorm1 = nn.BatchNorm1d(1)
         self.pooling = self.pooling_class.pooling
         self.unpooling = self.pooling_class.unpooling
@@ -171,8 +175,5 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
         x = torch.reshape(x[-1], [-1, n, 1])
         x = F.relu(x)
         x = torch.reshape(x, [d1, d2, d3, -1])
-        output =x
-        #print(x.size())
-        #output = x[:,-1:,:,:]
-        #print(x.size()) #torch.Size([2, 10, 1, 40962])
+        output = x[:,-1:,:,:]
         return output
