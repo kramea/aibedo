@@ -1,9 +1,9 @@
 IMAGE PARAMS:
   pooling_class: "icosahedron"
-  depth: 6
+  depth: 5
   laplacian_type: "combinatorial"
   time_lag: 0 #dummy for s-convlstm
-  time_length: 3 #>=1 for s-convlstm
+  time_length: 1 #>=1 for s-convlstm
 
 MODEL PARAMS:
   partition: [0.8,0.1,0.1]
@@ -13,8 +13,8 @@ MODEL PARAMS:
   kernel_size: 3
 
 INPUT PARAMS:
-  input_file: "/data/kramea/data_aibedo/compress.isosph.CESM2-FV2.historical.r1i1p1f1.Input.Exp8.nc"
-  output_file: "/data/kramea/data_aibedo/compress.isosph.CESM2-FV2.historical.r1i1p1f1.Output.nc"
+  input_file: "/data/kramea/data_aibedo/compress.isosph5.CESM2-FV2.historical.r1i1p1f1.Input.Exp8.nc"
+  output_file: "/data/kramea/data_aibedo/compress.isosph5.CESM2-FV2.historical.r1i1p1f1.Output.nc"
   output_path: "output_sunet"
   input_vars: ['clivi_pre', 'clwvi_pre', 'crelSurf_pre', 'crel_pre', 'cresSurf_pre', 'cres_pre', 'netSurf_pre', 'netTOA_pre', 'netTOAcs_pre', 'lcloud_nonorm']          
   output_vars: ['tas_pre', 'psl_pre', 'pr_pre']
