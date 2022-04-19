@@ -4,6 +4,9 @@ import xarray as xr
 import numpy as np
 import time
 
+### Adds no-normalized low cloud data to the datasets to avoid issues with divide by zero
+### in regions with no low cloud or topography is <700hPa
+
 def removeSC(x:np.ndarray):
     '''
     Removes seasonal cycle from monthly data
@@ -37,6 +40,7 @@ for fname in os.listdir(path):
         if 'lcloud_nonorm' in data.variables:
             continue
         print(fname)
+        ## remove seasonal cycle
         t1 = time.time()
         print('Deseasonalize')
         deseas = removeSC(data.lcloud.values.copy())
@@ -44,11 +48,13 @@ for fname in os.listdir(path):
         print('Time : ', t2-t1)
 
         print('Detrend')
+        ## remove order cubic fit
         print(data.time.values.shape)
         detre = detrend(deseas,data.time.values.copy())
         t3 = time.time()
         print('Time : ',t3-t2)
 
+        ## generate DataArray
         lcloud_nonorm = xr.DataArray(name='lcloud_nonorm', data=detre.astype(np.float32), attrs={"long_name":"Low cloud fraction deseas, detrend, no normalization", 
                                         "units":"%", "Description":"Cloud fraction integrated below 700hPa",
                                         "variables":["cl"],"minlevel":700e2, "maxlevel":1000e2, "integral":"vertical","signs":[1]}, 
