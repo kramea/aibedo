@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clouds and Circulation &mdash; AIBEDO 0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Fluctuation Dissipation Theorem" href="fdtheorem.html" />
+    <link rel="prev" title="Climate dynamics" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> AIBEDO
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../datasets/index.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../architecture/index.html">Hybrid AI Model Architecture</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Climate dynamics</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Clouds and Circulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#clouds">Clouds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#circulation-controls-of-clouds">Circulation controls of clouds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cloud-effects-on-circulation">Cloud effects on circulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#coupling-between-clouds-and-the-circulation">Coupling between clouds and the circulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cmip6-cloud-and-circulation-biases">CMIP6 cloud and circulation biases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fdtheorem.html">Fluctuation Dissipation Theorem</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../mcb/index.html">Marine Cloud Brightening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/index.html">Code usage and tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reports/index.html">AIBEDO Reports</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">AIBEDO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">Climate dynamics</a> &raquo;</li>
+      <li>Clouds and Circulation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dynamics/clouds.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="clouds-and-circulation">
+<span id="aibedo-clouds"></span><h1>Clouds and Circulation<a class="headerlink" href="#clouds-and-circulation" title="Permalink to this headline"></a></h1>
+<section id="clouds">
+<h2>Clouds<a class="headerlink" href="#clouds" title="Permalink to this headline"></a></h2>
+<p>As defined in the AMS Glossary of Meteorology, a cloud is a visible aggregate of minute water droplets and/or ice particles in the atmosphere above the earth’s surface<sup>1</sup>. Clouds form in the atmosphere as a result of the condensation of water vapor present in the atmosphere. At any point in time, about 70% of the earth is covered by one or other type of cloud. Clouds are important modifiers of the energy balance of the earth<sup>2</sup>, and are also tracers of the large-scale atmospheric circulation. How clouds modify the very atmospheric circulation in which they are embedded is less well understood, and is an area of active research.
+Clouds exhibit both spatial and temporal variability. Tropical regions of ascending motion are dominated by high-level clouds while subtropical regions of descending motion are dominated by low-level clouds<sup>3</sup>. Figure 1 shows the observed climatological spatial pattern of cloud amount and cloud top pressure from the International Satellite Cloud Climatology Project (ISCCP) dataset. Cloud cover is most substantial over tropical convective regions as well as mid-latitude storm tracks (Figure 1, left panel). Deserts regions generally have fewer clouds, and oceans have more cloud cover than nearby land regions.  The annual mean climatology of cloud top pressure (Figure 1, right panel) reveals that thick clouds with high tops are observed over convergence zones in the deep tropics and storm tracks over the midlatitudes, while subtropical regions of descent are characterized by low-level clouds.</p>
+<figure class="align-default" id="id1">
+<a class="reference internal image-reference" href="../_images/CloudAmount_CloudTop.png"><img alt="map to buried treasure" src="../_images/CloudAmount_CloudTop.png" style="width: 650.25px; height: 261.0px;" /></a>
+<figcaption>
+<p><span class="caption-text">Figure 1 Annual climatology of cloud amount (%, left panel) and cloud top pressure (mb, right panel) using ISCCP-D2 data (1983-2009).</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="circulation-controls-of-clouds">
+<h2>Circulation controls of clouds<a class="headerlink" href="#circulation-controls-of-clouds" title="Permalink to this headline"></a></h2>
+<p>The large-scale circulation influences clouds profoundly, so much so that clouds may be considered tracers of the atmospheric circulation. Over longer time scales, the distribution of clouds is modulated by the internal variability of climate, i.e. clouds fluctuate with changes in large-scale atmospheric dynamic and thermodynamic states.</p>
+<ol class="arabic simple">
+<li><p>Mid-tropospheric vertical velocity is the fundamental factor that controls the clouds in the atmosphere. High clouds dominate the ascent regions of the tropical deep convective belt as well as regions of slant-wise convection at the midlatitude storm tracks. On the other hand, low clouds form in descending regions of subtropical anticyclones and cold-air sectors of midlatitude storms/fronts<sup>3</sup>.</p></li>
+<li><p>Another important factor that controls clouds is static stability: increase in lower tropospheric stability is associated with increased low clouds, and decrease in upper tropospheric stability with increase in number of high clouds<sup>4</sup>.</p></li>
+<li><p>Colder SSTs and cold air advection also control the distribution of low-level clouds<sup>5,6</sup>.</p></li>
+</ol>
+</section>
+<section id="cloud-effects-on-circulation">
+<h2>Cloud effects on circulation<a class="headerlink" href="#cloud-effects-on-circulation" title="Permalink to this headline"></a></h2>
+<p>Clouds alter the radiation budget at the surface as well at top of the atmosphere (TOA) through scattering, absorption, and emission of radiation. The impact of clouds on circulation is mediated through cloud radiative effects (CRE). CRE quantifies the effect of clouds on radiation and is calculated as the difference between all-sky and clear-sky radiative fluxes<sup>2</sup>.</p>
+<p>Clouds reflect a significant amount of incoming solar radiation, which increases the planetary albedo and cools the planet.  This effect is known as the shortwave CRE (CRES). The top-of-atmosphere (TOA) and surface CRES is most pronounced over the midlatitude storm tracks, over subtropical oceanic regions where low clouds dominate, and at the Inter-Tropical Convergence Zone (ITCZ) of the deep tropics (Figure 2, left column).</p>
+<p>Clouds also absorb and emit longwave radiation. Clouds absorb the longwave radiation emitted by the earth and emit it to space at lower temperatures from the cloud top, which warms the planet in a manner similar to the greenhouse effect. The longwave CRE (CREL) depends on cloud altitude. Deep, high-level clouds cause the greatest TOA CREL in the deep tropics, and low-level clouds cause the greatest surface CREL in the subtropics (Figure 2, middle column). Globally clouds exert the net cooling effect at TOA and the surface (Figure 2, right column). The global net cloud radiative forcing is about 21 W m-2, about four times the magnitude of the forcing due to doubling atmospheric CO<sub>2</sub><sup>2</sup>.</p>
+<p>CREs, and fluctuations therein, may either cool or warm the atmosphere causing, changes in the atmospheric stability, meridional temperature gradients, and wind shear.  These, in turn, modify the large-scale dynamical circulation<sup>7-10</sup>.</p>
+<figure class="align-default" id="id2">
+<a class="reference internal image-reference" href="../_images/CRE_Climatologies_Obs.png"><img alt="map to buried treasure" src="../_images/CRE_Climatologies_Obs.png" style="width: 867.0px; height: 325.0px;" /></a>
+<figcaption>
+<p><span class="caption-text">Figure 2 Climatology of TOA (first row) and Surface (second row) CRE calculated using CERES-EBAF4.1 data. The numbers at top of each plot show the global mean value.</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="coupling-between-clouds-and-the-circulation">
+<h2>Coupling between clouds and the circulation<a class="headerlink" href="#coupling-between-clouds-and-the-circulation" title="Permalink to this headline"></a></h2>
+<p>The large-scale circulation drives the formation and distribution of clouds, and clouds affect the large-scale circulation through CREs. This cloud - large-scale circulation coupling (Figure 3) is a less understood part of the climate system, and is an area of ongoing research in the climate science community.</p>
+<figure class="align-default" id="id3">
+<a class="reference internal image-reference" href="../_images/CloudFeedbacks.png"><img alt="map to buried treasure" src="../_images/CloudFeedbacks.png" style="width: 581.1px; height: 317.85px;" /></a>
+<figcaption>
+<p><span class="caption-text">Figure 3 Schematic representing cloud circulation coupling.</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>A multitude of planetary-scale atmospheric circulation changes is anticipated with the increase in greenhouse gas concentrations in the atmosphere<sup>11-16</sup>. These circulation changes will determine the regional distribution of climate change impacts, including regional precipitation change. However, climate model projections of the circulation response to increasing atmospheric greenhouse gas involve large uncertainties at the regional level. The fundamental challenge of climate science involves reducing this uncertainty, a substantial fraction of which is due to cloud feedbacks and the climate response to this feedback. The poor agreement of models in simulating cloud feedbacks likely stems from an incomplete understanding of how clouds and the large-scale circulation interact.</p>
+</section>
+<section id="cmip6-cloud-and-circulation-biases">
+<h2>CMIP6 cloud and circulation biases<a class="headerlink" href="#cmip6-cloud-and-circulation-biases" title="Permalink to this headline"></a></h2>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline"></a></h2>
+<ol class="arabic simple">
+<li><p>“Cloud - Glossary of Meteorology.” Accessed March 31, 2022. <a class="reference external" href="https://glossary.ametsoc.org/wiki/Cloud">https://glossary.ametsoc.org/wiki/Cloud</a> .</p></li>
+<li><p>Ramanathan, VLRD, R. D. Cess, E. F. Harrison, P. Minnis, B. R. Barkstrom, E. Ahmad, and D. Hartmann. “Cloud-Radiative Forcing and Climate: Results from the Earth Radiation Budget Experiment.” Science 243, no. 4887 (1989): 57–63.</p></li>
+<li><p>Tselioudis, George, William Rossow, Yuanchong Zhang, and Dimitra Konsta. “Global Weather States and Their Properties from Passive and Active Satellite Cloud Retrievals.” Journal of Climate 26, no. 19 (2013): 7734–46.</p></li>
+<li><p>Li, Ying, David WJ Thompson, Graeme L. Stephens, and Sandrine Bony. “A Global Survey of the Instantaneous Linkages between Cloud Vertical Structure and Large-Scale Climate.” Journal of Geophysical Research: Atmospheres 119, no. 7 (2014): 3770–92.</p></li>
+<li><p>Norris, Joel R., and Sam F. Iacobellis. “North Pacific Cloud Feedbacks Inferred from Synoptic-Scale Dynamic and Thermodynamic Relationships.” Journal of Climate 18, no. 22 (2005): 4862–78.</p></li>
+<li><p>Myers, Timothy A., and Joel R. Norris. “On the Relationships between Subtropical Clouds and Meteorology in Observations and CMIP3 and CMIP5 Models.” Journal of Climate 28, no. 8 (April 15, 2015): 2945–67. <a class="reference external" href="https://doi.org/10.1175/JCLI-D-14-00475.1">https://doi.org/10.1175/JCLI-D-14-00475.1</a> .</p></li>
+<li><p>Bony, Sandrine, Bjorn Stevens, Dargan MW Frierson, Christian Jakob, Masa Kageyama, Robert Pincus, Theodore G. Shepherd, Steven C. Sherwood, A. Pier Siebesma, and Adam H. Sobel. “Clouds, Circulation and Climate Sensitivity.” Nature Geoscience 8, no. 4 (2015): 261–68.</p></li>
+<li><p>Voigt, Aiko, Nicole Albern, Paulo Ceppi, Kevin Grise, Ying Li, and Brian Medeiros. “Clouds, Radiation, and Atmospheric Circulation in the Present-Day Climate and under Climate Change.” Wiley Interdisciplinary Reviews: Climate Change 12, no. 2 (2021): e694.</p></li>
+<li><p>Albern, Nicole, Aiko Voigt, and Joaquim G. Pinto. “Cloud-Radiative Impact on the Regional Responses of the Midlatitude Jet Streams and Storm Tracks to Global Warming.” Journal of Advances in Modeling Earth Systems 11, no. 7 (2019): 1940–58. <a class="reference external" href="https://doi.org/10.1029/2018MS001592">https://doi.org/10.1029/2018MS001592</a>.</p></li>
+<li><p>Su, Hui, Jonathan H. Jiang, J. David Neelin, T. Janice Shen, Chengxing Zhai, Qing Yue, Zhien Wang, et al. “Tightening of Tropical Ascent and High Clouds Key to Precipitation Change in a Warmer Climate.” Nature Communications 8, no. 1 (June 7, 2017): 15771. <a class="reference external" href="https://doi.org/10.1038/ncomms15771">https://doi.org/10.1038/ncomms15771</a> .</p></li>
+<li><p>Huang, Ping, Shang-Ping Xie, Kaiming Hu, Gang Huang, and Ronghui Huang. “Patterns of the Seasonal Response of Tropical Rainfall to Global Warming.” Nature Geoscience 6, no. 5 (2013): 357–61.</p></li>
+<li><p>Lu, Jian, Gabriel A. Vecchi, and Thomas Reichler. “Expansion of the Hadley Cell under Global Warming.” Geophysical Research Letters 34, no. 6 (2007).</p></li>
+<li><p>Barnes, Elizabeth A., and Lorenzo Polvani. “Response of the Midlatitude Jets, and of Their Variability, to Increased Greenhouse Gases in the CMIP5 Models.” Journal of Climate 26, no. 18 (2013): 7117–35.</p></li>
+<li><p>Grise, Kevin M., and Sean M. Davis. “Hadley Cell Expansion in CMIP6 Models.” Atmospheric Chemistry and Physics 20, no. 9 (2020): 5249–68.</p></li>
+<li><p>Xia, Yan, Yongyun Hu, and Jiping Liu. “Comparison of Trends in the Hadley Circulation between CMIP6 and CMIP5.” Science Bulletin 65, no. 19 (2020): 1667–74.</p></li>
+<li><p>Jin, Chunhan, Bin Wang, and Jian Liu. “Future Changes and Controlling Factors of the Eight Regional Monsoons Projected by CMIP6 Models.” Journal of Climate 33, no. 21 (2020): 9307–26.</p></li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Climate dynamics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fdtheorem.html" class="btn btn-neutral float-right" title="Fluctuation Dissipation Theorem" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Ramea.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
