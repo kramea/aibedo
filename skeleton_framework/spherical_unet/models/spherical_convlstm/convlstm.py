@@ -5,7 +5,7 @@ import os
 from spherical_unet.layers.chebyshev import SphericalChebConv
 from spherical_unet.models.spherical_unet.utils import SphericalChebBN, SphericalChebBNPool
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class ConvLSTMCell(nn.Module):
 
@@ -48,13 +48,13 @@ class ConvLSTMCell(nn.Module):
 
     def forward(self, input_tensor, cur_state):
         #print("chev device", self.conv.chebconv.weight.device)
-        # device = self.conv.chebconv.weight.device #SOO: remove comments
-        #input_tensor = input_tensor.to(device) #SOO: remove comments
+        device = self.conv.chebconv.weight.device #SOO: remove comments
+        #device = input_tensor.device
+        input_tensor = input_tensor.to(device) #SOO: remove comments
         h_cur, c_cur = cur_state
         #print("input device", device) 
-        #h_cur = h_cur.to(device)
-        #c_cur = c_cur.to(device)
-        #print("1", input_tensor.size()) # 1 torch.Size([10, 3, 2562])
+        h_cur = h_cur.to(device)
+        c_cur = c_cur.to(device)
         input_tensor.size() #I don't know why this is reqired. But if I don't do it, I get Nan
         combined = torch.cat([input_tensor, h_cur], dim=1)  # concatenate along channel axis
         #print("2", combined.size()) #2 torch.Size([10, 67, 2562])
@@ -87,8 +87,8 @@ class ConvLSTMCell(nn.Module):
 
     def init_hidden(self, batch_size, image_size):
         N = image_size
-        return (torch.zeros(batch_size, self.hidden_dim, N),#, device=self.conv.chebconv.weight.device),
-                torch.zeros(batch_size, self.hidden_dim, N))#, device=self.conv.chebconv.weight.device))
+        return (torch.zeros(batch_size, self.hidden_dim, N, device=self.conv.chebconv.weight.device),
+                torch.zeros(batch_size, self.hidden_dim, N, device=self.conv.chebconv.weight.device))
 
 
 class ConvLSTM(nn.Module):
@@ -122,7 +122,7 @@ class ConvLSTM(nn.Module):
         self.batch_first = batch_first
         # We will unroll this over time steps
         self.convLSTMcell = ConvLSTMCell(in_channels, out_channels, kernel_size, lap, bias)
-
+       
     def forward(self, X, hidden_state=None):
         """
 
@@ -142,7 +142,7 @@ class ConvLSTM(nn.Module):
             input_tensor = X.permute(1, 0, 2, 3)
 
         batch_size, seq_len, _, N = X.size() #b,t,c,n
-
+        device = X.device
         # Initialize output
         output = torch.zeros(batch_size, seq_len, self.out_channels, N, device=device)
         # Initialize Hidden State
