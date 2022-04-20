@@ -138,14 +138,8 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
      - crelSurf
      - Surface Cloud radiative effect in longwave
    * - Input
-     - netTOA
-     - Net TOA radiation (all-sky) 
-   * - Input
      - netTOAcs 
      - TOA radiation without clouds (clear-sky)
-   * - Input
-     - netSurf
-     - Net Surface radiation
    * - Input
      - netSurfcs
      - Net Clearsky Surface radiation
@@ -180,7 +174,7 @@ The ESM data are pooled together to form the training and testing datasets for o
 	Figure 1. Box plot of spread of ESM global and time means of selected input, output, and constraint variables divided by their respective multi-model ensemble mean. Ensemble mean values shown in parentheses in the x-labels
 
 .. figure::
-	images/model_var_spatcorr_1.png
+	images/model_var_spatcorr_2.png
 
 	Figure 2. Pearson-R spatial correlations between ESM time average and ESM ensemble mean fields (for data remapped to level 5 Sphere-Icosahedral grid) across the models (rows) and variables (columns), showing the inter-ESM uncertainty in the climatologies of the selected input, output, and constraint variables
 
