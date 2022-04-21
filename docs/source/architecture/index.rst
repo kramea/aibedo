@@ -70,7 +70,7 @@ in the grid that forms the icosahedron.
 *Healpix Grids:* Healpix is a curvilinear partition grid type made up of equal area quadrilaterals. Unlike icosahedral grids, they are manifested as pixels, and the total number of pixels in a Healpix grid is calculated as follows:
 
 .. image::
-	images/healpix.png
+	images/healpixeq.png
 
 Here P is the number of pixels in the Healpix grid, and S is the grid sub-division or resolution param-
 eter. Healpix is constructed in such a way that the areas of each pixel for a given sub-division is equal.
