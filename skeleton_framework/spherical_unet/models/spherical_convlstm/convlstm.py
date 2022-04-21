@@ -6,7 +6,7 @@ from spherical_unet.layers.chebyshev import SphericalChebConv
 from spherical_unet.models.spherical_unet.utils import SphericalChebBN, SphericalChebBNPool
 
 #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-device = 'cpu'
+#device = 'cpu'
 #referred: https://github.com/KimUyen/ConvLSTM-Pytorch/blob/master/convlstm.py
 #https://discuss.pytorch.org/t/dynamic-parameter-declaration-in-forward-function/427/3
 
@@ -49,18 +49,22 @@ class ConvLSTMCell(nn.Module):
         self.register_parameter('W_ci', None)
         self.register_parameter('W_cf', None)
         self.register_parameter('W_co', None)
-    def reset_weight(self, size):
-        self.W_ci = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1])))
-        self.W_co = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1])))
-        self.W_cf = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1])))
-    def forward(self, input_tensor, cur_state):
-        if self.W_ci is None:
-            self.reset_weight((self.hidden_dim, len(self.lap)))
+        
+    def reset_weight(self, size, device=''):
+        #self.W_ci = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1], device=device)))
+        #self.W_co = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1], device=device)))
+        #self.W_cf = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1], device=device)))
+        
+        self.W_ci = nn.Parameter(nn.init.normal_(torch.empty(size[0], size[1], device=device)))
+        self.W_co = nn.Parameter(nn.init.normal_(torch.empty(size[0], size[1], device=device)))
+        self.W_cf = nn.Parameter(nn.init.normal_(torch.empty(size[0], size[1], device=device)))
 
-        #print("chev device", self.conv.chebconv.weight.device)
-        device = self.conv.chebconv.weight.device #SOO: remove comments
-        #device = input_tensor.device
-        input_tensor = input_tensor.to(device) #SOO: remove comments
+    def forward(self, input_tensor, cur_state):
+        device = self.conv.chebconv.weight.device
+        if self.W_ci is None:
+            self.reset_weight((self.hidden_dim, len(self.lap)), device=device)
+
+        input_tensor = input_tensor.to(device) 
         h_cur, c_cur = cur_state
         h_cur = h_cur.to(device)
         c_cur = c_cur.to(device)
@@ -70,6 +74,8 @@ class ConvLSTMCell(nn.Module):
         combined_conv = combined_conv.permute((0, 2, 1)) #put back
 
         i_conv, f_conv, C_conv, o_conv = torch.split(combined_conv, self.hidden_dim, dim=1)
+       
+        
         input_gate = torch.sigmoid(i_conv + self.W_ci*c_cur )
         forget_gate = torch.sigmoid(f_conv + self.W_cf*c_cur)
         
