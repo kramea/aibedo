@@ -30,10 +30,79 @@ Sampling Module
 
 Typically, models use climate data in a uniform 2D rectangular gridded pattern. While this may suffice local/regional modeling attributes, they do not capture the physical/geodesy properties of the Earth, particularly as the focus moves away from the equator. For this reason, we developed a geodesy-aware sampling that converts 2D rectangular gridded coordinates to a geodesic grid type. There are several ways a geodesic grid can be manifested. Our method allows the modeler to choose the target gridding type between two such mesh types: (a) Icosahedral, (b) Healpix.
 
-*Icosahedral Grids:* Icosahedral grids consist of a certain number of equiangular triangles to form a convex polygon, called Icosahedron. The triangles are formed by equally spaced grid points to form a sphere. The number of grid points are defined by their **levels**. 
+*Icosahedral Grids:* Icosahedral grids consist of a certain number of equiangular triangles to form a convex polygon, called Icosahedron. The triangles are formed by equally spaced grid points to form a sphere. The number of grid points are defined by their **levels** as shown in the following equation:
+
+.. image::
+	images/icoeq.png
+
+Here, g refers to the grid level we want to generate the mesh for, and N refers to the number of points
+in the grid that forms the icosahedron.
+
+.. image::
+	images/icoshLevels.png
+
+.. list-table:: Table 1. Icosahedral Levels, Vertices and Spatial Resolution
+   :widths: 20 20 20
+   :header-rows: 1
+
+   * - Levels
+     - Vertices
+     - Resolution
+   * - 1
+     - 42
+     - 3520 km
+   * - 2
+     - 162
+     - 1760 km
+   * - 3 
+     - 642 
+     - 880 km
+   * - 4
+     - 2562
+     - 440 km
+   * - 5
+     - 10242
+     - 220 km
+   * - 6
+     - 40962
+     - 110 km
 
 *Healpix Grids:* Healpix is a curvilinear partition grid type made up of equal area quadrilaterals. Unlike icosahedral grids, they are manifested as pixels, and the total number of pixels in a Healpix grid is calculated as follows:
 
+.. image::
+	images/healpix.png
+
+Here P is the number of pixels in the Healpix grid, and S is the grid sub-division or resolution param-
+eter. Healpix is constructed in such a way that the areas of each pixel for a given sub-division is equal.
+
+.. image::
+	images/healpixMesh.png
+
+.. list-table:: Table 2. Healpix Subdivisions, Vertices and Spatial Resolution
+   :widths: 20 20 20
+   :header-rows: 1
+
+   * - Subdivisions
+     - Vertices
+     - Resolution
+   * - 4
+     - 192
+     - 2497 km
+   * - 8
+     - 768
+     - 1248 km
+   * - 16
+     - 3072
+     - 6124 km
+   * - 32
+     - 12288
+     - 312 km
+   * - 64
+     - 49152
+     - 156 km
+   * - 128
+     - 196608
+     - 78 km
 
 Interpolation Module
 ~~~~~~~~~~~~~~~~~~~~
