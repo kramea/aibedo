@@ -68,18 +68,21 @@ class SphericalConvLSTMUnet(nn.Module):
         Returns:
             :obj:`torch.Tensor`: output
         """
-        #print(x.size()) # #A tensor of size B, T, C, N 
+        for i in range(6):
+            print(len(self.laps[i]))
+        print(x.size()) # #A tensor of size B, T, C, N 
 
         d1, d2, d3, n = x.size() 
         ch=d3
-        x,_ = self.convlstm1(x)
-        #print(x[-1].size()) 
-        d1, d2, d3,  n = x[-1].size()
+        print(x.size())
+        x = self.convlstm1(x)
+        print(x.float().size()) 
+        d1, d2, d3,  n = x.size()
         #batch norm#
-        x[-1] =  torch.reshape(x[-1], [-1, d3])
-        x[-1] = self.batchnorm1(x[-1])
+        x =  torch.reshape(x, [-1, d3])
+        x = self.batchnorm1(x)
         ############
-        x = torch.reshape(x[-1], [-1, n, 1])
+        x = torch.reshape(x, [-1, n, 1])
         x = F.relu(x)
         x_enc5 = self.pooling(x)
 
