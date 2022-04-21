@@ -8,10 +8,14 @@ from spherical_unet.models.spherical_unet.utils import SphericalChebBN, Spherica
 #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = 'cpu'
 #referred: https://github.com/KimUyen/ConvLSTM-Pytorch/blob/master/convlstm.py
+#https://discuss.pytorch.org/t/dynamic-parameter-declaration-in-forward-function/427/3
 class HadamardProduct(nn.Module):
     def __init__(self, shape):
         super(HadamardProduct, self).__init__()
         self.weights = nn.Parameter(torch.rand(shape)).to(device)
+        #self.weights = nn.Parameter((torch.Tensor(shape[0], shape[1])).to(device))
+        #nn.Parameter(nn.init.normal_(torch.Tensor(self.hidden_dim, len(self.lap))))
+        #print(self.weights.size)
         
     def forward(self, x):
         return x*self.weights
@@ -53,18 +57,16 @@ class ConvLSTMCell(nn.Module):
 
         # Initialize weights for Hadamard Products
         # found W blow up to nan. added init.normal_ here
-        self.W_ci = HadamardProduct((self.hidden_dim, len(self.lap)))
-        self.W_cf = HadamardProduct((self.hidden_dim, len(self.lap)))
-        self.W_co = HadamardProduct((self.hidden_dim, len(self.lap)))
-        #self.W_ci = nn.Parameter(nn.init.normal_(torch.Tensor(self.hidden_dim, len(self.lap))))
-        #self.W_co = nn.Parameter(nn.init.normal_(torch.Tensor(self.hidden_dim, len(self.lap))))
-        #self.W_cf = nn.Parameter(nn.init.normal_(torch.Tensor(self.hidden_dim, len(self.lap))))
-        #self.W_ci = nn.Parameter(torch.rand(self.hidden_dim, len(self.lap)))
-        #self.W_co = nn.Parameter(torch.rand(self.hidden_dim, len(self.lap)))
-        #self.W_cf = nn.Parameter(torch.rand(self.hidden_dim, len(self.lap)))
-        # or we can do self.W_ci = nn.Parameter(nn.rand(self.hidden_dim, len(self.lap)))
+        self.register_parameter('W_ci', None)
+        self.register_parameter('W_cf', None)
+        self.register_parameter('W_co', None)
+    def reset_weight(self, size):
+        self.W_ci = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1])))
+        self.W_co = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1])))
+        self.W_cf = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1])))
     def forward(self, input_tensor, cur_state):
-
+        if self.W_ci is None:
+            self.reset_weight((self.hidden_dim, len(self.lap)))
 
         #print("chev device", self.conv.chebconv.weight.device)
         device = self.conv.chebconv.weight.device #SOO: remove comments
@@ -91,13 +93,13 @@ class ConvLSTMCell(nn.Module):
 
         i_conv, f_conv, C_conv, o_conv = torch.split(combined_conv, self.hidden_dim, dim=1)
         #print(i_conv.size(), self.W_ci.size(), c_cur.size())
-        input_gate = torch.sigmoid(i_conv + self.W_ci(c_cur) )
-        forget_gate = torch.sigmoid(f_conv + self.W_cf(c_cur) )
+        input_gate = torch.sigmoid(i_conv + self.W_ci*c_cur )
+        forget_gate = torch.sigmoid(f_conv + self.W_cf*c_cur)
         
         # Current Cell output
         C = forget_gate* c_cur + input_gate * torch.tanh(C_conv)
 
-        output_gate = torch.sigmoid(o_conv + self.W_co(C) )
+        output_gate = torch.sigmoid(o_conv + self.W_co*C)
 
         # Current Hidden State
         H = output_gate * torch.tanh(C)
