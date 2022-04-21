@@ -73,38 +73,23 @@ class ConvLSTMCell(nn.Module):
         #device = input_tensor.device
         input_tensor = input_tensor.to(device) #SOO: remove comments
         h_cur, c_cur = cur_state
-        #print("input device", device) 
         h_cur = h_cur.to(device)
         c_cur = c_cur.to(device)
-        #print("1", input_tensor.size()) # 1 torch.Size([10, 3, 2562])
-        input_tensor.size() #I don't know why this is reqired. But if I don't do it, I get Nan
         combined = torch.cat([input_tensor, h_cur], dim=1)  # concatenate along channel axis
-        #print("2", combined.size()) #2 torch.Size([10, 67, 2562])
-        combined.size()
         combined = combined.permute((0, 2, 1))
-        #print("3", combined.size()) #3 torch.Size([10, 2562, 67])
-        combined.size()
         combined_conv = self.conv(combined)
-        #print("4", combined_conv.size()) #4 torch.Size([10, 2562, 256])
-        combined_conv.size()
         combined_conv = combined_conv.permute((0, 2, 1)) #put back
-        combined_conv.size()
-        #print("5", combined_conv.size()) # 5 torch.Size([10, 256, 2562])
 
         i_conv, f_conv, C_conv, o_conv = torch.split(combined_conv, self.hidden_dim, dim=1)
-        #print(i_conv.size(), self.W_ci.size(), c_cur.size())
         input_gate = torch.sigmoid(i_conv + self.W_ci*c_cur )
         forget_gate = torch.sigmoid(f_conv + self.W_cf*c_cur)
         
         # Current Cell output
         C = forget_gate* c_cur + input_gate * torch.tanh(C_conv)
-
         output_gate = torch.sigmoid(o_conv + self.W_co*C)
 
         # Current Hidden State
         H = output_gate * torch.tanh(C)
-        #H = torch.sigmoid(output_gate * torch.tanh(C))
-        #print(H.size(), C.size()) #torch.Size([10, 64, 2562]) torch.Size([10, 64, 2562])
         return H, C
 
 
