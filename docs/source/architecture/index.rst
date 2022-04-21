@@ -84,7 +84,7 @@ eter. Healpix is constructed in such a way that the areas of each pixel for a gi
 
 .. image::
 	images/healpixMesh.png
-  :scale: 50 %
+  :scale: 25 %
 
   Figure 4. Illustration of Healpix meshes for different Subdivisions
 
