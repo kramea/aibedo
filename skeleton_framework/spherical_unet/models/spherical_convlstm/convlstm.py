@@ -5,8 +5,8 @@ import os
 from spherical_unet.layers.chebyshev import SphericalChebConv
 from spherical_unet.models.spherical_unet.utils import SphericalChebBN, SphericalChebBNPool
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = 'cpu'
 class ConvLSTMCell(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, kernel_size, lap, bias):
@@ -54,7 +54,7 @@ class ConvLSTMCell(nn.Module):
         #print("input device", device) 
         #h_cur = h_cur.to(device)
         #c_cur = c_cur.to(device)
-        #print("1", input_tensor.size()) # 1 torch.Size([10, 3, 2562])
+       # print("1", input_tensor.size()) # 1 torch.Size([10, 3, 2562])
         input_tensor.size() #I don't know why this is reqired. But if I don't do it, I get Nan
         combined = torch.cat([input_tensor, h_cur], dim=1)  # concatenate along channel axis
         #print("2", combined.size()) #2 torch.Size([10, 67, 2562])
