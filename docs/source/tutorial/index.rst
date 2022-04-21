@@ -5,10 +5,11 @@ Code usage and tutorials
 
 This section provides directions on:
 
-#. generating preproecessed datasets
-#. how to use the derived data
-#. methods to train the hybrid model
-#. tools for postprocessing the results
+#. Preprocess ESM model output data
+#. Interpolate 2D-gridded data to Spherical grids
+#. Methods to train the hybrid model
+#. Visualizing the results
+#. Tools for interpreting and postprocessing the results
 
 
 Preprocessing Techniques
