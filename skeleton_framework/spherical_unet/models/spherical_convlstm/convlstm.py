@@ -9,17 +9,6 @@ from spherical_unet.models.spherical_unet.utils import SphericalChebBN, Spherica
 device = 'cpu'
 #referred: https://github.com/KimUyen/ConvLSTM-Pytorch/blob/master/convlstm.py
 #https://discuss.pytorch.org/t/dynamic-parameter-declaration-in-forward-function/427/3
-class HadamardProduct(nn.Module):
-    def __init__(self, shape):
-        super(HadamardProduct, self).__init__()
-        self.weights = nn.Parameter(torch.rand(shape)).to(device)
-        #self.weights = nn.Parameter((torch.Tensor(shape[0], shape[1])).to(device))
-        #nn.Parameter(nn.init.normal_(torch.Tensor(self.hidden_dim, len(self.lap))))
-        #print(self.weights.size)
-        
-    def forward(self, x):
-        return x*self.weights
-
 
 class ConvLSTMCell(nn.Module):
 
