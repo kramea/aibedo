@@ -40,6 +40,7 @@ in the grid that forms the icosahedron.
 
 .. image::
 	images/icoshLevels.png
+  :scale: 50 %
 
 .. list-table:: Table 1. Icosahedral Levels, Vertices and Spatial Resolution
    :widths: 20 20 20
@@ -77,6 +78,7 @@ eter. Healpix is constructed in such a way that the areas of each pixel for a gi
 
 .. image::
 	images/healpixMesh.png
+  :scale: 50 %
 
 .. list-table:: Table 2. Healpix Subdivisions, Vertices and Spatial Resolution
    :widths: 20 20 20
