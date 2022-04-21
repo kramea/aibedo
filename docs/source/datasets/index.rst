@@ -15,6 +15,12 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
    :widths: 20 20 20 20 20
    :header-rows: 1
 
+
+   * - Model
+     - N Historical
+     - N ssp585
+     - Lat spacing (deg)
+     - Lon spacing (deg)
    * - CESM2
      - 1 
      - 0 
