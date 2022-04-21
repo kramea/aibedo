@@ -19,10 +19,14 @@ Our model framework will specifically focus on "Spherical U-net architecture". U
 .. image::
 	u-net.png
 
+  Figure 1. Schematic of U-net Architecture
+
 The model uses special convolutional and pooling operations for representing spherical topology through Direct Neighbor (DiNe) convolution and spherical surface pooling operations. Also, the model takes input in the icosahedral surface for the better representation of the earth surface by resampling from the original 2-dimensional NetCDF grid data. 
 
 .. image::
 	images/sphericalunet.png
+
+  Figure 2. Spherical U-net Graph Convolution
 
 
 Sampling Module
@@ -41,6 +45,8 @@ in the grid that forms the icosahedron.
 .. image::
 	images/icoshLevels.png
   :scale: 50 %
+
+  Figure 3. Illustration of Icosahedral meshes for different levels
 
 .. list-table:: Table 1. Icosahedral Levels, Vertices and Spatial Resolution
    :widths: 20 20 20
@@ -80,6 +86,8 @@ eter. Healpix is constructed in such a way that the areas of each pixel for a gi
 	images/healpixMesh.png
   :scale: 50 %
 
+  Figure 4. Illustration of Healpix meshes for different Subdivisions
+
 .. list-table:: Table 2. Healpix Subdivisions, Vertices and Spatial Resolution
    :widths: 20 20 20
    :header-rows: 1
@@ -114,6 +122,8 @@ We use the PyGSP library in Python to perform the grid transformation. It is com
 .. image::
 	images/interpolated.png
 
+  Figure 5. Spherical sampled and interpolated dataset from 2D-linearly gridded data
+
 Model Library Module
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -131,6 +141,8 @@ We use two distinctive LSTM networks to implement this functionality: one for mo
 
 .. image::
 	images/mutilstm.png
+
+  Figure 5. Multi-timescale LSTM network
 
 PARC team is implementing the temporal model using two training schemes: 
 
