@@ -51,20 +51,25 @@ class ConvLSTMCell(nn.Module):
         self.register_parameter('W_co', None)
         
     def reset_weight(self, size, device=''):
-        #self.W_ci = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1], device=device)))
-        #self.W_co = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1], device=device)))
-        #self.W_cf = nn.Parameter(nn.init.normal_(torch.Tensor(size[0], size[1], device=device)))
+        self.W_ci = nn.Parameter(torch.rand(size[0], size[1], device=device))
+        self.W_co = nn.Parameter(torch.rand(size[0], size[1], device=device))
+        self.W_cf = nn.Parameter(torch.rand(size[0], size[1], device=device))
+
+        #self.W_ci = nn.Parameter(torch.Tensor(size[0], size[1], device=device))
+        #self.W_co = nn.Parameter(torch.Tensor(size[0], size[1], device=device))
+        #self.W_cf = nn.Parameter(torch.Tensor(size[0], size[1], device=device))
         
-        self.W_ci = nn.Parameter(nn.init.normal_(torch.empty(size[0], size[1], device=device)))
-        self.W_co = nn.Parameter(nn.init.normal_(torch.empty(size[0], size[1], device=device)))
-        self.W_cf = nn.Parameter(nn.init.normal_(torch.empty(size[0], size[1], device=device)))
+        #self.W_ci = nn.Parameter(nn.init.normal_(torch.empty(size[0], size[1], device=device)))
+        #self.W_co = nn.Parameter(nn.init.normal_(torch.empty(size[0], size[1], device=device)))
+        #self.W_cf = nn.Parameter(nn.init.normal_(torch.empty(size[0], size[1], device=device)))
 
     def forward(self, input_tensor, cur_state):
         device = self.conv.chebconv.weight.device
         if self.W_ci is None:
             self.reset_weight((self.hidden_dim, len(self.lap)), device=device)
 
-        input_tensor = input_tensor.to(device) 
+        input_tensor = input_tensor.to(device)
+        
         h_cur, c_cur = cur_state
         h_cur = h_cur.to(device)
         c_cur = c_cur.to(device)
