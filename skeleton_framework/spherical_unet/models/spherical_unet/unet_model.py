@@ -101,7 +101,8 @@ class SphericalUNetTemporalLSTM(SphericalUNet):
         device = x.device
         encoders_l0 = []
         for idx in range(self.sequence_length):
-            encoding = self.encoder(x[:, idx, :, :].squeeze(dim=1))
+            #encoding = self.encoder(x[:, idx, :, :].squeeze(dim=1))
+            encoding = self.encoder(x[idx,:,:,:].squeeze(dim=1)) #the index var location is different (Kalai)
             encoders_l0.append(encoding[0].reshape(encoding[0].size(0), 1, -1))
 
         encoders_l0 = torch.cat(encoders_l0, axis=1).to(device)
