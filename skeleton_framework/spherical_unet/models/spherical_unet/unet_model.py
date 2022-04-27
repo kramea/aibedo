@@ -77,7 +77,7 @@ class SphericalUNetTemporalLSTM(SphericalUNet):
             kernel_size (int): chebychev polynomial degree
             ratio (float): Parameter for equiangular sampling
         """
-        super().__init__(pooling_class, N, depth, laplacian_type, kernel_size, ratio)
+        super().__init__(pooling_class, N, depth, laplacian_type, kernel_size, in_channels, out_channels, ratio)
         self.sequence_length = sequence_length
         self.in_channels = in_channels # Additions by Kalai
         self.out_channels = out_channels # Additions by Kalai
