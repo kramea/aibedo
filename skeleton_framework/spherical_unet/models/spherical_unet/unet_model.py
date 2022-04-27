@@ -66,7 +66,6 @@ class SphericalUNetTemporalLSTM(SphericalUNet):
     """Sphericall GCNN Autoencoder with LSTM.
     """
 
-    #def __init__(self, pooling_class, N, depth, laplacian_type, sequence_length, kernel_size, ratio=1):
     def __init__(self, pooling_class, N, depth, laplacian_type, sequence_length, kernel_size, in_channels, out_channels, ratio=1):
         """Initialization.
 
