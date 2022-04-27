@@ -66,7 +66,8 @@ class SphericalUNetTemporalLSTM(SphericalUNet):
     """Sphericall GCNN Autoencoder with LSTM.
     """
 
-    def __init__(self, pooling_class, N, depth, laplacian_type, sequence_length, kernel_size, ratio=1):
+    #def __init__(self, pooling_class, N, depth, laplacian_type, sequence_length, kernel_size, ratio=1):
+    def __init__(self, pooling_class, N, depth, laplacian_type, sequence_length, kernel_size, in_channels, out_channels, ratio=1):
         """Initialization.
 
         Args:
@@ -79,9 +80,15 @@ class SphericalUNetTemporalLSTM(SphericalUNet):
         """
         super().__init__(pooling_class, N, depth, laplacian_type, kernel_size, ratio)
         self.sequence_length = sequence_length
+        self.in_channels = in_channels # Additions by Kalai
+        self.out_channels = out_channels # Additions by Kalai
         n_pixels = self.laps[0].size(0)
         n_features = self.encoder.enc_l0.spherical_cheb.chebconv.in_channels
         self.lstm_l0 = nn.LSTM(input_size=n_pixels * n_features, hidden_size=n_pixels * n_features, batch_first=True)
+
+        ## Additions by Kalai
+        self.encoder = Encoder(self.pooling_class.pooling, self.laps, self.kernel_size, self.in_channels)
+        self.decoder = Decoder(self.pooling_class.unpooling, self.laps, self.kernel_size, self.out_channels)
 
     def forward(self, x):
         """Forward Pass.
