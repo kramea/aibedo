@@ -202,7 +202,7 @@ def main(parser_args):
         os.mkdir(saved_model_path)
 
     torch.save(unet.state_dict(),
-               "./saved_model_lag_" + str(parser_args.time_lag) + "/unet_state_" + str(parser_args.n_epochs) + ".pt")
+               "./saved_model_lag_" + str(parser_args.time_length) + "/unet_state_" + str(parser_args.n_epochs) + ".pt")
 
     # Prediction code
 
@@ -218,9 +218,9 @@ def main(parser_args):
         predictions = np.concatenate((predictions, pred_numpy), axis=0)
         groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
 
-    np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/prediction_" + str(parser_args.n_epochs) + ".npy",
+    np.save("./saved_model_lag_" + str(parser_args.time_length) + "/prediction_" + str(parser_args.n_epochs) + ".npy",
             predictions)
-    np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/groundtruth_" + str(parser_args.n_epochs) + ".npy",
+    np.save("./saved_model_lag_" + str(parser_args.time_length) + "/groundtruth_" + str(parser_args.n_epochs) + ".npy",
             groundtruth)
 
 
