@@ -77,7 +77,7 @@ def get_dataloader(parser_args):
     for i in range(0, len(dataset_in)-time_length):
         intemp = np.concatenate(dataset_in[i:i + time_length, :, :], axis=1)
         new_in_data.append(intemp)
-        new_out_data.append(dataset_out[i+time_length, :, :])
+        new_out_data.append(dataset_out[i+time_length-1, :, :])
 
 
     dataset_in_lstm = np.asarray(new_in_data)
