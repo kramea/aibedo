@@ -65,8 +65,9 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_in = np.concatenate(data_all, axis=2)
 
-    for i in range(time_length, len(g)):
-        t = np.concatenate(dataset_in[i - time_length:i, :, :], axis=1)
+    new_data = []
+    for i in range(0, len(dataset_in)-time_length):
+        t = np.concatenate(dataset_in[i:i + time_length, :, :], axis=1)
         new_data.append(t)
 
     dataset_in_lstm = np.asarray(new_data)
@@ -78,7 +79,7 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
 
-    dataset_out_lstm = dataset_out[time_length:, :, :]
+    dataset_out_lstm = dataset_out[:len(dataset_out)-time_length, :, :]
 
     dataset_in_lstm, dataset_out_lstm = shuffle_data(dataset_in_lstm, dataset_out_lstm)
 
