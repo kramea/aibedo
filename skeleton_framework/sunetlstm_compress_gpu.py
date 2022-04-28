@@ -65,6 +65,12 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_in = np.concatenate(data_all, axis=2)
 
+    for i in range(time_length, len(g)):
+        t = np.concatenate(dataset_in[i - time_length:i, :, :], axis=1)
+        new_data.append(t)
+
+    dataset_in_lstm = np.asarray(new_data)
+
     # Output data
     data_all = []
     for var in parser_args.output_vars:
@@ -72,13 +78,12 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
 
-    dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
+    dataset_out_lstm = dataset_out[time_length:, :, :]
 
-    if parser_args.time_lag > 0:
-        dataset_in = dataset_in[:-parser_args.time_lag]
-        dataset_out = dataset_out[parser_args.time_lag:]
+    dataset_in_lstm, dataset_out_lstm = shuffle_data(dataset_in_lstm, dataset_out_lstm)
 
-    combined_data = np.concatenate((dataset_in, dataset_out), axis=2)
+
+    combined_data = np.concatenate((dataset_in_lstm, dataset_out_lstm), axis=2)
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
