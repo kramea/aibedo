@@ -1,0 +1,24 @@
+IMAGE PARAMS:
+  pooling_class: "icosahedron"
+  depth: 4
+  laplacian_type: "combinatorial"
+  time_lag: 0 #dummy for s-convlstm
+  time_length: 1 #>=1 for s-convlstm
+
+MODEL PARAMS:
+  partition: [0.8,0.1,0.1]
+  batch_size: 4
+  learning_rate: 0.005
+  n_epochs: 10
+  kernel_size: 3
+
+INPUT PARAMS:
+  input_file: "/data/kramea/data_aibedo/compress_level4_input.nc"
+  output_file: "/data/kramea/data_aibedo/compress_level4_output.nc"
+  output_path: "output_sunet"
+  input_vars: [ 'cres_pre', 'crel_Pre', 'netTOAcs_Pre', 'clivi_pre', 'clwvi_pre', 'cresSurf_Pre', 'crelSurf_Pre', 'netSurfcs_Pre', 'lsMask']          
+  output_vars: ['tas_pre', 'psl_pre', 'pr_pre']
+  generation_only: True
+
+EARLY_STOPPING:
+  earlystopping_patience: 30
