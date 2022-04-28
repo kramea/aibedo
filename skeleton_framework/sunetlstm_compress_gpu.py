@@ -6,7 +6,7 @@ import torch
 import torch.optim as optim
 from torchsummary import summary
 from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral, shuffle_data
-from spherical_unet.models.spherical_unet.unet_model import SphericalUNetTemporalLSTM
+# from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
 from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
 from spherical_unet.utils.samplings import icosahedron_nodes_calculator
@@ -27,28 +27,14 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
-def temporal_conversion(data, time):
-    """
-       data: [T, N, C]
-    """
-    print("start temporal conversion of original data shaped as "+str(np.shape(data)))
-    data = np.swapaxes(data, 1, 2)
-    t,_,_ =np.shape(data)
-    temporal_data = []
-    stride = 1
-    for i in range(0, int(t/stride)-time):
-        d1,d2,d3 =np.shape(data[i*stride:i*stride+time])
-        temporal_data.append( np.reshape(data[i*stride:i*stride+time], [1,d1,d2,d3]) )
-    out = np.concatenate(temporal_data, axis=0)
-    return out
-def convlstm_collate(batch):
+
+def sunet_collate(batch):
     batchShape = batch[0].shape
-    varlimit = batchShape[1] - 3 # 3 output variables: tas, psl, pr
-    timelimit = batchShape[0]-1
-     
-    data_in_array = np.array([item[:,0:varlimit, :] for item in batch])
-    data_out_array = np.array([item[timelimit:,varlimit:, :] for item in batch])
-    
+    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
+
+    data_in_array = np.array([item[:, 0:varlimit] for item in batch])
+    data_out_array = np.array([item[:, varlimit:] for item in batch])
+
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
@@ -75,7 +61,7 @@ def get_dataloader(parser_args):
     # Input data
     data_all = []
     for var in parser_args.input_vars:
-        temp_data = np.reshape(np.concatenate(inDS[var].data, axis = 0), [-1, n_pixels, 1])
+        temp_data = np.reshape(np.concatenate(inDS[var].data, axis=0), [-1, n_pixels, 1])
         data_all.append(temp_data)
     dataset_in = np.concatenate(data_all, axis=2)
 
@@ -86,14 +72,11 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
 
-
-    dataset_in = temporal_conversion(dataset_in, time_length)
-    dataset_out = temporal_conversion(dataset_out, time_length)
     dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
 
-    print("Timelength of input: " + str(time_length))
-    print("Shape: (1) Input ", np.shape(dataset_in), "(2) Output ", np.shape(dataset_out))
-
+    if parser_args.time_lag > 0:
+        dataset_in = dataset_in[:-parser_args.time_lag]
+        dataset_out = dataset_out[parser_args.time_lag:]
 
     combined_data = np.concatenate((dataset_in, dataset_out), axis=2)
 
@@ -102,11 +85,11 @@ def get_dataloader(parser_args):
             parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12,
-                                  collate_fn=convlstm_collate)
+                                  collate_fn=sunet_collate)
     dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12,
-                                       collate_fn=convlstm_collate)
+                                       collate_fn=sunet_collate)
     dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12,
-                                 collate_fn=convlstm_collate)
+                                 collate_fn=sunet_collate)
     return dataloader_train, dataloader_validation, dataloader_test
 
 
@@ -125,6 +108,7 @@ def main(parser_args):
 
     criterion = torch.nn.MSELoss()
 
+    print("Dataloader train size", len(dataloader_train.dataset[0].shape))
 
     output_path = parser_args.output_path
 
@@ -133,13 +117,21 @@ def main(parser_args):
 
     os.mkdir(output_path)
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     n_pixels = icosahedron_nodes_calculator(parser_args.depth)
-
-
-    unet = SphericalUNetTemporalLSTM(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, parser_args.time_length,
+    if parser_args.depth > 4:
+        print("Generating 6 layered unet")
+        # for glevel = 5,6 --> use 6-layered unet
+        from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
+        unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,
                              parser_args.kernel_size, len(parser_args.input_vars), len(parser_args.output_vars))
-
+    else:
+        print("Generating 3 layered unet")
+        # for glevel = 1,2,3,4 --> use 3-layered unet (shllow)
+        from spherical_unet.models.spherical_unet_shallow.unet_model import SphericalUNet
+        unet = SphericalUNet(parser_args.pooling_class, n_pixels, 3, parser_args.laplacian_type,
+                             parser_args.kernel_size, len(parser_args.input_vars), len(parser_args.output_vars))
 
     print(unet)
     # unet = unet.to(device)
