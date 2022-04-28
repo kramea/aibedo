@@ -137,7 +137,7 @@ def main(parser_args):
         # for glevel = 1,2,3,4 --> use 3-layered unet (shllow)
         from spherical_unet.models.spherical_unet_shallow.unet_model import SphericalUNet
         unet = SphericalUNet(parser_args.pooling_class, n_pixels, 3, parser_args.laplacian_type,
-                             parser_args.kernel_size, len(parser_args.input_vars), len(parser_args.output_vars))
+                             parser_args.kernel_size, len(parser_args.input_vars)* parser_args.time_length, len(parser_args.output_vars))
 
     print(unet)
     # unet = unet.to(device)
