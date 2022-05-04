@@ -80,6 +80,6 @@ class SphericalConvLSTMAutoEncoder(nn.Module):
 
 
         x = torch.reshape(x, [d1, d2, d3, -1])
-        output = x
+        output = x[:,-1:,:,:]
         
         return output
