@@ -184,6 +184,12 @@ The ESM data are pooled together to form the training and testing datasets for o
 
 	Figure 2. Pearson-R spatial correlations between ESM time average and ESM ensemble mean fields (for data remapped to level 5 Sphere-Icosahedral grid) across the models (rows) and variables (columns), showing the inter-ESM uncertainty in the climatologies of the selected input, output, and constraint variables
 
+Reanalysis
+-----------
+In addition to ESM data, we also employ "reanalysis" datasets as validation datasets. Namely the `Modern-Era Retrospective analysis for Research and Applications, Version 2 (MERRA2) <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ and the `ECMWF Reanalysis version 5 (ERA5) <https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era5>`_.
+These are the outputs from models which ingest large quantities observational data to estimate the historical evolution of the atmosphere, thus providing the best method for assessing the performance of the AiBEDO model.
+
+
 Preprocessing
 --------------
 
