@@ -187,8 +187,8 @@ The ESM data are pooled together to form the training and testing datasets for o
 Reanalysis
 -----------
 In addition to ESM data, we also employ "reanalysis" datasets as validation datasets. Namely the `Modern-Era Retrospective analysis for Research and Applications, Version 2 (MERRA2) <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ and the `ECMWF Reanalysis version 5 (ERA5) <https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era5>`_.
-These are the outputs from models which ingest large quantities observational data to estimate the historical evolution of the atmosphere, thus providing the best method for assessing the performance of the AiBEDO model.
-
+Reanalyses are models which ingest large quantities observational data to estimate the historical evolution of the atmosphere, thus providing an estimate of a wide range of atmospheric variables over the entire globe.
+While these data are exactly the same as observational data, they are the best method of obtaining physically consistent and complete climate data representing the recent past of the Earth's atmosphere.
 
 Preprocessing
 --------------
