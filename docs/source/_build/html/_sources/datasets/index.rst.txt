@@ -1,15 +1,12 @@
 .. _aibedo_datasets:
 
-
 Datasets
 ========
-
 
 Training data
 --------------
 
 Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (ESM) outputs which had sufficient data availability on AWS to calculate the requisite input variables for our analysis (shown in Table 1. For each ESM, there are three sets of data hyper-cubes: (a) input, (b) output, and (c) data for enforcing physics constraints. Based on the initial results from our alpha hybrid model, we revised and increased the list of input variables to achieve better hybrid model performance. The updated list of input, output, and constraint variables is shown in Table 2.
-
 
 .. list-table:: Table 1. Earth System Model datasets for Phase 1 training
    :widths: 20 20 20 20 20
@@ -171,7 +168,6 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
      - heatconv
      - Convergence of vertically integrated heat flux
 
-
 The ESM data are pooled together to form the training and testing datasets for our hybrid model. However, it is important to note there are substantial differences in the climatologies and variability of some of the chosen input variables across models (Figure 1). In particular, global average cloud liquid water content, cloud ice water content, and net top of atmosphere radiation vary more across ESMs than other variables. The former two are the result of differences in cloud parameterizations between ESMs, while the latter is likely due to uncertainties in the overall magnitude of anthropogenic forcing over the historical period. Comparing spatial correlation scores (Figure 2), shows net TOA radiation fields are very similar across models while the spatial pattern of cloud ice and water content varies substantially. Such variations represent the inter-ESM uncertainty in the representation of the climate. However, many of these ESM differences are largely removed during preprocessing described below.
 
 .. figure::
@@ -228,7 +224,7 @@ Unlike the climatic counterpart, this atmospheric budget balances the contributi
 
   \sum_{lat=30N}^{30N} \sum_{lon=180W}^{180E}(LP - R_{TOA} + R_{SFC} + SH + Q)_{lat,lon} \Delta A_{lat, lon} = 0   
 
-where :math:`L` is the latent heat of vaporization (:math:`2.4536 10^6` J/kg), :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the upwelling surface radiation, :math:`R_{TOA}` is the upwelling surface radiation, and :math:`Q` is the convergence of vertically integrated dry static energy (DSE) flux.
+where :math:`L` is the latent heat of vaporization (:math:`2.4536 10^6` J/kg), :math:`P` is the precipitation, :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the upwelling surface radiation, :math:`R_{TOA}` is the upwelling surface radiation, and :math:`Q` is the convergence of vertically integrated dry static energy (DSE) flux.
 Functionally, :math:`R^{TOA}` and :math:`R^{SFC}` can be calculated as the sum of the long wave and shortwave radiation at the top of atmosphere (TOA) and surface (SFC).
 :math:`Q` is computed at each grid cell as
 
@@ -277,6 +273,11 @@ This reference can thus be thought to represent the climatology and variability 
 We select the CMIP6 multi-ESM ensemble average climatology and variability for the denormalization (though we might equally consider using reanalysis data). 
 The average variability is computed as the square root of the average of the interannual variances across the ESMs.
 Note that we must still deal with a seasonal cycle in the climatology. A simple approach is to use a single month or season as the basis for the denormalization. More sophisticated methods of incorporating seasonal information are currently under consideration.
+
+.. figure::
+	images/CMIP6_tas_pr_evap_MMmean.png
+
+	Figure 3. March climatology and interannual variability in the CMIP6 multi-model average.
 
 References
 --------------------

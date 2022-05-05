@@ -355,7 +355,7 @@ This weakens the constraint as there is significant uncertainty within CMIP6 in 
 <p>Unlike the climatic counterpart, this atmospheric budget balances the contributions from upward net radiative heat flux at the TOA and SFC to the heat convergence in the tropics, at the model prediction timescales.</p>
 <div class="math notranslate nohighlight">
 \[\sum_{lat=30N}^{30N} \sum_{lon=180W}^{180E}(LP - R_{TOA} + R_{SFC} + SH + Q)_{lat,lon} \Delta A_{lat, lon} = 0\]</div>
-<p>where <span class="math notranslate nohighlight">\(L\)</span> is the latent heat of vaporization (<span class="math notranslate nohighlight">\(2.4536 10^6\)</span> J/kg), <span class="math notranslate nohighlight">\(SH\)</span> is the sensible heat flux, <span class="math notranslate nohighlight">\(R_{TOA}\)</span> is the upwelling surface radiation, <span class="math notranslate nohighlight">\(R_{TOA}\)</span> is the upwelling surface radiation, and <span class="math notranslate nohighlight">\(Q\)</span> is the convergence of vertically integrated dry static energy (DSE) flux.
+<p>where <span class="math notranslate nohighlight">\(L\)</span> is the latent heat of vaporization (<span class="math notranslate nohighlight">\(2.4536 10^6\)</span> J/kg), <span class="math notranslate nohighlight">\(P\)</span> is the precipitation, <span class="math notranslate nohighlight">\(SH\)</span> is the sensible heat flux, <span class="math notranslate nohighlight">\(R_{TOA}\)</span> is the upwelling surface radiation, <span class="math notranslate nohighlight">\(R_{TOA}\)</span> is the upwelling surface radiation, and <span class="math notranslate nohighlight">\(Q\)</span> is the convergence of vertically integrated dry static energy (DSE) flux.
 Functionally, <span class="math notranslate nohighlight">\(R^{TOA}\)</span> and <span class="math notranslate nohighlight">\(R^{SFC}\)</span> can be calculated as the sum of the long wave and shortwave radiation at the top of atmosphere (TOA) and surface (SFC).
 <span class="math notranslate nohighlight">\(Q\)</span> is computed at each grid cell as</p>
 <div class="math notranslate nohighlight">
@@ -396,6 +396,12 @@ This reference can thus be thought to represent the climatology and variability 
 <p>We select the CMIP6 multi-ESM ensemble average climatology and variability for the denormalization (though we might equally consider using reanalysis data).
 The average variability is computed as the square root of the average of the interannual variances across the ESMs.
 Note that we must still deal with a seasonal cycle in the climatology. A simple approach is to use a single month or season as the basis for the denormalization. More sophisticated methods of incorporating seasonal information are currently under consideration.</p>
+<figure class="align-default" id="id5">
+<img alt="../_images/CMIP6_tas_pr_evap_MMmean.png" src="../_images/CMIP6_tas_pr_evap_MMmean.png" />
+<figcaption>
+<p><span class="caption-text">Figure 3. March climatology and interannual variability in the CMIP6 multi-model average.</span><a class="headerlink" href="#id5" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
 </section>
 </section>
 <section id="references">
