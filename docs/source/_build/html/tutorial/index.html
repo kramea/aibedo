@@ -47,6 +47,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../mcb/index.html">Marine Cloud Brightening</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Code usage and tutorials</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#preprocessing-techniques">Preprocessing Techniques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interpolate-2d-gridded-data-to-spherical-grids">Interpolate 2D-gridded data to Spherical Grids</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../reports/index.html">AIBEDO Reports</a></li>
@@ -80,10 +81,11 @@
 <span id="aibedo-tutorial"></span><h1>Code usage and tutorials<a class="headerlink" href="#code-usage-and-tutorials" title="Permalink to this headline"></a></h1>
 <p>This section provides directions on:</p>
 <ol class="arabic simple">
-<li><p>generating preproecessed datasets</p></li>
-<li><p>how to use the derived data</p></li>
-<li><p>methods to train the hybrid model</p></li>
-<li><p>tools for postprocessing the results</p></li>
+<li><p>Preprocess ESM model output data</p></li>
+<li><p>Interpolate 2D-gridded data to Spherical grids</p></li>
+<li><p>Methods to train the hybrid model</p></li>
+<li><p>Visualizing the results</p></li>
+<li><p>Tools for interpreting and postprocessing the results</p></li>
 </ol>
 <section id="preprocessing-techniques">
 <h2>Preprocessing Techniques<a class="headerlink" href="#preprocessing-techniques" title="Permalink to this headline"></a></h2>
@@ -105,6 +107,65 @@
 </pre></div>
 </div>
 <p>Running this script preprocesses the model data to detrend, deseasonalize and normalize (detailed in Datasets section). We have provided similar high-level scripts for the selected ESM models we are using in our training data.</p>
+</section>
+<section id="interpolate-2d-gridded-data-to-spherical-grids">
+<h2>Interpolate 2D-gridded data to Spherical Grids<a class="headerlink" href="#interpolate-2d-gridded-data-to-spherical-grids" title="Permalink to this headline"></a></h2>
+<p>We use <code class="docutils literal notranslate"><span class="pre">pygsp</span></code> package to interpolate 2D-gridded data into a spherical grid format. This is done in two steps:</p>
+<p><strong>Step 1:</strong> Generate a text file (“skeleton”) with the desired Icosahedral level using our python script (<a class="reference external" href="https://github.com/kramea/aibedo/blob/preprocess_MS3/preprocessing/gen_icosph_gridfile.py">link here</a>). The code block is also shown below:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pygsp</span> <span class="k">as</span> <span class="nn">pg</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1">### Generates a text file with centre points of a icosahedral sphere grid</span>
+<span class="c1">### Formatted to pass as an argument for &#39;cdo remap,GRIDFILE in.nc out.nc&#39;</span>
+
+<span class="k">def</span> <span class="nf">xyz2lonlat</span><span class="p">(</span><span class="n">x</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span><span class="n">y</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span><span class="n">zLfloat</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">6371.0e6</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;From cartesian geocentric coordinates to 2D geographic coordinates.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot; lon: [-180, 180], lat:[-90, 90] &quot;&quot;&quot;</span>
+    <span class="n">latitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">z</span> <span class="o">/</span> <span class="n">radius</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">180</span>
+    <span class="n">longitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">180</span>
+    <span class="k">return</span> <span class="n">longitude</span><span class="p">,</span> <span class="n">latitude</span>
+
+<span class="k">def</span> <span class="nf">gen_icosphere</span><span class="p">(</span><span class="n">level</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span><span class="n">radius</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span> <span class="mf">6371.0e6</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Generates points on a icosphere grid (from Soo Kim)</span>
+<span class="sd">    level (int): iteration level</span>
+<span class="sd">    radius (float): radius of the earth</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1">#(1) generate graph of SphereIcosahedral</span>
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">graphs</span><span class="o">.</span><span class="n">SphereIcosahedral</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">level</span><span class="p">)</span>
+    <span class="c1">#(2) extract lon, lat coordinate</span>
+    <span class="n">vertices</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">coords</span> <span class="c1"># xyz coordinates</span>
+    <span class="c1">#print(&quot;number of vertices for level &quot;+str(level)+&quot; (2**&quot;+str(level)+&quot;)is &quot;+str(graph.n_vertices))</span>
+    <span class="n">lon</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lat</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">radius</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1"># convert cartesian points to spherical lon/lat</span>
+    <span class="k">for</span> <span class="n">tmp_xyz</span> <span class="ow">in</span> <span class="n">vertices</span><span class="p">:</span>
+        <span class="n">tmp_lon</span><span class="p">,</span> <span class="n">tmp_lat</span> <span class="o">=</span> <span class="n">xyz2lonlat</span><span class="p">(</span><span class="n">tmp_xyz</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">tmp_xyz</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">tmp_xyz</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">radius</span><span class="o">=</span><span class="n">radius</span><span class="p">)</span>
+        <span class="n">lon</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp_lon</span><span class="p">)</span>
+        <span class="n">lat</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp_lat</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lon</span><span class="p">,</span> <span class="n">lat</span>
+
+<span class="n">sphlevel</span> <span class="o">=</span> <span class="mi">6</span>
+
+<span class="n">lon</span><span class="p">,</span><span class="n">lat</span> <span class="o">=</span> <span class="n">gen_icosphere</span><span class="p">(</span><span class="n">sphlevel</span><span class="p">,</span><span class="n">radius</span> <span class="o">=</span> <span class="mf">6371.0e6</span><span class="p">)</span>
+
+<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;isosphere_</span><span class="si">{0}</span><span class="s2">.txt&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sphlevel</span><span class="p">),</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span>
+
+<span class="c1"># write grid to file</span>
+<span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;gridtype = unstructured</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;gridsize = </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lon</span><span class="p">)))</span>
+<span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# Longitudes</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;xvals = &quot;</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">lon</span><span class="p">))</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# Latitudes</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;yvals = &quot;</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">lat</span><span class="p">))</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This code block generates a text file that will be used to generate the spherical sample for level 6. To generate a text file for another grid level, please change the <code class="docutils literal notranslate"><span class="pre">sphlevel</span></code> in the code.</p>
+<p><strong>Step 2:</strong> Once the text file is generated in step 1, we use the <code class="docutils literal notranslate"><span class="pre">cdo</span></code> (Climate Data Operator) command line tool to generate the interpolated <code class="docutils literal notranslate"><span class="pre">netCDF</span></code> file. Please see <a class="reference external" href="https://www.isimip.org/protocol/preparing-simulation-files/cdo-help/">here</a> for instructions to download <code class="docutils literal notranslate"><span class="pre">cdo</span></code>.</p>
+<p>The following script is given in command line to generate the interpolated file for model training:</p>
+<p><code class="docutils literal notranslate"><span class="pre">cdo</span> <span class="pre">remapbil,icosphere_6.txt</span> <span class="pre">in.nc</span> <span class="pre">out.nc</span></code></p>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">in.nc</span></code> is the 2D-gridded file from ESM model ensembles or Reanalysis datasets, and <code class="docutils literal notranslate"><span class="pre">out.nc</span></code> is the name of the interpolated file that will be used for model training.</p>
 </section>
 </section>
 

@@ -6,7 +6,7 @@ Datasets
 
 
 Training data
-~~~~~~~~~~~~~~
+--------------
 
 Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (ESM) outputs which had sufficient data availability on AWS to calculate the requisite input variables for our analysis (shown in Table 1. For each ESM, there are three sets of data hyper-cubes: (a) input, (b) output, and (c) data for enforcing physics constraints. Based on the initial results from our alpha hybrid model, we revised and increased the list of input variables to achieve better hybrid model performance. The updated list of input, output, and constraint variables is shown in Table 2.
 
@@ -15,6 +15,12 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
    :widths: 20 20 20 20 20
    :header-rows: 1
 
+
+   * - Model
+     - N Historical
+     - N ssp585
+     - Lat spacing (deg)
+     - Lon spacing (deg)
    * - CESM2
      - 1 
      - 0 
@@ -138,14 +144,8 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
      - crelSurf
      - Surface Cloud radiative effect in longwave
    * - Input
-     - netTOA
-     - Net TOA radiation (all-sky) 
-   * - Input
      - netTOAcs 
      - TOA radiation without clouds (clear-sky)
-   * - Input
-     - netSurf
-     - Net Surface radiation
    * - Input
      - netSurfcs
      - Net Clearsky Surface radiation
@@ -180,12 +180,12 @@ The ESM data are pooled together to form the training and testing datasets for o
 	Figure 1. Box plot of spread of ESM global and time means of selected input, output, and constraint variables divided by their respective multi-model ensemble mean. Ensemble mean values shown in parentheses in the x-labels
 
 .. figure::
-	images/model_var_spatcorr_1.png
+	images/model_var_spatcorr_2.png
 
 	Figure 2. Pearson-R spatial correlations between ESM time average and ESM ensemble mean fields (for data remapped to level 5 Sphere-Icosahedral grid) across the models (rows) and variables (columns), showing the inter-ESM uncertainty in the climatologies of the selected input, output, and constraint variables
 
 Preprocessing
-~~~~~~~~~~~~~
+--------------
 
 Each of the above data hyper-cubes are preprocessed before ingestion into the hybrid model as follows:
 
@@ -194,41 +194,85 @@ Each of the above data hyper-cubes are preprocessed before ingestion into the hy
 #. **Normalized anomalies**: The anomaly at each grid point is calculated relative to a running mean that is computed over a centered 30-year window for that grid point and month. Anomalies are normalized by dividing by the standard deviation of the anomaly over the same 30-year window for that grid point and month.
 #. **Remap data to Sphere-Icosahedral**: Use `Climate Data Operators <https://code.mpimet.mpg.de/projects/cdo/embedded/index.html#x1-6460002.12.1>`_ to bilinearly remap disparate ESM grids to uniform level-6 Sphere-Icosahedral grid.
 
-Data required for Physics Constraints
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Physics Constraints
+--------------------
  
 To strengthen the generalisability of the AiBEDO model, we include "weak" physics-based constraints on the output to penalize unphysical results from the model.
 
-1. **Climate energy budget**: In this constraint, the energy is budgeted, between the heat storage and radiative fluxes at TOA, on longer climate-relevant timescales. 
+Constraint 1. Climate energy budget
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In this constraint, the energy is budgeted, between the heat storage and radiative fluxes at TOA, on longer climate-relevant timescales. 
  
 .. math:: 
   \sum_{t}^{> 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta {R^{TOA}_{lat, lon}} - \lambda_{ECS}T_{lat, lon}\Delta A_{lat, lon}) = 0
 
-where :math:`\Delta R^{TOA}` is heat storage, :math:`\lambda_{ECS}` feedback constant, :math:`T` is surface temperature and :math:`A` is the area of the cell.
+where :math:`\Delta R^{TOA}` is heat storage/top of atmosphere radiative imbalance, :math:`\lambda_{ECS}` feedback constant, :math:`T` is surface temperature and :math:`A` is the area of the cell. 
+For the :math:`\lambda_{ECS}` feedback constant, we use the CESM2 equilibrium feedback computed from a 2xCO\ :sub:`2` simulation.
+The Planck, water vapour, cloud, and albedo feedbacks are provided as seasonally varying zonal averages. 
+We sum all the feedback components together, map across longitude values, and then interpolate to the Sphere-Icosahedral grid.
+Constraint 1 applies over longer time scales than the other constraints thus requires several months of data to compute. 
+Note also that we are applying the feedback parameter :math:`\lambda_{ECS}` from one ESM (CESM2) regardless of the source of the training data. 
+This weakens the constraint as there is significant uncertainty within CMIP6 in the magnitude of the feedback parameter (Zelinka et al., 2020).
 
-2. **Tropical atmospheric energy budget**: Unlike the climatic counterpart, this atmospheric budget balances the contributions from upward net radiative heat flux at the TOA and SFC to the heat convergence in the tropics, at the model prediction timescales.
+Constraint 2. **Tropical atmospheric energy budget**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Unlike the climatic counterpart, this atmospheric budget balances the contributions from upward net radiative heat flux at the TOA and SFC to the heat convergence in the tropics, at the model prediction timescales.
 
 .. math:: 
 
   \sum_{lat=30N}^{30N} \sum_{lon=180W}^{180E}(LP - R_{TOA} + R_{SFC} + SH + Q)_{lat,lon} \Delta A_{lat, lon} = 0   
 
-where :math:`L` is the latent heat of vaporization, :math:`SH` is the sensible heat flux. Functionally, :math:`R^{TOA}` and :math:`R^{SFC}` can be calculated as the sum of the long wave and shortwave radiation at the top of atmosphere (TOA) and surface (SFC).
+where :math:`L` is the latent heat of vaporization (:math:`2.4536 10^6` J/kg), :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the upwelling surface radiation, :math:`R_{TOA}` is the upwelling surface radiation, and :math:`Q` is the convergence of vertically integrated dry static energy (DSE) flux.
+Functionally, :math:`R^{TOA}` and :math:`R^{SFC}` can be calculated as the sum of the long wave and shortwave radiation at the top of atmosphere (TOA) and surface (SFC).
+:math:`Q` is computed at each grid cell as
 
-3. **Global moisture budget**: This simple relationship balances the contributions from precipitation and evaporation, summed over all grid points.
+.. math:: 
+  Q =- -\frac{1}{g}\nabla \cdot \sum_{p=0}^{p_s} (c_p T + g Z) \vec{u} \Delta p
+
+which is the horizontal convergence of heat energy into the grid cell and balances the radiation and heat fluxes into the cell. 
+As we only use monthly mean data, we do not have information about the sub-monthly covariance of the variables used to compute :math:`Q`, thus the balance only holds assuming this sub-monthly covariability (A.K.A. "transient eddy" effects) are negligible. 
+This is approximately true in tropical regions, where mean flow dominates, but does not hold in the subtropics and poleward, where transient eddies play a much larger role.
+Thus, we compute this constraint only in the tropics.
+
+Constraint 3. **Global moisture budget**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This relationship balances the moisture flux in to (evaporation) and out of (precipitation) the atmosphere over the globe at each time step, thus ensuring conservation of moisture in the atmosphere.
 
 .. math:: 
   \sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} = 0
 
 where :math:`P` is the precipitation and :math:`E` is the evaporation.
 
-4. **Non-negative precipitation**: A simple yet relevant constraint is to ensure negative precipitation (:math:`P`) values are set to zero during model training. This will then ensure maximum penalty for the erring grid point when compared to the ground truth data.
+Constraint 4. **Non-negative precipitation**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A simple yet relevant constraint is to ensure negative precipitation (:math:`P`) values are set to zero during model training. This will then ensure maximum penalty for the erring grid point when compared to the ground truth data.
 
 .. math:: 
   P \ge 0, lat \in [90S, 90N], lon \in [180E, 180W]
 
-5. **Global atmospheric mass budget**: Using first principles, surface pressure can be used as a proxy for the atmospheric density, and therefore mass. This simple constraint ensures mass consistency summed over all the grid points for a particular timestep.
+Constraint 5. **Global atmospheric mass budget**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using the hydrostatic balance assumption, surface pressure can be used as a proxy for the mass of the atmosphere. This simple constraint ensures atmospheric mass conservation summed over the globe at each time step.
 
 .. math:: 
   \sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = 0
 
 where :math:`P_s` is the surface pressure.
+
+Denormalizing
+~~~~~~~~~~~~~~~
+As the AiBEDO model deals with normalized variables while the constraint require the variables in their original units (and with physically realistic spatial variations), we must "denormalize" the model output to apply the constraints.
+The training data fed into the model is detrended and deseasonalized, thus filtering out all low frequency information. However, the climatology and variability change as anthropogenic climate change intensifies.
+Furthermore, the data is derived from a range of models with differing mean climatology and interannual variability patterns.
+Thus, passing through the climatology and variability associated with the model and time period of training time step provides additional information about model uncertainty and GHG forced climate change that is undesirable when training in a Fluctuation Dissipation framework.
+As a result, we select a single reference climatology and variability with which to denormalize the model output for calculating constraints.
+This reference can thus be thought to represent the climatology and variability of the AiBEDO model.
+
+We select the CMIP6 multi-ESM ensemble average climatology and variability for the denormalization (though we might equally consider using reanalysis data). 
+The average variability is computed as the square root of the average of the interannual variances across the ESMs.
+Note that we must still deal with a seasonal cycle in the climatology. A simple approach is to use a single month or season as the basis for the denormalization. More sophisticated methods of incorporating seasonal information are currently under consideration.
+
+References
+--------------------
+
+Zelinka, M.D., Myers, T.A., McCoy, D.T., Po‐Chedley, S., Caldwell, P.M., Ceppi, P., Klein, S.A., Taylor, K.E., 2020. Causes of Higher Climate Sensitivity in CMIP6 Models. Geophys. Res. Lett. 47. https://doi.org/10.1029/2019GL085782

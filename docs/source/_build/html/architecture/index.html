@@ -94,20 +94,133 @@
 <section id="spherical-u-net-architecture">
 <h3>Spherical U-Net Architecture<a class="headerlink" href="#spherical-u-net-architecture" title="Permalink to this headline"></a></h3>
 <p>Our model framework will specifically focus on “Spherical U-net architecture”. U-net is a specific form of convolutional neural network (CNN) architecture that consists of pairs of downsampling and upsampling convolutional layers with pooling operations. Unlike regular CNNs, the upsampling feature channels help the model learn the global location and context simultaneously. This technique has been proven extremely useful for biomedical applications and recently has been adopted in the earth sciences. While this is a more effective technique, one of the limitations of U-net architecture when applied to earth sciences is the inability to capture the spherical topology of data. Typically they are resolved by including boundary layer conditions/constraints. In our approach, we adopt a variant of U-net called “spherical U-net” for modeling the spatial component of AIBEDO, which is a <strong>geodesy-aware</strong> architecture and hence accounts for the spherical topology of Earth System data alleviating the need for external architectural constraints.</p>
+<figure class="align-default" id="id1">
 <img alt="../_images/u-net.png" src="../_images/u-net.png" />
+<figcaption>
+<p><span class="caption-text">Figure 1. Schematic of U-net Architecture</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
 <p>The model uses special convolutional and pooling operations for representing spherical topology through Direct Neighbor (DiNe) convolution and spherical surface pooling operations. Also, the model takes input in the icosahedral surface for the better representation of the earth surface by resampling from the original 2-dimensional NetCDF grid data.</p>
+<figure class="align-default" id="id2">
 <img alt="../_images/sphericalunet.png" src="../_images/sphericalunet.png" />
+<figcaption>
+<p><span class="caption-text">Figure 2. Spherical U-net Graph Convolution</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
 </section>
 <section id="sampling-module">
 <h3>Sampling Module<a class="headerlink" href="#sampling-module" title="Permalink to this headline"></a></h3>
 <p>Typically, models use climate data in a uniform 2D rectangular gridded pattern. While this may suffice local/regional modeling attributes, they do not capture the physical/geodesy properties of the Earth, particularly as the focus moves away from the equator. For this reason, we developed a geodesy-aware sampling that converts 2D rectangular gridded coordinates to a geodesic grid type. There are several ways a geodesic grid can be manifested. Our method allows the modeler to choose the target gridding type between two such mesh types: (a) Icosahedral, (b) Healpix.</p>
-<p><em>Icosahedral Grids:</em> Icosahedral grids consist of a certain number of equiangular triangles to form a convex polygon, called Icosahedron. The triangles are formed by equally spaced grid points to form a sphere. The number of grid points are defined by their <strong>levels</strong>.</p>
+<p><em>Icosahedral Grids:</em> Icosahedral grids consist of a certain number of equiangular triangles to form a convex polygon, called Icosahedron. The triangles are formed by equally spaced grid points to form a sphere. The number of grid points are defined by their <strong>levels</strong> as shown in the following equation:</p>
+<img alt="../_images/icoeq.png" src="../_images/icoeq.png" />
+<p>Here, g refers to the grid level we want to generate the mesh for, and N refers to the number of points
+in the grid that forms the icosahedron.</p>
+<figure class="align-default" id="id3">
+<a class="reference internal image-reference" href="../_images/icoshLevels.png"><img alt="../_images/icoshLevels.png" src="../_images/icoshLevels.png" style="width: 475.0px; height: 574.0px;" /></a>
+<figcaption>
+<p><span class="caption-text">Figure 3. Illustration of Icosahedral meshes for different levels</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<table class="colwidths-given docutils align-default" id="id4">
+<caption><span class="caption-text">Table 1. Icosahedral Levels, Vertices and Spatial Resolution</span><a class="headerlink" href="#id4" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Levels</p></th>
+<th class="head"><p>Vertices</p></th>
+<th class="head"><p>Resolution</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>42</p></td>
+<td><p>3520 km</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>162</p></td>
+<td><p>1760 km</p></td>
+</tr>
+<tr class="row-even"><td><p>3</p></td>
+<td><p>642</p></td>
+<td><p>880 km</p></td>
+</tr>
+<tr class="row-odd"><td><p>4</p></td>
+<td><p>2562</p></td>
+<td><p>440 km</p></td>
+</tr>
+<tr class="row-even"><td><p>5</p></td>
+<td><p>10242</p></td>
+<td><p>220 km</p></td>
+</tr>
+<tr class="row-odd"><td><p>6</p></td>
+<td><p>40962</p></td>
+<td><p>110 km</p></td>
+</tr>
+</tbody>
+</table>
 <p><em>Healpix Grids:</em> Healpix is a curvilinear partition grid type made up of equal area quadrilaterals. Unlike icosahedral grids, they are manifested as pixels, and the total number of pixels in a Healpix grid is calculated as follows:</p>
+<img alt="../_images/healpixeq.png" src="../_images/healpixeq.png" />
+<p>Here P is the number of pixels in the Healpix grid, and S is the grid sub-division or resolution param-
+eter. Healpix is constructed in such a way that the areas of each pixel for a given sub-division is equal.</p>
+<figure class="align-default" id="id5">
+<a class="reference internal image-reference" href="../_images/healpixMesh.png"><img alt="../_images/healpixMesh.png" src="../_images/healpixMesh.png" style="width: 366.75px; height: 360.5px;" /></a>
+<figcaption>
+<p><span class="caption-text">Figure 4. Illustration of Healpix meshes for different Subdivisions</span><a class="headerlink" href="#id5" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<table class="colwidths-given docutils align-default" id="id6">
+<caption><span class="caption-text">Table 2. Healpix Subdivisions, Vertices and Spatial Resolution</span><a class="headerlink" href="#id6" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Subdivisions</p></th>
+<th class="head"><p>Vertices</p></th>
+<th class="head"><p>Resolution</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>192</p></td>
+<td><p>2497 km</p></td>
+</tr>
+<tr class="row-odd"><td><p>8</p></td>
+<td><p>768</p></td>
+<td><p>1248 km</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>3072</p></td>
+<td><p>6124 km</p></td>
+</tr>
+<tr class="row-odd"><td><p>32</p></td>
+<td><p>12288</p></td>
+<td><p>312 km</p></td>
+</tr>
+<tr class="row-even"><td><p>64</p></td>
+<td><p>49152</p></td>
+<td><p>156 km</p></td>
+</tr>
+<tr class="row-odd"><td><p>128</p></td>
+<td><p>196608</p></td>
+<td><p>78 km</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="interpolation-module">
 <h3>Interpolation Module<a class="headerlink" href="#interpolation-module" title="Permalink to this headline"></a></h3>
 <p>We use the PyGSP library in Python to perform the grid transformation. It is commonly used for various graph operations to use in signal processing or social network analysis (e.g., Erdos-Reyni network). We first develop a ‘backbone’ structure of a spherical coordinate system (icosahedron, healpix, etc.). The properties of the spherical coordinates, such as levels or sub-divisions, are given as input. At this point, the coordinates are simply graph networks. In the next step, we assign latitude and longitude values to the graph network (x, y) so that they can be manifested in a geographical coordinate system. Finally, we use the raw data from reanalysis or ESM output and perform bilinear interpolation to obtain the final spherically-sampled data.</p>
+<figure class="align-default" id="id7">
 <img alt="../_images/interpolated.png" src="../_images/interpolated.png" />
+<figcaption>
+<p><span class="caption-text">Figure 5. Spherical sampled and interpolated dataset from 2D-linearly gridded data</span><a class="headerlink" href="#id7" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
 </section>
 <section id="model-library-module">
 <h3>Model Library Module<a class="headerlink" href="#model-library-module" title="Permalink to this headline"></a></h3>
@@ -119,8 +232,13 @@
 <p>While the spatial model maps cloud properties with circulation and regional climate variables for a given step, the temporal component aims to predict the output for the next time step for a set of input conditions. Our goal to model temporal component is to initially understand how the circulation, precipitation, and temperature could change over time and subsequently observe if there are any patterns of climate tipping points. The tipping point characterization in our model does not intend to model the dynamics of nonlinear feedback loops in the earth system, but we would look at the large-scale trends over time at the decadal scale first, and then narrow down to any changing trends in seasonal scale to identify “early-onset” of tipping points.</p>
 <section id="multi-timescale-long-short-term-memory-lstm-networks">
 <h3>Multi-timescale Long Short-Term Memory (LSTM) Networks<a class="headerlink" href="#multi-timescale-long-short-term-memory-lstm-networks" title="Permalink to this headline"></a></h3>
-<p>We use two distinctive LSTM networks to implement this functionality: one for modeling long-term climate impacts at the decadal scale (${LSTM}_d$) and another for modeling shorter-term seasonal changes (${LSTM}_s$). We will run the decadal-scale model ${LSTM}_d$ first, where we will make yearly predictions. The hidden states of ${LSTM}_d$ at every year will then be used by ${LSTM}_s$ as initial states to make monthly predictions. Since the two LSTM branches may have different hidden sizes, we will feed the states through a linear state transfer layer. Figure ** shows an illustration of a multi-time scale LSTM network.</p>
+<p>We use two distinctive LSTM networks to implement this functionality: one for modeling long-term climate impacts at the decadal scale LSTMd and another for modeling shorter-term seasonal changes LSTMs. We will run the decadal-scale model ${LSTM}_d$ first, where we will make yearly predictions. The hidden states of LSTMd at every year will then be used by LSTMs as initial states to make monthly predictions. Since the two LSTM branches may have different hidden sizes, we will feed the states through a linear state transfer layer. Figure 5 shows an illustration of a multi-time scale LSTM network.</p>
+<figure class="align-default" id="id8">
 <img alt="../_images/mutilstm.png" src="../_images/mutilstm.png" />
+<figcaption>
+<p><span class="caption-text">Figure 5. Multi-timescale LSTM network</span><a class="headerlink" href="#id8" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
 <p>PARC team is implementing the temporal model using two training schemes:</p>
 <ol class="arabic simple">
 <li><p><em>Teacher forcing strategy</em>: we are designing the both LSTM approaches as feed-forward networks, where the ground truth from a prior time step will be used as input</p></li>
