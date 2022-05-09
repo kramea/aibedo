@@ -333,6 +333,12 @@ While these data are exactly the same as observational data, they are the best m
 <li><p><strong>Normalized anomalies</strong>: The anomaly at each grid point is calculated relative to a running mean that is computed over a centered 30-year window for that grid point and month. Anomalies are normalized by dividing by the standard deviation of the anomaly over the same 30-year window for that grid point and month.</p></li>
 <li><p><strong>Remap data to Sphere-Icosahedral</strong>: Use <a class="reference external" href="https://code.mpimet.mpg.de/projects/cdo/embedded/index.html#x1-6460002.12.1">Climate Data Operators</a> to bilinearly remap disparate ESM grids to uniform level-6 Sphere-Icosahedral grid.</p></li>
 </ol>
+<figure class="align-default" id="id5">
+<img alt="../_images/preprocessing_example.png" src="../_images/preprocessing_example.png" />
+<figcaption>
+<p><span class="caption-text">Figure 3. Example preprocessing for a surface air temperature data point.</span><a class="headerlink" href="#id5" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
 </section>
 <section id="physics-constraints">
 <h2>Physics Constraints<a class="headerlink" href="#physics-constraints" title="Permalink to this headline"></a></h2>
@@ -396,10 +402,10 @@ This reference can thus be thought to represent the climatology and variability 
 <p>We select the CMIP6 multi-ESM ensemble average climatology and variability for the denormalization (though we might equally consider using reanalysis data).
 The average variability is computed as the square root of the average of the interannual variances across the ESMs.
 Note that we must still deal with a seasonal cycle in the climatology. A simple approach is to use a single month or season as the basis for the denormalization. More sophisticated methods of incorporating seasonal information are currently under consideration.</p>
-<figure class="align-default" id="id5">
+<figure class="align-default" id="id6">
 <img alt="../_images/CMIP6_tas_pr_evap_MMmean.png" src="../_images/CMIP6_tas_pr_evap_MMmean.png" />
 <figcaption>
-<p><span class="caption-text">Figure 3. March climatology and interannual variability in the CMIP6 multi-model average.</span><a class="headerlink" href="#id5" title="Permalink to this image"></a></p>
+<p><span class="caption-text">Figure 4. March climatology and interannual variability in the CMIP6 multi-model average.</span><a class="headerlink" href="#id6" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 </section>

@@ -196,6 +196,11 @@ Each of the above data hyper-cubes are preprocessed before ingestion into the hy
 #. **Normalized anomalies**: The anomaly at each grid point is calculated relative to a running mean that is computed over a centered 30-year window for that grid point and month. Anomalies are normalized by dividing by the standard deviation of the anomaly over the same 30-year window for that grid point and month.
 #. **Remap data to Sphere-Icosahedral**: Use `Climate Data Operators <https://code.mpimet.mpg.de/projects/cdo/embedded/index.html#x1-6460002.12.1>`_ to bilinearly remap disparate ESM grids to uniform level-6 Sphere-Icosahedral grid.
 
+.. figure::
+	images/preprocessing_example.png
+
+  Figure 3. Example preprocessing for a surface air temperature data point.
+
 Physics Constraints
 --------------------
  
@@ -277,7 +282,7 @@ Note that we must still deal with a seasonal cycle in the climatology. A simple 
 .. figure::
 	images/CMIP6_tas_pr_evap_MMmean.png
 
-	Figure 3. March climatology and interannual variability in the CMIP6 multi-model average.
+	Figure 4. March climatology and interannual variability in the CMIP6 multi-model average.
 
 References
 --------------------
