@@ -200,7 +200,7 @@ def main(parser_args):
 
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
-    saved_model_path = "./saved_model_lag_" + str(parser_args.time_lag)
+    saved_model_path = "./saved_model_lag_" + str(parser_args.time_length)
     if os.path.isdir(saved_model_path):
         shutil.rmtree(saved_model_path)
         os.mkdir(saved_model_path)
