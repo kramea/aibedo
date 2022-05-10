@@ -98,11 +98,12 @@ The specific science questions to be addressed by these experiments are:
 * Q6. What is the variability of the climate response?
 * Q7. Can one “optimize” the MCB to achieve particular climate goals?
 
-.. sidebar::  Question for Kalai and Hansi:
+..   
+	Question for Kalai and Hansi:
 
-	      do you want a table of experiments?
+	do you want a table of experiments?
 
-	      do you want figure showing shiptracks?
+	do you want figure showing shiptracks?
 
 ------------------
 Stage 2: AIbedo ML Model Perturbations
