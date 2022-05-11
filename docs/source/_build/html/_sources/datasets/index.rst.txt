@@ -185,6 +185,7 @@ Reanalysis
 In addition to ESM data, we also employ "reanalysis" datasets as validation datasets. Namely the `Modern-Era Retrospective analysis for Research and Applications, Version 2 (MERRA2) <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ and the `ECMWF Reanalysis version 5 (ERA5) <https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era5>`_.
 Reanalyses are models which ingest large quantities observational data to estimate the historical evolution of the atmosphere, thus providing an estimate of a wide range of atmospheric variables over the entire globe.
 While these data are exactly the same as observational data, they are the best method of obtaining physically consistent and complete climate data representing the recent past of the Earth's atmosphere.
+MERRA2 includes data from 1980 to 2020 at 0.5 degree resolution and ERA5 includes data from 1979 to 2021 at 0.25 degree resolution.
 
 Preprocessing
 --------------
@@ -208,10 +209,10 @@ To strengthen the generalisability of the AiBEDO model, we include "weak" physic
 
 Constraint 1. Climate energy budget
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In this constraint, the energy is budgeted, between the heat storage and radiative fluxes at TOA, on longer climate-relevant timescales. 
+In this constraint, the energy is budgeted between the heat storage and radiative fluxes at TOA on timescales over which atmospheric energy storage is minimal. This constraint is related to the energy budget used to calculate the transient climate sensitivity (e.g. Bitz et al., 2012).
  
 .. math:: 
-  \sum_{t}^{> 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta {R^{TOA}_{lat, lon}} - \lambda_{ECS}T_{lat, lon}\Delta A_{lat, lon}) = 0
+  \sum_{t}^{> 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta {R^{TOA}_{lat, lon}} - \lambda_{ECS}\Delta T_{lat, lon}\Delta A_{lat, lon}) = 0
 
 where :math:`\Delta R^{TOA}` is heat storage/top of atmosphere radiative imbalance, :math:`\lambda_{ECS}` feedback constant, :math:`T` is surface temperature and :math:`A` is the area of the cell. 
 For the :math:`\lambda_{ECS}` feedback constant, we use the CESM2 equilibrium feedback computed from a 2xCO\ :sub:`2` simulation.
@@ -223,7 +224,7 @@ This weakens the constraint as there is significant uncertainty within CMIP6 in 
 
 Constraint 2. **Tropical atmospheric energy budget**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Unlike the climatic counterpart, this atmospheric budget balances the contributions from upward net radiative heat flux at the TOA and SFC to the heat convergence in the tropics, at the model prediction timescales.
+This atmospheric budget balances the contributions from upward net radiative heat flux at the TOA and SFC to the heat convergence in the tropics (Muller and O'Gorman, 2011)).
 
 .. math:: 
 
@@ -234,7 +235,7 @@ Functionally, :math:`R^{TOA}` and :math:`R^{SFC}` can be calculated as the sum o
 :math:`Q` is computed at each grid cell as
 
 .. math:: 
-  Q =- -\frac{1}{g}\nabla \cdot \sum_{p=0}^{p_s} (c_p T + g Z) \vec{u} \Delta p
+  Q = -\frac{1}{g}\nabla \cdot \sum_{p=0}^{p_s} (c_p T + g Z) \vec{u} \Delta p
 
 which is the horizontal convergence of heat energy into the grid cell and balances the radiation and heat fluxes into the cell. 
 As we only use monthly mean data, we do not have information about the sub-monthly covariance of the variables used to compute :math:`Q`, thus the balance only holds assuming this sub-monthly covariability (A.K.A. "transient eddy" effects) are negligible. 
@@ -286,5 +287,8 @@ Note that we must still deal with a seasonal cycle in the climatology. A simple 
 
 References
 --------------------
+Bitz, C. M., K. M. Shell, P. R. Gent, D. A. Bailey, G. Danabasoglu, K. C. Armour, M. M. Holland, and J. T. Kiehl. “Climate Sensitivity of the Community Climate System Model, Version 4.” Journal of Climate 25, no. 9 (May 2012): 3053–70. https://doi.org/10.1175/JCLI-D-11-00290.1.
 
 Zelinka, M.D., Myers, T.A., McCoy, D.T., Po‐Chedley, S., Caldwell, P.M., Ceppi, P., Klein, S.A., Taylor, K.E., 2020. Causes of Higher Climate Sensitivity in CMIP6 Models. Geophys. Res. Lett. 47. https://doi.org/10.1029/2019GL085782
+
+Muller, C. J., and P. A. O’Gorman. “An Energetic Perspective on the Regional Response of Precipitation to Climate Change.” Nature Climate Change 1, no. 5 (August 2011): 266–71. https://doi.org/10.1038/nclimate1169.
