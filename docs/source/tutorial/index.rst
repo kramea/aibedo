@@ -8,6 +8,7 @@ This section provides directions on:
 #. Preprocess ESM model output data
 #. Interpolate 2D-gridded data to Spherical grids
 #. Spherical U-Net Model
+#. Temporal Spherical U-Net Model
 #. Methods to train the hybrid model
 #. Visualizing the results
 #. Tools for interpreting and postprocessing the results
