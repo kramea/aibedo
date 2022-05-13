@@ -113,7 +113,7 @@ Spherical U-Net Model
 
 Spherical U-Net model is developed using PyTorch package and wrapped in `Lightning <https://www.pytorchlightning.ai/>`_ to create a scalable framework. The preprocessed file in the previous steps can be directly used to train this model. The accompanying model parameters is given in a ``config.yml`` file. Example contents of the yml file is shown below. The ``pooling_class``, ``depth``, and ``laplacian_type`` refer to the grid shape of the data type that we have generated. MODEL PARAMS include the modeling details of the Spherical U-Net model: ``partition`` refers to the train, validation and test sizes; ``batch_size`` refers to the training batch size (larger size requires more GPU memory); ``learning_rate`` is the model learning rate during training; ``n_epochs`` refers to the number of epochs. 
 
-.. code-block:: yaml
+.. code-block:: none
 
 IMAGE PARAMS:
   pooling_class: "icosahedron"
