@@ -133,3 +133,11 @@ Spherical U-Net model is developed using PyTorch package and wrapped in `Lightni
       output_path: "output_sunet"
       input_vars: ['clivi_pre', 'clwvi_pre', 'crelSurf_pre', 'crel_pre', 'cresSurf_pre', 'cres_pre', 'netTOAcs_pre', 'netSurfcs_pre']
       output_vars: ['tas_pre', 'psl_pre', 'pr_pre']
+
+This file is given as command line input while running the Spherical U-Net model. The code for Spherical U-Net model can be found `here <https://github.com/kramea/aibedo/blob/sunet/skeleton_framework/sunet_compress_gpu.py>`_. 
+
+To start model training on CPU mode, give the below command:
+
+``python <sunet_code.py> --config-file <config file>``
+
+To run the same code with GPUs, add the ``--gpu`` flag and provide the actual GPU number(s). For example, to run the code with the GPU 3, provide `--gpu 3`` at the end of the command line input. For running multiple GPUs (e.g. run on 7, 8, 9), add the flag ``--gpu 7 8 9`` in the command line.
