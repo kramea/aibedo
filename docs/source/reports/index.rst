@@ -28,3 +28,10 @@ Milestone 3
 The main objective of this milestone is to identify appropriate assessment metrics for the hybrid model and deliver prepared datasets that can be used for Phase 1 model development. In addition, this report includes updates on hybrid model development, outcomes of the initial model runs, and the methodology plan for upcoming modules.
 
 `Link to milestone 3 report <https://github.com/kramea/aibedo/blob/main/docs/source/reports/Milestone3/AIBEDO_Milestone_3_Report.pdf>`__
+
+Milestone 4
+-----------
+
+The main objective of this milestone is to assess preliminary results and elucidate the model development next steps. 
+
+`Link to milestone 4 report <https://github.com/kramea/aibedo/blob/main/docs/source/reports/Milestone4/AIBEDO_Milestone4_May13_22.pdf>`_
