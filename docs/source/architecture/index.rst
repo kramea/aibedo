@@ -158,7 +158,7 @@ In Phase 1, we are assessing the hybrid model performance on two main metrics: a
 * To assess regional accuracy of the model, we have divided the regions as shown in Figure 6, which consists of the tropics, midlatitudes (northern hemisphere and southern hemisphere), Arctic, and Antarctic zones. In each zone, we will report the error metrics of land and ocean areas separately using a land-sea mask attribute. 
 
 .. figure::
-	images/regionmetrics.png
+	images/region_metrics.png
 
   Figure 6. Region-wise Metrics
       
