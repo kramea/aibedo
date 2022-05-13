@@ -113,23 +113,23 @@ Spherical U-Net Model
 
 Spherical U-Net model is developed using PyTorch package and wrapped in `Lightning <https://www.pytorchlightning.ai/>`_ to create a scalable framework. The preprocessed file in the previous steps can be directly used to train this model. The accompanying model parameters is given in a ``config.yml`` file. Example contents of the yml file is shown below. The ``pooling_class``, ``depth``, and ``laplacian_type`` refer to the grid shape of the data type that we have generated. MODEL PARAMS include the modeling details of the Spherical U-Net model: ``partition`` refers to the train, validation and test sizes; ``batch_size`` refers to the training batch size (larger size requires more GPU memory); ``learning_rate`` is the model learning rate during training; ``n_epochs`` refers to the number of epochs. 
 
-.. code-block:: none
+.. code-block:: yaml
 
-IMAGE PARAMS:
-  pooling_class: "icosahedron"
-  depth: 6
-  laplacian_type: "combinatorial"
+    IMAGE PARAMS:
+      pooling_class: "icosahedron"
+      depth: 6
+      laplacian_type: "combinatorial"
 
-MODEL PARAMS:
-  partition: [0.8,0.1,0.1]
-  batch_size: 10
-  learning_rate: 0.001
-  n_epochs: 5
-  kernel_size: 3
+    MODEL PARAMS:
+      partition: [0.8,0.1,0.1]
+      batch_size: 10
+      learning_rate: 0.001
+      n_epochs: 5
+      kernel_size: 3
 
-INPUT PARAMS:
-  input_file: "/data_aibedo/compress.isosph.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
-  output_file: "/data_aibedo/compress.isosph.CESM2.historical.r1i1p1f1.Output.nc"
-  output_path: "output_sunet"
-  input_vars: ['clivi_pre', 'clwvi_pre', 'crelSurf_pre', 'crel_pre', 'cresSurf_pre', 'cres_pre', 'netTOAcs_pre', 'netSurfcs_pre']
-  output_vars: ['tas_pre', 'psl_pre', 'pr_pre']
+    INPUT PARAMS:
+      input_file: "/data_aibedo/compress.isosph.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
+      output_file: "/data_aibedo/compress.isosph.CESM2.historical.r1i1p1f1.Output.nc"
+      output_path: "output_sunet"
+      input_vars: ['clivi_pre', 'clwvi_pre', 'crelSurf_pre', 'crel_pre', 'cresSurf_pre', 'cres_pre', 'netTOAcs_pre', 'netSurfcs_pre']
+      output_vars: ['tas_pre', 'psl_pre', 'pr_pre']
