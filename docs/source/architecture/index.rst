@@ -165,3 +165,19 @@ In Phase 1, we are assessing the hybrid model performance on two main metrics: a
 * As we start including the physics constraints during model training, we will assess the impact on model performance for each additional physics constraint, as well as a combination of all the constraints. These will be reported for the entire model and the sub-regions.
 * Finally, once the full model is trained and used for inference, we will record the time taken to obtain the output predictions for a given input variable. This will be compared with the time taken to run different Earth System models (CESM, E3SM, etc.)
 
+Preliminary Results
+--------------------
+
+Our initial results of the Spherical U-Net model is shown in Figure 7. We observe that the hybrid model is generally good at capturing the patterns for all three output variables. However, the model output is poor in certain regions (e.g., tropics, due to high variability). 
+
+.. figure::
+	images/prelim_result1.png
+
+  Figure 7. Comparison of Ground Truth and Model Predictions for Air Temperature, Sea Level Pressure and Precipitation
+
+To investigate this further, we plotted the errors split across regions (tropics, midlatitudes, arctic, antarctic, and over land and ocean) in Figure 8. Granular analysis of errors for different zonal regions helps us investigate how to mitigate the model performance issues, specifically, on designing physics constraints that can be incorporated accordingly. 
+
+.. figure::
+	images/prelim_result2.png
+
+  Figure 8. Region-wise plot of errors
