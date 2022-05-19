@@ -252,7 +252,7 @@ This is the energetic constraint on global precipitation. Annual mean global pre
   
   \sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta LP + \Delta SH - \Delta R_{TOA} + \Delta R_{SFC}) = 0
   
- where where :math:`L` is the latent heat of vaporization (:math:`2.4536 10^6` J/kg), :math:`P` is the precipitation, :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the upwelling TOA radiation, :math:`R_{SFC}` is the upwelling surface radiation
+ where :math:`L` is the latent heat of vaporization (:math:`2.4536 10^6` J/kg), :math:`P` is the precipitation, :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the upwelling TOA radiation, :math:`R_{SFC}` is the upwelling surface radiation
 
 
 
