@@ -146,13 +146,13 @@ def main(parser_args):
         data_out = data_out.to(device)
         optimizer.zero_grad()
         outputs = unet(data_in)
-        
+        # function called next to function definition 
         normVal = normVal.to(device)
         data_out_unscaled = torch.zeros_like(data_out)
         outputs_unscaled = torch.zeros_like(outputs)
 
         '''
-        Note: Currently order of output is assumed to tas, pr, psl
+        Note: Currently order of output is assumed to tas, psl, pr
               If that is incorrect, please make edits in the section below or 
               refer to the function at the end.
         '''
@@ -164,18 +164,18 @@ def main(parser_args):
             
             # for ground truth data
 
-            data_out_unscaled[i,0:int(data_out.shape[1])-1, 0] = data_out[i,0:int(data_out.shape[1])-1, 0] * normVal[int(idx),:,1] + normVal[int(idx),:,0]
+            data_out_unscaled[i,0:int(data_out.shape[1])-1, 0] = data_out[i,0:int(data_out.shape[1])-1, 0] * normVal[int(idx),:, 1] + normVal[int(idx),:, 0]
             data_out_unscaled[i,0:int(data_out.shape[1])-1, 1] = data_out[i,0:int(data_out.shape[1])-1, 1] * normVal[int(idx),:, 3] + normVal[int(idx),:, 2]
             data_out_unscaled[i,0:int(data_out.shape[1])-1, 2] = data_out[i,0:int(data_out.shape[1])-1, 2] * normVal[int(idx),:, 5] + normVal[int(idx),:, 4]
     
             # for outputs
-            
-            outputs_unscaled[i,0:int(data_out.shape[1])-1, 0] = outputs[i,0:int(data_out.shape[1])-1, 0] * tas_std[int(idx),:] + tas_mean[int(idx),:]
-            outputs_unscaled[i,0:int(data_out.shape[1])-1, 1] = outputs[i,0:int(data_out.shape[1])-1, 1] * pr_std[int(idx),:] + pr_mean[int(idx),:]
-            outputs_unscaled[i,0:int(data_out.shape[1])-1, 2] = outputs[i,0:int(data_out.shape[1])-1, 2] * psl_std[int(idx),:] + psl_mean[int(idx),:]
+
+            outputs_unscaled[i, :, 0] = outputs[i, :, 0] * normVal[int(idx),:, 1] + normVal[int(idx),:, 0]
+            outputs_unscaled[i, :, 1] = outputs[i, :, 1] * normVal[int(idx),:, 3] + normVal[int(idx),:, 2]
+            outputs_unscaled[i, :, 2] = outputs[i, :, 2] * normVal[int(idx),:, 5] + normVal[int(idx),:, 4]
         
         outputs = precip_pos(outputs_unscaled)
-        gt = data_out[:,0:int(data_out.shape[1])-1, :] # removing the extra dimension of one_hot encoding
+        data_out = data_out[:,0:int(data_out.shape[1])-1, :] # removing the extra dimension of one_hot encoding
         loss = criterion(outputs.float(), data_out)
         optimizer.zero_grad()
         loss.backward()
@@ -244,16 +244,22 @@ def main(parser_args):
     np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
 
 def oneHotEncode3D(field):
-    ## Additional step of concatenating another dimension needed.
-    q = 0
-    j = 0
+    
+    q, j = 0, 0
+    
     for i in range(field.shape[0]):
+        
         if i == 0:
+            
             field[j, -1, :] = i
+        
         else:
             q = i // 12
-            i = i - q*12
+            
+            i = i - q * 12
+            
             j = j + 1
+            
             field[j, -1, :] = i
 
     return field
@@ -262,11 +268,23 @@ def precip_pos(output):
 
     output = output.detach().numpy()
 
-    precip = np.array(output[:, :, -1]) # update index from 0 to the correct number
+    precip = np.array(output[:, :, -1])
 
     precip[precip<0] = 0 # set any negative values to zero
     
     output[:, :, -1] = precip # update original precip value to reflect updated array
+    
+    '''
+    
+    Note: rescaling it back to the data space : (unscaled - mean) / std 
+
+    '''
+
+    for i in range(output.shape[0]):
+        
+        idx = output[i,-1,0]
+
+        output[i, :, 2] = (output[i, :, 2] - normVal[int(idx),:, 4]) / normVal[int(idx),:, 5]
     
     output = output.to(device)
 
@@ -275,24 +293,36 @@ def precip_pos(output):
 '''
 Need to update path!
 '''
+
 foutput_mean = "./data/aibedo_data/ymonmean.1980_2010.isosph.CMIP6.historical.ensmean.Output.nc"
+
 foutput_std = "./data/aibedo_data/ymonstd.1980_2010.isosph.CMIP6.historical.ensmean.Output.nc"
 
 def loadVal(foutput_mean, foutput_std):
+
     dsoutput_mean = xr.open_dataset(foutput_mean)
+    
     dsoutput_std = xr.open_dataset(foutput_std)
     
     tas_mean = np.array(dsoutput_mean.tas_pre)
+    
     pr_mean = np.array(dsoutput_mean.pr_pre)
+    
     psl_mean = np.array(dsoutput_mean.psl_pre)
     
     tas_std = np.array(dsoutput_std.tas_pre)
+    
     pr_std = np.array(dsoutput_std.pr_pre)
+    
     psl_std = np.array(dsoutput_std.psl_pre)
     
-    normVal = np.dstack((tas_mean, tas_std, pr_mean, pr_std, psl_mean, psl_std))
+    normVal = np.dstack((tas_mean, tas_std, psl_mean, psl_std, pr_mean, pr_std))
                         
     return normVal
+
+# Read into memory just once as this value wont change during one single experimentation
+
+normVal = loadVal(foutput_mean, foutput_std)
 
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
