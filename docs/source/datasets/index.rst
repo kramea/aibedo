@@ -222,25 +222,35 @@ Constraint 1 applies over longer time scales than the other constraints thus req
 Note also that we are applying the feedback parameter :math:`\lambda_{ECS}` from one ESM (CESM2) regardless of the source of the training data. 
 This weakens the constraint as there is significant uncertainty within CMIP6 in the magnitude of the feedback parameter (Zelinka et al., 2020).
 
-Constraint 2. **Tropical atmospheric energy budget**
+..
+	Constraint 2. **Tropical atmospheric energy budget**
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	This atmospheric budget balances the contributions from upward net radiative heat flux at the TOA and SFC to the heat convergence in the tropics (Muller and O'Gorman, 2011)).
+
+	.. math:: 
+
+  	\sum_{lat=30N}^{30N} \sum_{lon=180W}^{180E}(LP - R_{TOA} + R_{SFC} + SH + Q)_{lat,lon} \Delta A_{lat, lon} = 0   
+
+	where :math:`L` is the latent heat of vaporization (:math:`2.4536 10^6` J/kg), :math:`P` is the precipitation, :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the upwelling surface radiation, :math:`R_{TOA}` is the upwelling surface radiation, and :math:`Q` is the convergence of vertically integrated dry static energy (DSE) flux.
+	Functionally, :math:`R^{TOA}` and :math:`R^{SFC}` can be calculated as the sum of the long wave and shortwave radiation at the top of atmosphere (TOA) and surface (SFC).
+	:math:`Q` is computed at each grid cell as
+
+	.. math:: 
+  	Q = -\frac{1}{g}\nabla \cdot \sum_{p=0}^{p_s} (c_p T + g Z) \vec{u} \Delta p
+
+	which is the horizontal convergence of heat energy into the grid cell and balances the radiation and heat fluxes into the cell. 
+	As we only use monthly mean data, we do not have information about the sub-monthly covariance of the variables used to compute :math:`Q`, thus the balance only holds assuming this sub-monthly covariability (A.K.A. "transient eddy" effects) are negligible. 
+	This is approximately true in tropical regions, where mean flow dominates, but does not hold in the subtropics and poleward, where transient eddies play a much larger role.
+	Thus, we compute this constraint only in the tropics.
+
+Constraint 2. **Precipitation energy budget**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This atmospheric budget balances the contributions from upward net radiative heat flux at the TOA and SFC to the heat convergence in the tropics (Muller and O'Gorman, 2011)).
+This is the energetic constraint on global precipitation. Annual mean global precipitation changes are constrained by this relationship. Globally averaged annual mean radiative cooling of the atmosphere must be balanced by latent heat flux due to condensation and sensible heat flux from the surface (Allen and Ingram, 2002; Jakob et al., 2019). 
 
 .. math:: 
+  \sum_{t}^{= 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta LP + \Delta SH) = \sum_{t}^{= 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta R_{TOA} + \Delta R_{SFC})
 
-  \sum_{lat=30N}^{30N} \sum_{lon=180W}^{180E}(LP - R_{TOA} + R_{SFC} + SH + Q)_{lat,lon} \Delta A_{lat, lon} = 0   
 
-where :math:`L` is the latent heat of vaporization (:math:`2.4536 10^6` J/kg), :math:`P` is the precipitation, :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the upwelling surface radiation, :math:`R_{TOA}` is the upwelling surface radiation, and :math:`Q` is the convergence of vertically integrated dry static energy (DSE) flux.
-Functionally, :math:`R^{TOA}` and :math:`R^{SFC}` can be calculated as the sum of the long wave and shortwave radiation at the top of atmosphere (TOA) and surface (SFC).
-:math:`Q` is computed at each grid cell as
-
-.. math:: 
-  Q = -\frac{1}{g}\nabla \cdot \sum_{p=0}^{p_s} (c_p T + g Z) \vec{u} \Delta p
-
-which is the horizontal convergence of heat energy into the grid cell and balances the radiation and heat fluxes into the cell. 
-As we only use monthly mean data, we do not have information about the sub-monthly covariance of the variables used to compute :math:`Q`, thus the balance only holds assuming this sub-monthly covariability (A.K.A. "transient eddy" effects) are negligible. 
-This is approximately true in tropical regions, where mean flow dominates, but does not hold in the subtropics and poleward, where transient eddies play a much larger role.
-Thus, we compute this constraint only in the tropics.
 
 Constraint 3. **Global moisture budget**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -287,8 +297,14 @@ Note that we must still deal with a seasonal cycle in the climatology. A simple 
 
 References
 --------------------
-Bitz, C. M., K. M. Shell, P. R. Gent, D. A. Bailey, G. Danabasoglu, K. C. Armour, M. M. Holland, and J. T. Kiehl. “Climate Sensitivity of the Community Climate System Model, Version 4.” Journal of Climate 25, no. 9 (May 2012): 3053–70. https://doi.org/10.1175/JCLI-D-11-00290.1.
+Allen, M. R., & Ingram, W. J. (2002). Constraints on future changes in climate and the hydrologic cycle. Nature, 419(6903), 228-232.
 
-Zelinka, M.D., Myers, T.A., McCoy, D.T., Po‐Chedley, S., Caldwell, P.M., Ceppi, P., Klein, S.A., Taylor, K.E., 2020. Causes of Higher Climate Sensitivity in CMIP6 Models. Geophys. Res. Lett. 47. https://doi.org/10.1029/2019GL085782
+Bitz, C. M., Shell, K. M., Gent, P. R., Bailey, D. A., Danabasoglu, G., Armour, K. C., Holland M. M. & Kiehl, J. T. (2012). Climate sensitivity of the community climate system model, version 4. Journal of Climate, 25(9), 3053-3070.
 
-Muller, C. J., and P. A. O’Gorman. “An Energetic Perspective on the Regional Response of Precipitation to Climate Change.” Nature Climate Change 1, no. 5 (August 2011): 266–71. https://doi.org/10.1038/nclimate1169.
+Jakob, C., Singh, M. S., & Jungandreas, L. (2019). Radiative convective equilibrium and organized convection: An observational perspective. Journal of Geophysical Research: Atmospheres, 124(10), 5418-5430.
+
+Muller, C. J., & O’Gorman, P. A. (2011). An energetic perspective on the regional response of precipitation to climate change. Nature Climate Change, 1(5), 266-271.
+
+Zelinka, M. D., Myers, T. A., McCoy, D. T., Po‐Chedley, S., Caldwell, P. M., Ceppi, P., Klein, S.A. & Taylor, K. E. (2020). Causes of higher climate sensitivity in CMIP6 models. Geophysical Research Letters, 47(1), e2019GL085782.
+
+
