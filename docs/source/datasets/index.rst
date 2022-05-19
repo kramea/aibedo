@@ -248,7 +248,11 @@ Constraint 2. **Precipitation energy budget**
 This is the energetic constraint on global precipitation. Annual mean global precipitation changes are constrained by this relationship. Globally averaged annual mean radiative cooling of the atmosphere must be balanced by latent heat flux due to condensation and sensible heat flux from the surface (Allen and Ingram, 2002; Jakob et al., 2019). 
 
 .. math:: 
-  \sum_{t}^{= 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta LP + \Delta SH) = \sum_{t}^{= 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta R_{TOA} + \Delta R_{SFC})
+  \sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta LP + \Delta SH) = \sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta R_{TOA} - \Delta R_{SFC})
+  
+  \sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta LP + \Delta SH - \Delta R_{TOA} + \Delta R_{SFC}) = 0
+  
+ where where :math:`L` is the latent heat of vaporization (:math:`2.4536 10^6` J/kg), :math:`P` is the precipitation, :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the upwelling TOA radiation, :math:`R_{SFC}` is the upwelling surface radiation
 
 
 
