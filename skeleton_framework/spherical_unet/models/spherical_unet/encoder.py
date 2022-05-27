@@ -69,8 +69,11 @@ class SphericalChebPool(nn.Module):
         Returns:
             :obj:`torch.Tensor`: output [batch x vertices x channels/features]
         """
+        #print("before pool: ", x.size()) #torch.Size([10, 162, 512])
         x = self.pooling(x)
+        #print("after pool: ", x.size()) #after pool:  torch.Size([10, 42, 512])
         x = self.spherical_cheb(x)
+        #print("after spherical_cheb(x)", x.size()) #after spherical_cheb(x) torch.Size([10, 42, 512])
         return x
 
 
@@ -90,6 +93,7 @@ class Encoder(nn.Module):
         self.pooling = pooling
         self.kernel_size = kernel_size
         self.in_channels = in_channels
+    
         self.enc_l5 = SphericalChebBN2(self.in_channels, 32, 64, laps[5], self.kernel_size) #`16-->5`
         self.enc_l4 = SphericalChebBNPool(64, 128, laps[4], self.pooling, self.kernel_size)
         self.enc_l3 = SphericalChebBNPool(128, 256, laps[3], self.pooling, self.kernel_size)
@@ -106,14 +110,24 @@ class Encoder(nn.Module):
         Returns:
             x_enc* :obj: `torch.Tensor`: output [batch x vertices x channels/features]
         """
+        #print("1", x.size())           #1 torch.Size([10, 40962, 8])
         x_enc5 = self.enc_l5(x)
+        #print("2", x_enc5.size())      #2 torch.Size([10, 40962, 64])
         x_enc4 = self.enc_l4(x_enc5)
+        #print("3", x_enc4.size())      #3 torch.Size([10, 10242, 128])
         x_enc3 = self.enc_l3(x_enc4)
+        #print("4", x_enc3.size())      #4 torch.Size([10, 2562, 256])
         x_enc2 = self.enc_l2(x_enc3)
+        #print("5", x_enc2.size())      #5 torch.Size([10, 642, 512])
         x_enc1 = self.enc_l1(x_enc2)
+        #print("6", x_enc1.size())      #6 torch.Size([10, 162, 512])
         x_enc0 = self.enc_l0(x_enc1)
-
+        #print("7", x_enc0.size())      #7 torch.Size([10, 42, 512])
         return x_enc0, x_enc1, x_enc2, x_enc3, x_enc4
+
+
+
+
 
 
 class EncoderTemporalConv(Encoder):
