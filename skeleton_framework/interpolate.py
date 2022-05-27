@@ -89,7 +89,9 @@ def interpolate_SphereIcosahedral(level, input_array,lon_list, lat_list):
         lon.append(tmp_lon)
         lat.append(tmp_lat)
     #(3)bilinear interpolate along with lon, lat order
+
     num_lat, num_lon = np.shape(input_array)
+
     div_lon = float((180.0*2)/float(num_lon))
     div_lat = float((90.0*2)/float(num_lat))
     interpolated_result = []

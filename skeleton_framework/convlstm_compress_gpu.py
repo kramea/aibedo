@@ -11,7 +11,7 @@ from spherical_unet.utils.initialization import init_device
 
 from spherical_unet.models.spherical_convlstm.convlstm import *
 from spherical_unet.models.spherical_convlstm.convlstm_multilayer_ts2 import *
-from spherical_unet.models.spherical_convlstm.convlstm_unet import *
+from spherical_unet.models.spherical_convlstm.convlstm_unet_new import *
 from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
 from spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
 from spherical_unet.layers.chebyshev import SphericalChebConv
@@ -136,8 +136,8 @@ def main(parser_args):
 
     n_pixels = icosahedron_nodes_calculator(parser_args.depth)
 
-    model = SphericalConvLSTMAutoEncoder(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,len(parser_args.input_vars), len(parser_args.output_vars))
-    #model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, len(parser_args.input_vars), len(parser_args.output_vars))
+    #model = SphericalConvLSTMAutoEncoder(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,len(parser_args.input_vars), len(parser_args.output_vars))
+    model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, len(parser_args.input_vars), len(parser_args.output_vars))
     model, device = init_device(parser_args.device, model)
     print("Device", device)
     #model = model.to(device)

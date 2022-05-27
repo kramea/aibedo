@@ -13,7 +13,11 @@ from spherical_unet.models.spherical_convlstm.convlstm_multilayer_ts2 import *
 #from spherical_unet.models.spherical_convlstm.convlstm_autoencoder import SphericalConvLSTMAutoEncoder
 from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
 from spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
-from spherical_unet.layers.chebyshev import SphericalChebConv
+
+
+
+
+
 from spherical_unet.utils.samplings import icosahedron_nodes_calculator
 from argparse import Namespace
 from pathlib import Path
@@ -61,8 +65,8 @@ def main(parser_args):
     print(out_temp_npy_file)
     
 
-    in_channels = len(parser_args.input_vars)
-    out_channels = len(parser_args.output_vars)
+    in_channels = 1 # len(parser_args.input_vars)
+    out_channels = 1 #len(parser_args.output_vars)
 
     if os.path.exists(in_temp_npy_file):
         print("Gridded input .npy file exists")
@@ -100,14 +104,18 @@ def main(parser_args):
         optimizer = optim.Adam(model.parameters(), lr=lr)
         #(2) Load data
         dataset = np.load(in_temp_npy_file)
-        print(np.shape(dataset))
+    
         dataset = normalize(dataset, "in")
         dataset_out = np.load(out_temp_npy_file)
         dataset_out = normalize(dataset_out, "out")
-        
+        #channel = [tas, psl, pr]
+        channel = ii = 1
+        dataset_out = dataset_out[:,:,ii:ii+1]
+        dataset = dataset[:,:,ii:ii+1]
+        print(np.shape(dataset))
 
-        dataset = temporal_conversion(dataset, time_length)
-        dataset_out = temporal_conversion(dataset_out, time_length)
+        dataset = temporal_conversion(dataset[:-1], time_length)
+        dataset_out = temporal_conversion(dataset_out[1:], time_length)
         # shuffle
         dataset, dataset_out = shuffle_data(dataset, dataset_out)
         # collect only last timestep from output

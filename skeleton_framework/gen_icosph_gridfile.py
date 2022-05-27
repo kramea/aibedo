@@ -20,7 +20,7 @@ def gen_icosphere(level,radius = 6371.0e6):
         lon.append(tmp_lon)
         lat.append(tmp_lat)
     return (lon, lat)
-sphlevel = 5
+sphlevel = 6
 f = open("isosphere_{0}.txt".format(sphlevel), "a")
 lon, lat = gen_icosphere(sphlevel,radius = 6371.0e6)
 
