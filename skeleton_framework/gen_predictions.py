@@ -108,7 +108,7 @@ def main(parser_args):
 
 
     #ckpt = torch.load("./saved_model_lag_4/unet_state_4.pt")
-    weights_file = "./saved_model_lag_4/unet_state_1.pt"
+    weights_file = torch.load("./saved_model_lag_4/unet_state_1.pt")
 
     print(weights_file.keys())
 
