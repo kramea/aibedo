@@ -131,7 +131,7 @@ def main(parser_args):
         groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
 
     np.save("pred.npy", predictions)
-    np.save("gt.npy", predictions)
+    np.save("gt.npy", groundtruth)
 
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
