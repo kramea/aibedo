@@ -108,7 +108,7 @@ def main(parser_args):
     ckpt = torch.load("./saved_model_lag_4/unet_state_4.pt")
     weights_file = "./saved_model_lag_4/unet_state_4.pt"
 
-    unet.load_state_dict(ckpt['state_dict'])
+    unet.load_state_dict(ckpt)
     unet.eval()
 
     predictions = np.empty((parser_args.batch_size, n_pixels, len(parser_args.output_vars)))
