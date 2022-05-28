@@ -97,7 +97,7 @@ def get_dataloader(parser_args):
     return dataloader_pred
 
 def main(parser_args):
-    #dataloader_pred = get_dataloader(parser_args)
+    dataloader_pred = get_dataloader(parser_args)
 
 
     n_pixels = icosahedron_nodes_calculator(parser_args.depth)
