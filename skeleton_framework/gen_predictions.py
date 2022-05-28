@@ -114,9 +114,9 @@ def main(parser_args):
 
     weights_file = {key.replace("module.", ""): value for key, value in weights_file.items()}
 
-    print(weights_file.keys())
+    #print(weights_file.keys())
 
-    '''
+
     unet.load_state_dict(torch.load(weights_file))
     unet, device = init_device(parser_args.device, unet)
     unet.eval()
@@ -131,7 +131,7 @@ def main(parser_args):
         groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
 
     np.save("pred.npy", predictions)
-    np.save("gt.npy", predictions) '''
+    np.save("gt.npy", predictions)
 
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
