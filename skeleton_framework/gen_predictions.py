@@ -7,6 +7,7 @@ import torch.optim as optim
 from torchsummary import summary
 from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral, shuffle_data
 # from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
+from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
 from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
 from spherical_unet.utils.samplings import icosahedron_nodes_calculator
@@ -96,7 +97,8 @@ def get_dataloader(parser_args):
     return dataloader_pred
 
 def main(parser_args):
-    from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
+    dataloader_pred = get_dataloader(parser_args)
+
 
     n_pixels = icosahedron_nodes_calculator(parser_args.depth)
 
