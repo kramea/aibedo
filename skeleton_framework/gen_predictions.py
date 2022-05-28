@@ -104,13 +104,7 @@ def main(parser_args):
                              parser_args.kernel_size, len(parser_args.input_vars)*parser_args.time_length, len(parser_args.output_vars))
 
     unet, device = init_device(parser_args.device, unet)
-    lr = parser_args.learning_rate
 
-    val_metrics = {
-        "mse": Loss(criterion)
-    }
-
-    evaluator = create_supervised_evaluator(unet, metrics=val_metrics, device=device)
 
     weights_file = "./saved_model_lag_4/unet_state_4.pt"
 
