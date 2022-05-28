@@ -110,7 +110,7 @@ def main(parser_args):
     #ckpt = torch.load("./saved_model_lag_4/unet_state_4.pt")
     weights_file = "./saved_model_lag_4/unet_state_1.pt"
 
-    print(weights_file['state_dict'])
+    print(weights_file.keys())
 
     #weights_file = {key.replace("module.", ""): value for key, value in weights_file['state_dict'].items()}
 
