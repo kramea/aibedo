@@ -117,7 +117,7 @@ def main(parser_args):
     #print(weights_file.keys())
 
 
-    unet.load_state_dict(torch.load(weights_file))
+    unet.load_state_dict(weights_file)
     unet, device = init_device(parser_args.device, unet)
     unet.eval()
 
