@@ -105,12 +105,13 @@ def main(parser_args):
     unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,
                              parser_args.kernel_size, len(parser_args.input_vars)*parser_args.time_length, len(parser_args.output_vars))
 
-    unet, device = init_device(parser_args.device, unet)
+
 
     #ckpt = torch.load("./saved_model_lag_4/unet_state_4.pt")
     weights_file = "./saved_model_lag_4/unet_state_4.pt"
 
     unet.load_state_dict(torch.load(weights_file))
+    unet, device = init_device(parser_args.device, unet)
     unet.eval()
 
     predictions = np.empty((parser_args.batch_size, n_pixels, len(parser_args.output_vars)))
