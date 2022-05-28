@@ -210,6 +210,8 @@ def main(parser_args):
     torch.save(unet.state_dict(),
                "./saved_model_lag_" + str(parser_args.time_length) + "/unet_state_" + str(parser_args.n_epochs) + ".pt")
 
+    torch.save(unet, "./saved_model_lag_" + str(parser_args.time_length) + "/unet_model_" + str(parser_args.n_epochs) + ".pt")
+
     # Prediction code
 
     # model.load_state_dict(model.state_dict())
