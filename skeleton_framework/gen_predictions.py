@@ -108,7 +108,7 @@ def main(parser_args):
 
     weights_file = "./saved_model_lag_4/unet_state_4.pt"
 
-    unet.load_state_dict(torch.load(weights_file))
+    unet.load_state_dict(torch.load(weights_file['state_dict']))
     unet.eval()
 
     predictions = np.empty((parser_args.batch_size, n_pixels, len(parser_args.output_vars)))
