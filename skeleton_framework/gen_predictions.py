@@ -97,7 +97,7 @@ def get_dataloader(parser_args):
     return dataloader_pred
 
 def main(parser_args):
-    dataloader_pred = get_dataloader(parser_args)
+    #dataloader_pred = get_dataloader(parser_args)
 
 
     n_pixels = icosahedron_nodes_calculator(parser_args.depth)
@@ -108,7 +108,9 @@ def main(parser_args):
 
 
     #ckpt = torch.load("./saved_model_lag_4/unet_state_4.pt")
-    weights_file = "./saved_model_lag_4/unet_state_4.pt"
+    weights_file = "./saved_model_lag_4/unet_state_1.pt"
+
+    print(weights_file)
 
     weights_file = {key.replace("module.", ""): value for key, value in weights_file['state_dict'].items()}
 
