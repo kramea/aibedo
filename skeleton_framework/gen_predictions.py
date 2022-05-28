@@ -112,7 +112,7 @@ def main(parser_args):
 
     print(weights_file)
 
-    weights_file = {key.replace("module.", ""): value for key, value in weights_file['state_dict'].items()}
+    #weights_file = {key.replace("module.", ""): value for key, value in weights_file['state_dict'].items()}
 
 
     unet.load_state_dict(torch.load(weights_file))
