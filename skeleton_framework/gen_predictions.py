@@ -110,7 +110,7 @@ def main(parser_args):
     #ckpt = torch.load("./saved_model_lag_4/unet_state_4.pt")
     weights_file = "./saved_model_lag_4/unet_state_4.pt"
 
-    unet.load_state_dict(torch.load(weights_file), strict=False)
+    unet.load_state_dict(torch.load(weights_file))
     unet, device = init_device(parser_args.device, unet)
     unet.eval()
 
