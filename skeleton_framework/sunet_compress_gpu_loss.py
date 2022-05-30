@@ -31,11 +31,11 @@ def sunet_collate(batch):
 
     batchShape = batch[0].shape
     print("batch shape", batchShape)
-    varlimit = batchShape[1] - 9  # 3 output variables: tas, psl, pr, 3 mean, 3 std
+    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr, 3 mean, 3 std
     
-    data_in_array = np.array([item[:, 0:varlimit] for item in batch]) #includes mean and std
+    data_in_array = np.array([item[:, 0:varlimit-6] for item in batch]) #includes mean and std
     #data_out_array = np.array([item[:, varlimit:] for item in batch])
-    data_out_array = np.array([item[:, varlimit:varlimit+3] for item in batch])
+    data_out_array = np.array([item[:, varlimit:] for item in batch])
     #data_mean_array = np.array([item[:, varlimit+3:varlimit + 6] for item in batch])
     #data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
     
