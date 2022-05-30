@@ -218,7 +218,10 @@ def main(parser_args):
         data_mean = [prdict[k] for k in batch_month]
 
         #print("data mean shape", data_mean.shape)
-        print("data mean values", data_mean)
+        #print("data mean values", data_mean)
+
+        unscaled = data_out[:, :, 2] + data_mean
+        print(unscaled)
 
         #data_in = data_in_initial.cpu().detach().numpy()
         #print("data in", data_in.shape)
