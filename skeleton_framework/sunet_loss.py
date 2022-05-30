@@ -37,15 +37,15 @@ def sunet_collate(batch):
     data_in_array = np.array([item[:, 0:varlimit - 6] for item in batch])  # includes mean and std
     # data_out_array = np.array([item[:, varlimit:] for item in batch])
     data_out_array = np.array([item[:, varlimit:] for item in batch])
-    # data_mean_array = np.array([item[:, varlimit-6:varlimit-3] for item in batch])
+    data_mean_array = np.array([item[:, varlimit-6:varlimit-3] for item in batch])
     # data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
 
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
-    # data_mean = torch.Tensor(data_mean_array)
+    data_mean = torch.Tensor(data_mean_array)
     # data_std = torch.Tensor(data_std_array)
     # return [data_in, data_out, data_mean, data_std]
-    return [data_in, data_out]
+    return [data_in, data_out, data_mean]
 
 
 def get_dataloader(parser_args):
@@ -181,7 +181,7 @@ def main(parser_args):
 
     def trainer(engine, batch):
 
-        data_in_initial, data_out = batch
+        data_in_initial, data_out, _ = batch
         print("input", data_in_initial.shape)
         # print("output", data_out_initial.shape)
         data_in = data_in_initial
@@ -223,7 +223,7 @@ def main(parser_args):
 
     evaluator = create_supervised_evaluator(unet, metrics=val_metrics, device=device)
 
-    # engine_train.add_event_handler(Events.EPOCH_STARTED, lambda x: print("Starting Epoch: {}".format(x.state.epoch)))
+    #engine_train.add_event_handler(Events.EPOCH_STARTED, lambda x: print("Starting Epoch: {}".format(x.state.epoch)))
 
     @engine_train.on(Events.ITERATION_COMPLETED(every=10))
     def log_training_results_iteration(engine):
