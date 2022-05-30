@@ -294,9 +294,9 @@ def precip_pos(output):
 Need to update path!
 '''
 
-foutput_mean = "./data/aibedo_data/ymonmean.1980_2010.isosph.CMIP6.historical.ensmean.Output.nc"
+foutput_mean = "/data-ssd/kramea/data_aibedo/ymonmean.1980_2010.isosph.CMIP6.historical.ensmean.Output.nc"
 
-foutput_std = "./data/aibedo_data/ymonstd.1980_2010.isosph.CMIP6.historical.ensmean.Output.nc"
+foutput_std = "/data-ssd/kramea/data_aibedo/ymonstd.1980_2010.isosph.CMIP6.historical.ensmean.Output.nc"
 
 def loadVal(foutput_mean, foutput_std):
 
