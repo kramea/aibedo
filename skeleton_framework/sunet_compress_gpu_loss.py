@@ -180,6 +180,7 @@ def main(parser_args):
         print("input", data_in_initial.shape)
         #print("output", data_out_initial.shape)
         data_in = data_in_initial[:, :, 0:7]
+        print("input revised", data_in.shape)
         #data_in, data_out, data_mean, data_std = batch
         #data_out = data_out_initial[:, :, 0:3]
         data_mean = data_in_initial[:, :, 7:10]
