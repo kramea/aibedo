@@ -208,7 +208,7 @@ def main(parser_args):
         # data_mean = data_mean.to(device)
         # data_std = data_std.to(device)
         optimizer.zero_grad()
-        print(unet)
+        #print(unet)
         unet.train()
         outputs = unet(data_in)
 
