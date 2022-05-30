@@ -74,7 +74,7 @@ def get_dataloader(parser_args):
         temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1, n_pixels,1])
         data_all.append(temp_data)
 
-    print(data_all[0][0])
+    print(len(data_all[0][0]))
 
     dataset_out = np.concatenate(data_all, axis=2)
 
