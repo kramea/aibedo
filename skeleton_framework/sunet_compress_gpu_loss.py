@@ -75,7 +75,7 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
 
-    print(dataset_out[0].shape)
+    print(dataset_out[0:1980])
 
 
     #print(dataset_out.shape)
