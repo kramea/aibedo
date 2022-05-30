@@ -214,7 +214,7 @@ def main(parser_args):
 
         data_in, data_out = batch
 
-        print(data_in[:,:,7])
+        print(np.unique(data_in[:,:,7]))
         #data_in = data_in_initial.cpu().detach().numpy()
         #print("data in", data_in.shape)
         #print("input", data_in_initial.shape)
