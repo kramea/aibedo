@@ -77,6 +77,7 @@ def get_dataloader(parser_args):
 
     months = np.resize(np.arange(12), 12*len(dataset_out))
     dataset_out_mo = np.expand_dims(dataset_out, axis = 0)
+    print(dataset_out_mo.shape)
     dataset_out_mo = np.append(dataset_out_mo, months, axis = 0)
 
     print(dataset_out_mo.shape)
