@@ -106,11 +106,11 @@ def get_dataloader(parser_args):
 
     dataset_std = np.concatenate(data_all, axis=0)
 
-    dataset_in, dataset_out, dataset_mean, dataset_std = shuffle_data(dataset_in, dataset_out, dataset_mean, dataset_std)
+    #dataset_in, dataset_out, dataset_mean, dataset_std = shuffle_data(dataset_in, dataset_out, dataset_mean, dataset_std)
 
-    if parser_args.time_lag > 0:
+    '''if parser_args.time_lag > 0:
         dataset_in = dataset_in[:-parser_args.time_lag]
-        dataset_out = dataset_out[parser_args.time_lag:]
+        dataset_out = dataset_out[parser_args.time_lag:]'''
 
     combined_data = np.concatenate((dataset_in, dataset_out, dataset_mean, dataset_std), axis=2)
 
