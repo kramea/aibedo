@@ -220,8 +220,11 @@ def main(parser_args):
         #print("data mean shape", data_mean.shape)
         #print("data mean values", data_mean)
 
-        unscaled = data_out[:, :, 2] + torch.Tensor(np.array(data_mean))
-        print(unscaled)
+        print(data_out.shape)
+        print(torch.Tensor(np.array(data_mean)).shape)
+
+        #unscaled = data_out[:, :, 2] + torch.Tensor(np.array(data_mean))
+        #print(unscaled)
 
         #data_in = data_in_initial.cpu().detach().numpy()
         #print("data in", data_in.shape)
