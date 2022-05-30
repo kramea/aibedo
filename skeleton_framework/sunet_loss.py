@@ -186,7 +186,7 @@ def main(parser_args):
             convert_tensor(y, device=device, non_blocking=non_blocking),
         )
 
-    trainer = create_supervised_trainer(unet, optimizer=optimizer, loss=criterion, prepare_batch=custom_prepare_batch)
+    trainer = create_supervised_trainer(unet, optimizer=optimizer, loss_fn=criterion, prepare_batch=custom_prepare_batch)
 
     '''def trainer(engine, batch):
 
