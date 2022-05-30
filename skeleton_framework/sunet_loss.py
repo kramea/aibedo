@@ -191,7 +191,7 @@ def main(parser_args):
     def trainer(engine, batch):
 
         data_in_initial, data_out = batch
-        print("input", data_in_initial.shape)
+        #print("input", data_in_initial.shape)
         # print("output", data_out_initial.shape)
         data_in = data_in_initial
         # print("input revised", data_in.shape)
