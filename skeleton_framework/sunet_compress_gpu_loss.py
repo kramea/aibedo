@@ -77,7 +77,7 @@ def get_dataloader(parser_args):
 
     month_data = []
     for i in range(len(months)):
-        month_data.append(np.reshape(dataset_out[i, :, :]), (months[i], 1, n_pixels, 3))
+        month_data.append(np.reshape(dataset_out[i, :, :], (months[i], 1, n_pixels, 3)))
 
     out = np.concatenate(month_data, axis =0)
 
