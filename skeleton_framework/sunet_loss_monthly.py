@@ -159,7 +159,7 @@ def get_dataloader(parser_args):
                                        collate_fn=sunet_collate)
     dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12,
                                  collate_fn=sunet_collate)
-    return dataloader_train, dataloader_validation, dataloader_test
+    return dataloader_train, dataloader_validation, dataloader_test, prdict
 
 
 def main(parser_args):
@@ -172,7 +172,7 @@ def main(parser_args):
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
 
-    dataloader_train, dataloader_validation, dataloader_test = get_dataloader(parser_args)
+    dataloader_train, dataloader_validation, dataloader_test, prdict = get_dataloader(parser_args)
 
     criterion = torch.nn.MSELoss()
 
@@ -213,8 +213,13 @@ def main(parser_args):
     def trainer(engine, batch):
 
         data_in, data_out = batch
+        batch_month = np.unique(data_in[:, :, 7])
 
-        print(np.unique(data_in[:,:,7]))
+        data_mean = [prdict[k] for k in batch_month]
+
+        print("data mean shape", data_mean.shape)
+        print("data mean values", data_mean)
+
         #data_in = data_in_initial.cpu().detach().numpy()
         #print("data in", data_in.shape)
         #print("input", data_in_initial.shape)
@@ -229,6 +234,7 @@ def main(parser_args):
         data_in = data_in.to(device)
         #data_out = torch.Tensor(data_out)
         data_out = data_out.to(device)
+
         # data_mean = data_mean.to(device)
         # data_std = data_std.to(device)
         optimizer.zero_grad()
