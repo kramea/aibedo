@@ -256,7 +256,7 @@ def main(parser_args):
             f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
 
     pbar = ProgressBar()
-    pbar.attach(trainer, output_transform=lambda x: {"loss": x})
+    pbar.attach(engine_train, output_transform=lambda x: {"loss": x})
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
 
