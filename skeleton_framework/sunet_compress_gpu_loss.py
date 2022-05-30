@@ -174,6 +174,7 @@ def main(parser_args):
     # unet = unet.to(device)
     unet, device = init_device(parser_args.device, unet)
     lr = parser_args.learning_rate
+    loss = torch.nn.MSELoss()
 
     #optimizer = optim.Adam(unet.parameters(), lr=lr)
 
@@ -192,7 +193,7 @@ def main(parser_args):
     trainer = create_supervised_trainer(
         unet,
         optimizer = optim.Adam(unet.parameters(), lr=lr),
-        loss = torch.nn.MSELoss(),
+        loss = loss,
         prepare_batch=prepare_batch_fn,
         device=device,
         output_transform=output_transform_fn
