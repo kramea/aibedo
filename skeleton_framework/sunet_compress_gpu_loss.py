@@ -17,13 +17,15 @@ import time
 from ignite.contrib.handlers.param_scheduler import create_lr_scheduler_with_warmup
 from ignite.contrib.handlers.tensorboard_logger import GradsHistHandler, OptimizerParamsHandler, OutputHandler, \
     TensorboardLogger, WeightsHistHandler
-from ignite.engine import Engine, Events, create_supervised_evaluator
+from ignite.engine import Engine, Events, create_supervised_evaluator, create_supervised_trainer
+from ignite.contrib.handlers.tqdm_logger import ProgressBar
 from ignite.handlers import EarlyStopping, TerminateOnNan
 from ignite.metrics import EpochMetric, Accuracy, Loss
 from sklearn.model_selection import train_test_split
 from torch import nn, optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
+from ignite.utils import convert_tensor
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
@@ -35,15 +37,15 @@ def sunet_collate(batch):
     data_in_array = np.array([item[:, 0:varlimit-6] for item in batch]) #includes mean and std
     #data_out_array = np.array([item[:, varlimit:] for item in batch])
     data_out_array = np.array([item[:, varlimit:] for item in batch])
-    data_mean_array = np.array([item[:, varlimit-6:varlimit-3] for item in batch])
+    #data_mean_array = np.array([item[:, varlimit-6:varlimit-3] for item in batch])
     #data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
     
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
-    data_mean = torch.Tensor(data_mean_array)
+    #data_mean = torch.Tensor(data_mean_array)
     #data_std = torch.Tensor(data_std_array)
     #return [data_in, data_out, data_mean, data_std]
-    return [data_in, data_out, data_mean]
+    return [data_in, data_out]
 
 
 def get_dataloader(parser_args):
@@ -173,9 +175,35 @@ def main(parser_args):
     unet, device = init_device(parser_args.device, unet)
     lr = parser_args.learning_rate
 
-    optimizer = optim.Adam(unet.parameters(), lr=lr)
+    #optimizer = optim.Adam(unet.parameters(), lr=lr)
 
-    def trainer(engine, batch):
+    def prepare_batch_fn:
+        x, y = batch
+        return (
+            convert_tensor(x, device=device, non_blocking=False),
+            convert_tensor(y, device=device, non_blocking=False)
+        )
+
+    def output_transform_fn(x, y, y_pred, loss):
+        # return only the loss is actually the default behavior for
+        # trainer engine, but you can return anything you want
+        return loss.item()
+
+    trainer = create_supervised_trainer(
+        unet,
+        optimizer = optim.Adam(unet.parameters(), lr=lr),
+        loss = torch.nn.MSELoss(),
+        prepare_batch=prepare_batch_fn,
+        device=device,
+        output_transform=output_transform_fn
+    )
+
+    trainer.run(dataloader_train, max_epochs=5)
+
+    pbar = ProgressBar()
+    pbar.attach(trainer, output_transform=lambda x: {"loss": x})
+
+    '''def trainer(engine, batch):
 
         data_in_initial, data_out, _ = batch
         print("input", data_in_initial.shape)
@@ -211,7 +239,7 @@ def main(parser_args):
 
         return loss.item()
 
-    engine_train = Engine(trainer)
+    engine_train = Engine(trainer)'''
 
     val_metrics = {
         "mse": Loss(criterion)
@@ -219,9 +247,9 @@ def main(parser_args):
 
     evaluator = create_supervised_evaluator(unet, metrics=val_metrics, device=device)
 
-    engine_train.add_event_handler(Events.EPOCH_STARTED, lambda x: print("Starting Epoch: {}".format(x.state.epoch)))
+    #engine_train.add_event_handler(Events.EPOCH_STARTED, lambda x: print("Starting Epoch: {}".format(x.state.epoch)))
 
-    @engine_train.on(Events.ITERATION_COMPLETED(every=10))
+    ''''@engine_train.on(Events.ITERATION_COMPLETED(every=10))
     def log_training_results_iteration(engine):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
@@ -243,7 +271,7 @@ def main(parser_args):
         print(
             f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
 
-    engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
+    engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)'''
 
     saved_model_path = "./saved_model_lag_" + str(parser_args.time_lag)
     if os.path.isdir(saved_model_path):
