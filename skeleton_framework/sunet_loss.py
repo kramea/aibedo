@@ -40,12 +40,12 @@ def sunet_collate(batch):
     #data_mean_array = np.array([item[:, varlimit-6:varlimit-3] for item in batch])
     # data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
 
-    #data_in = torch.Tensor(data_in_array)
-    #data_out = torch.Tensor(data_out_array)
+    data_in = torch.Tensor(data_in_array)
+    data_out = torch.Tensor(data_out_array)
     #data_mean = torch.Tensor(data_mean_array)
     # data_std = torch.Tensor(data_std_array)
-    # return [data_in, data_out, data_mean, data_std]
-    return [data_in_array, data_out_array]
+    return [data_in, data_out]
+    #return [data_in_array, data_out_array]
 
 
 
@@ -195,10 +195,10 @@ def main(parser_args):
         # data_out = data_out_initial[:, :, 0:3]
         # data_mean = data_in_initial[:, :, 7:10]
         # data_std = data_in_initial[:, :, 10:]
-        data_in = torch.Tensor(data_in)
-        data_in = data_in.to(device)
-        data_out = torch.Tensor(data_out)
-        data_out = data_out.to(device)
+        #data_in = torch.Tensor(data_in)
+        #data_in = data_in.to(device)
+        #data_out = torch.Tensor(data_out)
+        #data_out = data_out.to(device)
         # data_mean = data_mean.to(device)
         # data_std = data_std.to(device)
         optimizer.zero_grad()
