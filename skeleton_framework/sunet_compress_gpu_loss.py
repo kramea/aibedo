@@ -175,7 +175,7 @@ def main(parser_args):
     optimizer = optim.Adam(unet.parameters(), lr=lr)
 
     def trainer(engine, batch):
-        unet.train()
+
         data_in_initial, data_out = batch
         print("input", data_in_initial.shape)
         #print("output", data_out_initial.shape)
@@ -190,6 +190,7 @@ def main(parser_args):
         data_mean = data_mean.to(device)
         data_std = data_std.to(device)
         optimizer.zero_grad()
+        unet.train()
         outputs = unet(data_in)
         #data_out_unscaled = (data_out * data_std) + data_mean
         #outputs_unscaled = (outputs * data_std) + data_mean
