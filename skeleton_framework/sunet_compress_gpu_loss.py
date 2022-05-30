@@ -31,22 +31,17 @@ def sunet_collate(batch):
 
     batchShape = batch[0].shape
     varlimit = batchShape[1] - (3*3)  # 3 output variables: tas, psl, pr, 3 mean, 3 std
-
-    print("varlimit", varlimit)
     
     data_in_array = np.array([item[:, 0:varlimit] for item in batch])
     data_out_array = np.array([item[:, varlimit:varlimit+3] for item in batch])
     data_mean_array = np.array([item[:, varlimit+3:varlimit + 6] for item in batch])
     data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
-
-    print("data in array", data_in_array.shape)
-    print("data out array", data_out_array.shape)
-    print("data mean", data_mean_array.shape)
-    print("data std", data_std_array.shape)
     
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
-    return [data_in, data_out]
+    data_mean = torch.Tensor(data_mean_array)
+    data_std = torch.Tensor(data_std_array)
+    return [data_in, data_out, data_mean, data_std]
 
 
 def get_dataloader(parser_args):
@@ -89,7 +84,7 @@ def get_dataloader(parser_args):
     #Mean data
 
     data_all = []
-    for var in parser_args.output_vars:
+    for var in parser_args.meanstd_vars:
         temp_data = np.reshape(np.concatenate(meanDS[var].data, axis = 0), [-1, n_pixels,1])
         data_all.append(temp_data)
     dataset_mean_v1 = np.concatenate(data_all, axis=2)
@@ -104,7 +99,7 @@ def get_dataloader(parser_args):
     # Std data
 
     data_all = []
-    for var in parser_args.output_vars:
+    for var in parser_args.meanstd_vars:
         temp_data = np.reshape(np.concatenate(stdDS[var].data, axis = 0), [-1, n_pixels,1])
         data_all.append(temp_data)
     dataset_std_v1 = np.concatenate(data_all, axis=2)
@@ -122,8 +117,6 @@ def get_dataloader(parser_args):
         dataset_out = dataset_out[parser_args.time_lag:]'''
 
     combined_data = np.concatenate((dataset_in, dataset_out, dataset_mean, dataset_std), axis=2)
-
-    print(combined_data.shape)
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
@@ -182,41 +175,24 @@ def main(parser_args):
 
     def trainer(engine, batch):
         unet.train()
-        data_in, data_out = batch
+        data_in, data_out, data_mean, data_std = batch
         data_in = data_in.to(device)
         data_out = data_out.to(device)
+        data_mean = data_mean.to(device)
+        data_std = data_std.to(device)
         optimizer.zero_grad()
         outputs = unet(data_in)
-        # function called next to function definition 
-        normVal = normVal.to(device)
-        data_out_unscaled = torch.zeros_like(data_out)
-        outputs_unscaled = torch.zeros_like(outputs)
+        data_out_unscaled = (data_out * data_std) + data_mean
+        outputs_unscaled = (outputs * data_std) + data_mean
 
-        '''
-        Note: Currently order of output is assumed to tas, psl, pr
-              If that is incorrect, please make edits in the section below or 
-              refer to the function at the end.
-        '''
-        for i in range(data_out.shape[0]):
-            # store month encoding in variable idx. 
-            # use it to access value from mean/std file 
-            # all fields will have same encoding
-            idx = data_out[i,-1,0]
-            
-            # for ground truth data
+        # Precipitation constraint
+        outputs_unscaled[outputs_unscaled[:, :, 2] < 0] = 0
 
-            data_out_unscaled[i,0:int(data_out.shape[1])-1, 0] = data_out[i,0:int(data_out.shape[1])-1, 0] * normVal[int(idx),:, 1] + normVal[int(idx),:, 0]
-            data_out_unscaled[i,0:int(data_out.shape[1])-1, 1] = data_out[i,0:int(data_out.shape[1])-1, 1] * normVal[int(idx),:, 3] + normVal[int(idx),:, 2]
-            data_out_unscaled[i,0:int(data_out.shape[1])-1, 2] = data_out[i,0:int(data_out.shape[1])-1, 2] * normVal[int(idx),:, 5] + normVal[int(idx),:, 4]
-    
-            # for outputs
+        #normalize
+        outputs = (outputs_unscaled - data_mean) / data_std
 
-            outputs_unscaled[i, :, 0] = outputs[i, :, 0] * normVal[int(idx),:, 1] + normVal[int(idx),:, 0]
-            outputs_unscaled[i, :, 1] = outputs[i, :, 1] * normVal[int(idx),:, 3] + normVal[int(idx),:, 2]
-            outputs_unscaled[i, :, 2] = outputs[i, :, 2] * normVal[int(idx),:, 5] + normVal[int(idx),:, 4]
-        
-        outputs = precip_pos(outputs_unscaled)
-        data_out = data_out[:,0:int(data_out.shape[1])-1, :] # removing the extra dimension of one_hot encoding
+        #outputs = precip_pos(outputs_unscaled)
+        #data_out = data_out[:,0:int(data_out.shape[1])-1, :] # removing the extra dimension of one_hot encoding
         loss = criterion(outputs.float(), data_out)
         optimizer.zero_grad()
         loss.backward()

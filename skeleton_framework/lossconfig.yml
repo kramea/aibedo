@@ -20,6 +20,7 @@ INPUT PARAMS:
   std_file: "/data-ssd/kramea/data_aibedo/ymonstd.1980_2010.isosph.CMIP6.historical.ensmean.Output.nc"
   input_vars: [ 'crelSurf_pre', 'crel_pre', 'cresSurf_pre', 'cres_pre', 'netTOAcs_pre', 'lsMask', 'netSurfcs_pre']
   output_vars: ['tas_pre', 'psl_pre', 'pr_pre']
+  meanstd_vars: ['tas', 'psl', 'pr']
   generation_only: True
 
 EARLY_STOPPING:
