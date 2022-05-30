@@ -76,7 +76,7 @@ def get_dataloader(parser_args):
     dataset_out = np.concatenate(data_all, axis=2)
 
     for i in range(len(dataset_out)):
-        print("g", i.shape)
+        print("g", dataset_out[i,:,:].shape)
 
 
 
