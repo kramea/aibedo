@@ -217,9 +217,10 @@ def main(parser_args):
         print(data_in[:,:,7])
         batch_month = [[m[0] for m in np.array(data_in[:,:,7])]]
 
+        print(batch_month)
 
-        data_mean = [prdict[k] for k in batch_month]
-        print(data_mean)
+        #data_mean = [prdict[k] for k in batch_month]
+        #print(data_mean)
 
         #print("data mean shape", data_mean.shape)
         #print("data mean values", data_mean)
