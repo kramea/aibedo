@@ -74,11 +74,11 @@ def get_dataloader(parser_args):
         temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1, n_pixels,1])
         data_all.append(temp_data)
 
-    print(len(data_all[0][0]))
+    print(len(data_all[0][0][0]))
 
     dataset_out = np.concatenate(data_all, axis=2)
 
-    print(dataset_out.shape)
+    #print(dataset_out.shape)
 
     #months = list(np.resize(np.arange(12), 12*165)) #1980/12 = 165
     #dataset_out_mo = np.expand_dims(dataset_out, axis = 0)
@@ -94,7 +94,7 @@ def get_dataloader(parser_args):
 
     dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
 
-    print(dataset_out[:,:,0])
+    #print(dataset_out[:,:,0])
 
 
 
