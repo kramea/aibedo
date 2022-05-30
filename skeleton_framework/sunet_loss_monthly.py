@@ -69,12 +69,25 @@ def get_dataloader(parser_args):
     in_channels = len(parser_args.input_vars)
     out_channels = len(parser_args.output_vars)
 
+
+    # Dictionary of Monthly Precipitation
+
+    month = np.arange(12)
+
+    #Pixel-wise month (assigned to each grid)
+
+    month_pixel_data = np.reshape(np.repeat(month, n_pixels), [-1, n_pixels, 1])
+
     # Input data
     data_all = []
     for var in parser_args.input_vars:
         temp_data = np.reshape(np.concatenate(inDS[var].data, axis=0), [-1, n_pixels, 1])
         data_all.append(temp_data)
+
+    data_all.append(month_pixel_data)
     dataset_in = np.concatenate(data_all, axis=2)
+
+    print("dataset with month", dataset_in.shape)
 
     # Output data
     data_all = []
@@ -84,9 +97,7 @@ def get_dataloader(parser_args):
     dataset_out = np.concatenate(data_all, axis=2)
 
 
-    # Dictionary of Monthly Precipitation
 
-    month = np.arange(12)
     meanPr = meanDS.pr.data
     prdict = {}
     for m, p in zip(month, meanPr):
