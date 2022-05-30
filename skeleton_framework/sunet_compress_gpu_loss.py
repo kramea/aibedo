@@ -35,7 +35,7 @@ def sunet_collate(batch):
     
     data_in_array = np.array([item[:, 0:varlimit] for item in batch]) #includes mean and std
     #data_out_array = np.array([item[:, varlimit:] for item in batch])
-    data_out_array = np.array([item[:, varlimit:] for item in batch])
+    data_out_array = np.array([item[:, varlimit:varlimit+3] for item in batch])
     #data_mean_array = np.array([item[:, varlimit+3:varlimit + 6] for item in batch])
     #data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
     
