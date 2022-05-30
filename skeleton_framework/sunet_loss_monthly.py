@@ -215,7 +215,7 @@ def main(parser_args):
         data_in, data_out = batch
         #batch_month = np.unique(data_in[:, :, 7])
         print(data_in[:,:,7])
-        batch_month = [[m[0] for m in data_in[:,:,7]]]
+        batch_month = [[m[0] for m in np.array(data_in[:,:,7])]]
 
 
         data_mean = [prdict[k] for k in batch_month]
