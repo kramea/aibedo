@@ -177,7 +177,7 @@ def main(parser_args):
 
     #optimizer = optim.Adam(unet.parameters(), lr=lr)
 
-    def prepare_batch_fn:
+    def prepare_batch_fn(batch):
         x, y = batch
         return (
             convert_tensor(x, device=device, non_blocking=False),
