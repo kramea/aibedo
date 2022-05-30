@@ -110,7 +110,7 @@ def get_dataloader(parser_args):
     for m, p in zip(month, meanPr):
         prdict[m] = p
 
-    print(prdict)
+    #print(prdict)
 
     '''# Mean data
 
@@ -213,6 +213,8 @@ def main(parser_args):
     def trainer(engine, batch):
 
         data_in, data_out = batch
+
+        print(data_in[:,:,8])
         #data_in = data_in_initial.cpu().detach().numpy()
         #print("data in", data_in.shape)
         #print("input", data_in_initial.shape)
