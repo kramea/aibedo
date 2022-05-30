@@ -86,17 +86,11 @@ def get_dataloader(parser_args):
     dataset_mean_v1 = np.concatenate(data_all, axis=2)
 
     data_all = []
-    test_temp = int(len(dataset_out)/len(dataset_mean_v1))
-    print("this should be 165", test_temp)
     for c in range(int(len(dataset_out)/len(dataset_mean_v1))):
         data_all.append(dataset_mean_v1)
 
     dataset_mean = np.concatenate(data_all, axis=0)
-
-
     print(dataset_mean.shape)
-    print(dataset_mean[0])
-    print(dataset_mean[12])
 
     # Std data
 
@@ -104,10 +98,16 @@ def get_dataloader(parser_args):
     for var in parser_args.output_vars:
         temp_data = np.reshape(np.concatenate(stdDS[var].data, axis = 0), [-1, n_pixels,1])
         data_all.append(temp_data)
-    dataset_std = np.concatenate(data_all, axis=2)
+    dataset_std_v1 = np.concatenate(data_all, axis=2)
 
+    data_all = []
+    for c in range(int(len(dataset_out)/len(dataset_std_v1))):
+        data_all.append(dataset_std_v1)
+
+    dataset_std = np.concatenate(data_all, axis=0)
     print(dataset_std.shape)
     print(dataset_std[0])
+    print(dataset_std[12])
 
     #print(dataset_out.shape)
 
