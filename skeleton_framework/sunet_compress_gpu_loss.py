@@ -30,11 +30,11 @@ from torchvision import transforms
 def sunet_collate(batch):
 
     batchShape = batch[0].shape
-    varlimit = batchShape[1] - (3*3)  # 3 output variables: tas, psl, pr, 3 mean, 3 std
+    varlimit = batchShape[1] - (3)  # 3 output variables: tas, psl, pr, 3 mean, 3 std
     
-    data_in_array = np.array([item[:, 0:varlimit] for item in batch])
+    data_in_array = np.array([item[:, 0:varlimit] for item in batch]) #includes mean and std
     #data_out_array = np.array([item[:, varlimit:] for item in batch])
-    data_out_array = np.array([item[:, varlimit:varlimit+3] for item in batch])
+    data_out_array = np.array([item[:, varlimit:] for item in batch])
     #data_mean_array = np.array([item[:, varlimit+3:varlimit + 6] for item in batch])
     #data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
     
@@ -117,7 +117,7 @@ def get_dataloader(parser_args):
         dataset_in = dataset_in[:-parser_args.time_lag]
         dataset_out = dataset_out[parser_args.time_lag:]'''
 
-    combined_data = np.concatenate((dataset_in, dataset_out, dataset_mean, dataset_std), axis=2)
+    combined_data = np.concatenate((dataset_in, dataset_mean, dataset_std, dataset_out), axis=2)
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
@@ -176,18 +176,18 @@ def main(parser_args):
 
     def trainer(engine, batch):
         unet.train()
-        data_in, data_out = batch
+        data_in_initial, data_out = batch
         print("input", data_in.shape)
         #print("output", data_out_initial.shape)
-        #data_in = data_in[:, :, 0:5]
+        data_in = data_in_initial[:, :, 0:7]
         #data_in, data_out, data_mean, data_std = batch
         #data_out = data_out_initial[:, :, 0:3]
-        #data_mean = data_out_initial[:, :, 3:6]
-        #data_std = data_out_initial[:, :, 6:]
+        data_mean = data_in_initial[:, :, 7:10]
+        data_std = data_out_initial[:, :, 10:]
         data_in = data_in.to(device)
         data_out = data_out.to(device)
-        #data_mean = data_mean.to(device)
-        #data_std = data_std.to(device)
+        data_mean = data_mean.to(device)
+        data_std = data_std.to(device)
         optimizer.zero_grad()
         outputs = unet(data_in)
         #data_out_unscaled = (data_out * data_std) + data_mean
