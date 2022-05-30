@@ -106,9 +106,14 @@ def get_dataloader(parser_args):
 
 
     meanPr = meanDS.pr.data
-    prdict = {}
+    pr_mean_dict = {}
     for m, p in zip(month, meanPr):
-        prdict[m] = p
+        pr_mean_dict[m] = p
+
+    stdPr = stdDS.pr.data
+    pr_std_dict = {}
+    for m, p in zip(month, stdPr):
+        pr_std_dict[m] = p
 
     #print(prdict)
 
@@ -159,7 +164,7 @@ def get_dataloader(parser_args):
                                        collate_fn=sunet_collate)
     dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12,
                                  collate_fn=sunet_collate)
-    return dataloader_train, dataloader_validation, dataloader_test, prdict
+    return dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict
 
 
 def main(parser_args):
@@ -172,7 +177,7 @@ def main(parser_args):
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
 
-    dataloader_train, dataloader_validation, dataloader_test, prdict = get_dataloader(parser_args)
+    dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict = get_dataloader(parser_args)
 
     criterion = torch.nn.MSELoss()
 
@@ -219,11 +224,12 @@ def main(parser_args):
 
         #print(batch_month)
 
-        data_mean = [prdict[k] for k in batch_month[0]]
+        data_mean = [pr_mean_dict[k] for k in batch_month[0]]
+        data_std = [pr_std_dict[k] for k in batch_month[0]]
         #print(np.array(data_out[:,:,2]).shape)
         #print(np.array(data_mean).shape)
 
-        dd = np.array(data_out[:,:,2]) + np.array(data_mean)
+        dd = (np.array(data_out[:,:,2]) * np.array(data_std)) + data_mean
         print(dd.shape)
         print(dd)
 
