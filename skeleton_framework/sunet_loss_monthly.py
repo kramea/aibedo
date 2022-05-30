@@ -213,15 +213,16 @@ def main(parser_args):
     def trainer(engine, batch):
 
         data_in, data_out = batch
-        batch_month = np.unique(data_in[:, :, 7])
+        #batch_month = np.unique(data_in[:, :, 7])
+        print(data_in[:,:,7])
 
         data_mean = [prdict[k] for k in batch_month]
 
         #print("data mean shape", data_mean.shape)
         #print("data mean values", data_mean)
 
-        print(data_out.shape)
-        print(torch.Tensor(np.array(data_mean)).shape)
+        #print(data_out.shape)
+        #print(torch.Tensor(np.array(data_mean)).shape)
 
         #unscaled = data_out[:, :, 2] + torch.Tensor(np.array(data_mean))
         #print(unscaled)
