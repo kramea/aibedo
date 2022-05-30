@@ -70,24 +70,26 @@ def get_dataloader(parser_args):
     #Output data
     data_all = []
     for var in parser_args.output_vars:
-        temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1,-1, n_pixels,1])
+        temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1, n_pixels,1])
         data_all.append(temp_data)
-    dataset_out = np.concatenate(data_all, axis=3)
+    dataset_out = np.concatenate(data_all, axis=2)
 
     print(dataset_out.shape)
 
     #months = list(np.resize(np.arange(12), 12*165)) #1980/12 = 165
-    dataset_out_mo = np.expand_dims(dataset_out, axis = 0)
-    print(dataset_out_mo.shape)
-    dataset_out_mo = np.concatenate((dataset_out_mo, months), axis = 3)
+    #dataset_out_mo = np.expand_dims(dataset_out, axis = 0)
+    #print(dataset_out_mo.shape)
+    #dataset_out_mo = np.concatenate((dataset_out_mo, months), axis = 3)
 
-    print(dataset_out_mo.shape)
+    #print(dataset_out_mo.shape)
 
     #dataset_out = np.concatenate((dataset_out, np.zeros(dataset_out.shape[0]).reshape(-1,1)), axis = 1)
     #dataset_out = oneHotEncode3D(dataset_out)
 
 
     dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
+
+    print(dataset_out[:,:,0])
 
 
 
