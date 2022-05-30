@@ -39,13 +39,13 @@ def sunet_collate(batch):
     #data_mean_array = np.array([item[:, varlimit+3:varlimit + 6] for item in batch])
     #data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
     
-    #data_in = torch.Tensor(data_in_array)
-    #data_out = torch.Tensor(data_out_array)
+    data_in = torch.Tensor(data_in_array)
+    data_out = torch.Tensor(data_out_array)
     #data_mean = torch.Tensor(data_mean_array)
     #data_std = torch.Tensor(data_std_array)
     #return [data_in, data_out, data_mean, data_std]
-    #return [data_in, data_out]
-    return [data_in_array, data_out_array]
+    return [data_in, data_out]
+
 
 def get_dataloader(parser_args):
 
@@ -179,8 +179,6 @@ def main(parser_args):
     def trainer(engine, batch):
 
         data_in_initial, data_out = batch
-        data_in_initial = torch.Tensor(data_in_initial)
-        data_out = torch.Tensor(data_out)
         print("input", data_in_initial.shape)
         #print("output", data_out_initial.shape)
         data_in = data_in_initial
