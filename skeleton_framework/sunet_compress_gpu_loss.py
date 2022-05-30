@@ -90,7 +90,7 @@ def get_dataloader(parser_args):
         data_all.append(dataset_mean_v1)
 
     dataset_mean = np.concatenate(data_all, axis=0)
-    print(dataset_mean.shape)
+
 
     # Std data
 
@@ -105,45 +105,25 @@ def get_dataloader(parser_args):
         data_all.append(dataset_std_v1)
 
     dataset_std = np.concatenate(data_all, axis=0)
-    print(dataset_std.shape)
-    print(dataset_std[0])
-    print(dataset_std[12])
 
-    #print(dataset_out.shape)
-
-    #months = list(np.resize(np.arange(12), 12*165)) #1980/12 = 165
-    #dataset_out_mo = np.expand_dims(dataset_out, axis = 0)
-    #print(dataset_out_mo.shape)
-    #dataset_out_mo = np.concatenate((dataset_out_mo, months), axis = 3)
-
-    #print(dataset_out_mo.shape)
-
-
-    #dataset_out = np.concatenate((dataset_out, np.zeros(dataset_out.shape[0]).reshape(-1,1)), axis = 1)
-    #dataset_out = oneHotEncode3D(dataset_out)
-
-
-    dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
-
-
-    #print(dataset_out[:,:,0])
-
-
+    dataset_in, dataset_out, dataset_mean, dataset_std = shuffle_data(dataset_in, dataset_out, dataset_mean, dataset_std)
 
     if parser_args.time_lag > 0:
         dataset_in = dataset_in[:-parser_args.time_lag]
         dataset_out = dataset_out[parser_args.time_lag:]
 
-    combined_data = np.concatenate((dataset_in, dataset_out), axis=2)
+    combined_data = np.concatenate((dataset_in, dataset_out, dataset_mean, dataset_std), axis=2)
 
-    train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
+    print(combined_data.shape)
+
+    '''train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
                 parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12, collate_fn=sunet_collate)
     dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=sunet_collate)
     dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12, collate_fn=sunet_collate)
-    return dataloader_train, dataloader_validation, dataloader_test
+    return dataloader_train, dataloader_validation, dataloader_test'''
 
 def main(parser_args):
     """Main function to create model and train, validation model.
