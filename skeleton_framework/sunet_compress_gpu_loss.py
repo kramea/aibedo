@@ -52,6 +52,8 @@ def get_dataloader(parser_args):
 
     inDS = xr.open_dataset(parser_args.input_file)
     outDS = xr.open_dataset(parser_args.output_file)
+    meanDS = xr.open_dataset(parser_args.mean_file)
+    stdDS = xr.open_dataset(parser_args.std_file)
 
     lon_list = inDS.lon.data
     lat_list = inDS.lat.data
@@ -77,18 +79,25 @@ def get_dataloader(parser_args):
 
     #Mean data
 
-    data_mean = []
+    data_all = []
+    for var in parser_args.output_vars:
+        temp_data = np.reshape(np.concatenate(meanDS[var].data, axis = 0), [-1, n_pixels,1])
+        data_all.append(temp_data)
+    dataset_mean = np.concatenate(data_all, axis=2)
+
+    print(dataset_mean.shape)
+    print(dataset_mean[0])
 
     # Std data
 
-    data_std = []
+    data_all = []
+    for var in parser_args.output_vars:
+        temp_data = np.reshape(np.concatenate(stdDS[var].data, axis = 0), [-1, n_pixels,1])
+        data_all.append(temp_data)
+    dataset_std = np.concatenate(data_all, axis=2)
 
-    
-
-
-
-
-
+    print(dataset_std.shape)
+    print(dataset_std[0])
 
     #print(dataset_out.shape)
 
