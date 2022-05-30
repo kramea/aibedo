@@ -179,7 +179,7 @@ def main(parser_args):
     loss = torch.nn.MSELoss()
     optimizer = optim.Adam(unet.parameters(), lr=lr)
 
-    def custom_prepare_batch(batch, device, non_blocking):
+    def custom_prepare_batch(batch):
         x, y = batch
         return (
             convert_tensor(x),
@@ -187,8 +187,6 @@ def main(parser_args):
         )
 
     '''trainer = create_supervised_trainer(unet, optimizer=optimizer, loss_fn=criterion, prepare_batch=custom_prepare_batch)'''
-
-
 
     def trainer(engine, batch):
 
