@@ -59,6 +59,7 @@ def get_dataloader(parser_args):
     in_channels = len(parser_args.input_vars)
     out_channels = len(parser_args.output_vars)
 
+    months = list(np.resize(np.arange(12), 12 * 165))  # 1980/12 = 165
     #Input data
     data_all = []
     for var in parser_args.input_vars:
@@ -69,13 +70,13 @@ def get_dataloader(parser_args):
     #Output data
     data_all = []
     for var in parser_args.output_vars:
-        temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1,n_pixels,1])
+        temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1,-1, n_pixels,1])
         data_all.append(temp_data)
-    dataset_out = np.concatenate(data_all, axis=2)
+    dataset_out = np.concatenate(data_all, axis=3)
 
     print(dataset_out.shape)
 
-    months = list(np.resize(np.arange(12), 12*165)) #1980/12 = 165
+    #months = list(np.resize(np.arange(12), 12*165)) #1980/12 = 165
     dataset_out_mo = np.expand_dims(dataset_out, axis = 0)
     print(dataset_out_mo.shape)
     dataset_out_mo = np.concatenate((dataset_out_mo, months), axis = 3)
