@@ -177,7 +177,7 @@ def main(parser_args):
     def trainer(engine, batch):
         unet.train()
         data_in_initial, data_out = batch
-        print("input", data_in.shape)
+        print("input", data_in_initial.shape)
         #print("output", data_out_initial.shape)
         data_in = data_in_initial[:, :, 0:7]
         #data_in, data_out, data_mean, data_std = batch
