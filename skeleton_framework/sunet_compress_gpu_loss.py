@@ -75,10 +75,12 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
 
-    new_data = []
-    for i in range(len(dataset_out)):
+    new_data = np.expand_dims(dataset_out, axis=0)
+    print("new_data",new_data.shape)
+    '''for i in range(len(dataset_out)):
+        
         print("months", months[i])
-        print("g", dataset_out[i,:,:].shape)
+        print("g", dataset_out[i,:,:].shape)'''
 
 
 
