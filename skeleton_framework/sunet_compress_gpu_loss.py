@@ -76,9 +76,9 @@ def get_dataloader(parser_args):
 
     print(len(data_all))
 
-    print(len(data_all[0]))
-    print(len(data_all[1]))
-    print(len(data_all[2]))
+    print(data_all)
+
+
     dataset_out = np.concatenate(data_all, axis=2)
 
     print(dataset_out.shape)
