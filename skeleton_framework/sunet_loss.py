@@ -40,12 +40,12 @@ def sunet_collate(batch):
     #data_mean_array = np.array([item[:, varlimit-6:varlimit-3] for item in batch])
     # data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
 
-    data_in = torch.Tensor(data_in_array)
-    data_out = torch.Tensor(data_out_array)
+    #data_in = torch.Tensor(data_in_array)
+    #data_out = torch.Tensor(data_out_array)
     #data_mean = torch.Tensor(data_mean_array)
     # data_std = torch.Tensor(data_std_array)
     # return [data_in, data_out, data_mean, data_std]
-    return [data_in, data_out]
+    return [data_in_array, data_out_array]
 
 
 
@@ -178,15 +178,6 @@ def main(parser_args):
     lr = parser_args.learning_rate
     loss = torch.nn.MSELoss()
     optimizer = optim.Adam(unet.parameters(), lr=lr)
-
-    def custom_prepare_batch(batch):
-        x, y = batch
-        x1 = x.cpu().detach().numpy()
-        x1 = x1[:, :, 0:7]
-        return (
-            convert_tensor(x1),
-            convert_tensor(y),
-        )
 
     '''trainer = create_supervised_trainer(unet, optimizer=optimizer, loss_fn=criterion, prepare_batch=custom_prepare_batch)'''
 
