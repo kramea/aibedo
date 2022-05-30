@@ -220,8 +220,12 @@ def main(parser_args):
         #print(batch_month)
 
         data_mean = [prdict[k] for k in batch_month[0]]
-        print(np.array(data_out[:,:,2]).shape)
-        print(np.array(data_mean).shape)
+        #print(np.array(data_out[:,:,2]).shape)
+        #print(np.array(data_mean).shape)
+
+        dd = np.array(data_out[:,:,2]) + np.array(data_mean)
+        print(dd.shape)
+        print(dd)
 
         #print("data mean shape", data_mean.shape)
         #print("data mean values", data_mean)
