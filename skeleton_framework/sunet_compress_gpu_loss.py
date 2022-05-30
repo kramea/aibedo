@@ -5,7 +5,7 @@ import os, shutil
 import torch
 import torch.optim as optim
 from torchsummary import summary
-from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral, shuffle_data
+from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral, shuffle_data, shuffle_data_meanstd
 # from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
 from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
@@ -108,7 +108,7 @@ def get_dataloader(parser_args):
 
     dataset_std = np.concatenate(data_all, axis=0)
 
-    #dataset_in, dataset_out, dataset_mean, dataset_std = shuffle_data(dataset_in, dataset_out, dataset_mean, dataset_std)
+    dataset_in, dataset_out, dataset_mean, dataset_std = shuffle_data_meanstd(dataset_in, dataset_out, dataset_mean, dataset_std)
 
     '''if parser_args.time_lag > 0:
         dataset_in = dataset_in[:-parser_args.time_lag]
