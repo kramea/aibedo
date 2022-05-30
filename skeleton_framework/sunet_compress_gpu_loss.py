@@ -186,18 +186,18 @@ def main(parser_args):
         #data_std = data_out_initial[:, :, 6:]
         data_in = data_in.to(device)
         data_out = data_out.to(device)
-        data_mean = data_mean.to(device)
-        data_std = data_std.to(device)
+        #data_mean = data_mean.to(device)
+        #data_std = data_std.to(device)
         optimizer.zero_grad()
         outputs = unet(data_in)
-        data_out_unscaled = (data_out * data_std) + data_mean
-        outputs_unscaled = (outputs * data_std) + data_mean
+        #data_out_unscaled = (data_out * data_std) + data_mean
+        #outputs_unscaled = (outputs * data_std) + data_mean
 
         # Precipitation constraint
-        outputs_unscaled[outputs_unscaled[:, :, 2] < 0] = 0
+        #outputs_unscaled[outputs_unscaled[:, :, 2] < 0] = 0
 
         #normalize
-        outputs = (outputs_unscaled - data_mean) / data_std
+        #outputs = (outputs_unscaled - data_mean) / data_std
 
         #outputs = precip_pos(outputs_unscaled)
         #data_out = data_out[:,0:int(data_out.shape[1])-1, :] # removing the extra dimension of one_hot encoding
