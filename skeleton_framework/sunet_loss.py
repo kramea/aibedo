@@ -179,16 +179,16 @@ def main(parser_args):
     loss = torch.nn.MSELoss()
     optimizer = optim.Adam(unet.parameters(), lr=lr)
 
-    def custom_prepare_batch(batch, device, non_blocking):
+    '''def custom_prepare_batch(batch, device, non_blocking):
         x, y = batch
         return (
             convert_tensor(x, device=device, non_blocking=non_blocking),
             convert_tensor(y, device=device, non_blocking=non_blocking),
         )
 
-    trainer = create_supervised_trainer(unet, optimizer=optimizer, loss_fn=criterion, prepare_batch=custom_prepare_batch)
+    trainer = create_supervised_trainer(unet, optimizer=optimizer, loss_fn=criterion, prepare_batch=custom_prepare_batch)'''
 
-    '''def trainer(engine, batch):
+    def trainer(engine, batch):
 
         data_in_initial, data_out, _ = batch
         print("input", data_in_initial.shape)
@@ -222,9 +222,9 @@ def main(parser_args):
         loss.backward()
         optimizer.step()
 
-        return loss.item()'''
+        return loss.item()
 
-    #engine_train = Engine(trainer)
+    engine_train = Engine(trainer)
 
     val_metrics = {
         "mse": Loss(criterion)
@@ -232,7 +232,7 @@ def main(parser_args):
 
     evaluator = create_supervised_evaluator(unet, metrics=val_metrics, device=device)
 
-    '''#engine_train.add_event_handler(Events.EPOCH_STARTED, lambda x: print("Starting Epoch: {}".format(x.state.epoch)))
+    #engine_train.add_event_handler(Events.EPOCH_STARTED, lambda x: print("Starting Epoch: {}".format(x.state.epoch)))
 
     @engine_train.on(Events.ITERATION_COMPLETED(every=10))
     def log_training_results_iteration(engine):
@@ -255,11 +255,12 @@ def main(parser_args):
         print(
             f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
 
-    #engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)'''
-
     pbar = ProgressBar()
     pbar.attach(trainer, output_transform=lambda x: {"loss": x})
-    trainer.run(dataloader_train, max_epochs=parser_args.n_epochs)
+    engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
+
+
+    #trainer.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
     saved_model_path = "./saved_model_lag_" + str(parser_args.time_lag)
     if os.path.isdir(saved_model_path):
