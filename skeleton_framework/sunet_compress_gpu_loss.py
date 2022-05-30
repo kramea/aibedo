@@ -83,6 +83,10 @@ def get_dataloader(parser_args):
 
     #print(dataset_out_mo.shape)
 
+    dataset_out_mo = np.concatenate((dataset_out, np.zeros(dataset_out.shape[0]).reshape(-1, 1)), axis=1)
+
+    print(dataset_out_mo.shape)
+
     #dataset_out = np.concatenate((dataset_out, np.zeros(dataset_out.shape[0]).reshape(-1,1)), axis = 1)
     #dataset_out = oneHotEncode3D(dataset_out)
 
