@@ -31,6 +31,8 @@ def sunet_collate(batch):
 
     batchShape = batch[0].shape
     varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
+
+    print("varlimit", varlimit)
     
     data_in_array = np.array([item[:, 0:varlimit] for item in batch])
     data_out_array = np.array([item[:, varlimit:] for item in batch])
