@@ -222,9 +222,9 @@ def main(parser_args):
         loss.backward()
         optimizer.step()
 
-        return loss.item()
+        return loss.item()'''
 
-    engine_train = Engine(trainer)'''
+    engine_train = Engine(trainer)
 
     val_metrics = {
         "mse": Loss(criterion)
