@@ -183,7 +183,7 @@ def main(parser_args):
 
     def trainer(engine, batch):
 
-        data_in_initial, data_out = custom_prepare_batch(batch)
+        data_in, data_out = batch
 
         #data_in = data_in_initial.cpu().detach().numpy()
         #print("data in", data_in.shape)
@@ -197,6 +197,7 @@ def main(parser_args):
         # data_std = data_in_initial[:, :, 10:]
         data_in = torch.Tensor(data_in)
         data_in = data_in.to(device)
+        data_out = torch.Tensor(data_out)
         data_out = data_out.to(device)
         # data_mean = data_mean.to(device)
         # data_std = data_std.to(device)
