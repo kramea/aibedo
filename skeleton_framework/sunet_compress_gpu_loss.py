@@ -75,13 +75,7 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
 
-    month_data = []
-    for i in range(len(months)):
-        month_data.append(np.reshape(dataset_out[i, :, :], (1, 1, n_pixels, 3)))
-
-    out = np.concatenate(month_data, axis =0)
-
-    print(out.shape)
+    print(dataset_out[0].shape)
 
 
     #print(dataset_out.shape)
