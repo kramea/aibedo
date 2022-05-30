@@ -196,9 +196,9 @@ def main(parser_args):
         # data_mean = data_in_initial[:, :, 7:10]
         # data_std = data_in_initial[:, :, 10:]
         #data_in = torch.Tensor(data_in)
-        #data_in = data_in.to(device)
+        data_in = data_in.to(device)
         #data_out = torch.Tensor(data_out)
-        #data_out = data_out.to(device)
+        data_out = data_out.to(device)
         # data_mean = data_mean.to(device)
         # data_std = data_std.to(device)
         optimizer.zero_grad()
