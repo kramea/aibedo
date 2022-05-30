@@ -172,7 +172,7 @@ def main(parser_args):
         unet = SphericalUNet(parser_args.pooling_class, n_pixels, 3, parser_args.laplacian_type,
                              parser_args.kernel_size, len(parser_args.input_vars), len(parser_args.output_vars))
 
-    print(unet)
+    #print(unet)
     # unet = unet.to(device)
     unet, device = init_device(parser_args.device, unet)
     lr = parser_args.learning_rate
@@ -191,9 +191,12 @@ def main(parser_args):
     def trainer(engine, batch):
 
         data_in_initial, data_out = batch
+
+        data_in = data_in_initial.cpu().detach().numpy()
+        print("data in", data_in.shape)
         #print("input", data_in_initial.shape)
         # print("output", data_out_initial.shape)
-        data_in = data_in_initial.detach().clone()
+        data_in = data_in[:, :, 0:7]
         # print("input revised", data_in.shape)
         # data_in, data_out, data_mean, data_std = batch
         # data_out = data_out_initial[:, :, 0:3]
@@ -205,6 +208,7 @@ def main(parser_args):
         # data_mean = data_mean.to(device)
         # data_std = data_std.to(device)
         optimizer.zero_grad()
+        print(unet)
         unet.train()
         outputs = unet(data_in)
 
