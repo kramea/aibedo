@@ -37,15 +37,16 @@ def sunet_collate(batch):
     data_in_array = np.array([item[:, 0:varlimit - 6] for item in batch])  # includes mean and std
     # data_out_array = np.array([item[:, varlimit:] for item in batch])
     data_out_array = np.array([item[:, varlimit:] for item in batch])
-    data_mean_array = np.array([item[:, varlimit-6:varlimit-3] for item in batch])
+    #data_mean_array = np.array([item[:, varlimit-6:varlimit-3] for item in batch])
     # data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
 
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
-    data_mean = torch.Tensor(data_mean_array)
+    #data_mean = torch.Tensor(data_mean_array)
     # data_std = torch.Tensor(data_std_array)
     # return [data_in, data_out, data_mean, data_std]
-    return [data_in, data_out, data_mean]
+    return [data_in, data_out]
+
 
 
 def get_dataloader(parser_args):
@@ -176,10 +177,18 @@ def main(parser_args):
     unet, device = init_device(parser_args.device, unet)
     lr = parser_args.learning_rate
     loss = torch.nn.MSELoss()
-
     optimizer = optim.Adam(unet.parameters(), lr=lr)
 
-    def trainer(engine, batch):
+    def custom_prepare_batch(batch, device, non_blocking):
+        x, y = batch
+        return (
+            convert_tensor(x, device=device, non_blocking=non_blocking),
+            convert_tensor(y, device=device, non_blocking=non_blocking),
+        )
+
+    trainer = create_supervised_trainer(unet, optimizer=optimizer, loss=criterion, prepare_batch=custom_prepare_batch)
+
+    '''def trainer(engine, batch):
 
         data_in_initial, data_out, _ = batch
         print("input", data_in_initial.shape)
@@ -215,7 +224,7 @@ def main(parser_args):
 
         return loss.item()
 
-    engine_train = Engine(trainer)
+    engine_train = Engine(trainer)'''
 
     val_metrics = {
         "mse": Loss(criterion)
@@ -246,7 +255,8 @@ def main(parser_args):
         print(
             f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
 
-    engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
+    #engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
+    trainer.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
     saved_model_path = "./saved_model_lag_" + str(parser_args.time_lag)
     if os.path.isdir(saved_model_path):
