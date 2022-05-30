@@ -33,16 +33,17 @@ def sunet_collate(batch):
     varlimit = batchShape[1] - (3*3)  # 3 output variables: tas, psl, pr, 3 mean, 3 std
     
     data_in_array = np.array([item[:, 0:varlimit] for item in batch])
-    data_out_array = np.array([item[:, varlimit:varlimit+3] for item in batch])
-    data_mean_array = np.array([item[:, varlimit+3:varlimit + 6] for item in batch])
-    data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
+    data_out_array = np.array([item[:, varlimit:] for item in batch])
+    #data_out_array = np.array([item[:, varlimit:varlimit+3] for item in batch])
+    #data_mean_array = np.array([item[:, varlimit+3:varlimit + 6] for item in batch])
+    #data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
     
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
-    data_mean = torch.Tensor(data_mean_array)
-    data_std = torch.Tensor(data_std_array)
-    return [data_in, data_out, data_mean, data_std]
-
+    #data_mean = torch.Tensor(data_mean_array)
+    #data_std = torch.Tensor(data_std_array)
+    #return [data_in, data_out, data_mean, data_std]
+    return [data_in, data_out]
 
 def get_dataloader(parser_args):
 
@@ -175,7 +176,11 @@ def main(parser_args):
 
     def trainer(engine, batch):
         unet.train()
-        data_in, data_out, data_mean, data_std = batch
+        data_in, data_out_initial = batch
+        #data_in, data_out, data_mean, data_std = batch
+        data_out = data_out_initial[:, :, 0:3]
+        data_mean = data_out_initial[:, :, 3:6]
+        data_std = data_out_initial[:, :, 6:]
         data_in = data_in.to(device)
         data_out = data_out.to(device)
         data_mean = data_mean.to(device)
