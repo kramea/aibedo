@@ -30,12 +30,19 @@ from torchvision import transforms
 def sunet_collate(batch):
 
     batchShape = batch[0].shape
-    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
+    varlimit = batchShape[1] - (3*3)  # 3 output variables: tas, psl, pr, 3 mean, 3 std
 
     print("varlimit", varlimit)
     
     data_in_array = np.array([item[:, 0:varlimit] for item in batch])
-    data_out_array = np.array([item[:, varlimit:] for item in batch])
+    data_out_array = np.array([item[:, varlimit:varlimit+3] for item in batch])
+    data_mean_array = np.array([item[:, varlimit+3:varlimit + 6] for item in batch])
+    data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
+
+    print("data in array", data_in_array.shape)
+    print("data out array", data_out_array.shape)
+    print("data mean", data_mean_array.shape)
+    print("data std", data_std_array.shape)
     
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
