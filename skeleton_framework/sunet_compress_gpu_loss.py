@@ -67,20 +67,25 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_in = np.concatenate(data_all, axis=2)
 
-    months =  list(np.resize(np.arange(12), 12*165)) #1980/12 = 165
+
     #Output data
     data_all = []
-    new_data = []
     for var in parser_args.output_vars:
         temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1, n_pixels,1])
-        for i in range(len(temp_data)):
-            gg = np.reshape(np.concatenate(months[i], axis=0), [1, -1, n_pixels, 1])
-            new_data.append(gg)
         data_all.append(temp_data)
-
     dataset_out = np.concatenate(data_all, axis=2)
 
-    print('gg', gg.shape)
+    #Mean data
+
+    data_mean = []
+
+    # Std data
+
+    data_std = []
+
+    
+
+
 
 
 
