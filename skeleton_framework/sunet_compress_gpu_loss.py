@@ -179,7 +179,7 @@ def main(parser_args):
         data_in, data_out = batch
         print("input", data_in.shape)
         #print("output", data_out_initial.shape)
-        data_in = data_in[:, :, 0:5]
+        #data_in = data_in[:, :, 0:5]
         #data_in, data_out, data_mean, data_std = batch
         #data_out = data_out_initial[:, :, 0:3]
         #data_mean = data_out_initial[:, :, 3:6]
