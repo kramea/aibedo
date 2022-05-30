@@ -72,8 +72,17 @@ def get_dataloader(parser_args):
         temp_data = np.reshape(np.concatenate(outDS[var].data, axis = 0), [-1,n_pixels,1])
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
-    dataset_out = np.concatenate((dataset_out, np.zeros(dataset_out.shape[0]).reshape(-1,1)), axis = 1)
-    dataset_out = oneHotEncode3D(dataset_out)
+
+    months = np.resize(np.arange(12), 12*len(dataset_out))
+    dataset_out_mo = np.expand_dims(dataset_out, axis = 3)
+    dataset_out_mo = np.append(dataset_out_mo, months, axis = 3)
+
+    print(dataset_out_mo.shape)
+
+    #dataset_out = np.concatenate((dataset_out, np.zeros(dataset_out.shape[0]).reshape(-1,1)), axis = 1)
+    #dataset_out = oneHotEncode3D(dataset_out)
+
+
     dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
 
 
@@ -243,6 +252,7 @@ def main(parser_args):
     np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/prediction_"+str(parser_args.n_epochs)+".npy", predictions)
     np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
 
+'''
 def oneHotEncode3D(field):
     
     q, j = 0, 0
@@ -262,7 +272,7 @@ def oneHotEncode3D(field):
             
             field[j, -1, :] = i
 
-    return field
+    return field '''
 
 def precip_pos(output):
 
