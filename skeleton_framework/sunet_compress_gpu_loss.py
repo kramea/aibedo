@@ -86,7 +86,9 @@ def get_dataloader(parser_args):
     dataset_mean_v1 = np.concatenate(data_all, axis=2)
 
     data_all = []
-    for c in range(len(dataset_out)/len(dataset_mean_v1)):
+    test_temp = int(len(dataset_out)/len(dataset_mean_v1))
+    print("this should be 165", test_temp)
+    for c in range(int(len(dataset_out)/len(dataset_mean_v1))):
         data_all.append(dataset_mean_v1)
 
     dataset_mean = np.concatenate(data_all, axis=0)
