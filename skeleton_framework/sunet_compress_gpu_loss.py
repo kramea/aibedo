@@ -31,7 +31,7 @@ def sunet_collate(batch):
 
     batchShape = batch[0].shape
     print("batch shape", batchShape)
-    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr, 3 mean, 3 std
+    varlimit = batchShape[1] - 9  # 3 output variables: tas, psl, pr, 3 mean, 3 std
     
     data_in_array = np.array([item[:, 0:varlimit] for item in batch]) #includes mean and std
     #data_out_array = np.array([item[:, varlimit:] for item in batch])
@@ -184,12 +184,12 @@ def main(parser_args):
         print("input revised", data_in.shape)
         #data_in, data_out, data_mean, data_std = batch
         #data_out = data_out_initial[:, :, 0:3]
-        data_mean = data_in_initial[:, :, 7:10]
-        data_std = data_in_initial[:, :, 10:]
+        #data_mean = data_in_initial[:, :, 7:10]
+        #data_std = data_in_initial[:, :, 10:]
         data_in = data_in.to(device)
         data_out = data_out.to(device)
-        data_mean = data_mean.to(device)
-        data_std = data_std.to(device)
+        #data_mean = data_mean.to(device)
+        #data_std = data_std.to(device)
         optimizer.zero_grad()
         unet.train()
         outputs = unet(data_in)
