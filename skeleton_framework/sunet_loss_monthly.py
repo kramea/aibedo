@@ -215,8 +215,10 @@ def main(parser_args):
         data_in, data_out = batch
         #batch_month = np.unique(data_in[:, :, 7])
         print(data_in[:,:,7])
+        batch_month = [[m[0] for m in data_in[:,:,7]]]
+        print(batch_month)
 
-        data_mean = [prdict[k] for k in batch_month]
+        #data_mean = [prdict[k] for k in batch_month]
 
         #print("data mean shape", data_mean.shape)
         #print("data mean values", data_mean)
