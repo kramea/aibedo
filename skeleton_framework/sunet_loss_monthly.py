@@ -219,8 +219,8 @@ def main(parser_args):
 
         print(batch_month)
 
-        #data_mean = [prdict[k] for k in batch_month]
-        #print(data_mean)
+        data_mean = [prdict[k] for k in batch_month[0]]
+        print(data_mean)
 
         #print("data mean shape", data_mean.shape)
         #print("data mean values", data_mean)
