@@ -185,7 +185,7 @@ def main(parser_args):
             convert_tensor(y, device=device, non_blocking=False)
         )
 
-    def output_transform_fn(x, y, y_pred, loss):
+    def output_transform_fn(x, y, y_pred, loss=torch.nn.MSELoss()):
         # return only the loss is actually the default behavior for
         # trainer engine, but you can return anything you want
         return loss.item()
@@ -193,7 +193,7 @@ def main(parser_args):
     trainer = create_supervised_trainer(
         unet,
         optimizer = optim.Adam(unet.parameters(), lr=lr),
-        loss = loss,
+        loss_fn = loss,
         prepare_batch=prepare_batch_fn,
         device=device,
         output_transform=output_transform_fn
