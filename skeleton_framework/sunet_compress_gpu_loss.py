@@ -67,7 +67,7 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_in = np.concatenate(data_all, axis=2)
 
-    months = np.resize(np.arange(12), 12 * 165)  # 1980/12 = 165
+    months =  list(np.resize(np.arange(12), 12*165)) #1980/12 = 165
     #Output data
     data_all = []
     for var in parser_args.output_vars:
@@ -75,7 +75,16 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
 
-    print(dataset_out[0:1980])
+    month_data = []
+    for m in months:
+        t = np.reshape(np.concatenate(months[i], axis=0), [1, n_pixels, -1])
+        month_data.append(t)
+
+    print(month_data)
+
+    month_all = np.concatenate(month_data, axis=0)
+    print(month_all.shape)
+
 
 
     #print(dataset_out.shape)
