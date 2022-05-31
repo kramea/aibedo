@@ -227,12 +227,11 @@ def main(parser_args):
         data_in = data_in.to(device)
         data_out = data_out.to(device)
 
-        # data_mean = data_mean.to(device)
-        # data_std = data_std.to(device)
         optimizer.zero_grad()
-        #print(unet)
         unet.train()
         outputs = unet(data_in)
+
+        '''
 
         outputs_detach = outputs.detach().cpu().numpy()
 
@@ -244,11 +243,8 @@ def main(parser_args):
         outputs_rescaled_pr = (outputs_unscaled_pr - data_mean) / data_std
 
         # normalize
-        outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs)
+        outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs) '''
 
-
-
-        #outputs = torch.Tensor(outputs).to(device)
         loss = criterion(outputs.float(), data_out)
         optimizer.zero_grad()
         loss.backward()
@@ -266,7 +262,7 @@ def main(parser_args):
 
     #engine_train.add_event_handler(Events.EPOCH_STARTED, lambda x: print("Starting Epoch: {}".format(x.state.epoch)))
 
-    @engine_train.on(Events.ITERATION_COMPLETED(every=10))
+    '''@engine_train.on(Events.ITERATION_COMPLETED(every=10))
     def log_training_results_iteration(engine):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
@@ -285,7 +281,7 @@ def main(parser_args):
         evaluator.run(dataloader_validation)
         metrics = evaluator.state.metrics
         print(
-            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
+            f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}") '''
 
     pbar = ProgressBar()
     pbar.attach(engine_train, output_transform=lambda x: {"loss": x})
