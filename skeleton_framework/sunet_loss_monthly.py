@@ -248,7 +248,7 @@ def main(parser_args):
 
         # outputs = precip_pos(outputs_unscaled)
         # data_out = data_out[:,0:int(data_out.shape[1])-1, :] # removing the extra dimension of one_hot encoding
-        outputs.to(device)
+        torch.Tensor(outputs).to(device)
         loss = criterion(outputs.float(), data_out)
         optimizer.zero_grad()
         loss.backward()
