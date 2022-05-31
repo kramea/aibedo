@@ -236,10 +236,7 @@ def main(parser_args):
         outputs_unscaled_pr = (np.array(outputs_detach[:,:,2]) * data_std) + data_mean
 
         # Precipitation constraint
-        print(outputs_unscaled_pr)
-        print(unscaled_data_out_pr)
         outputs_unscaled_pr[outputs_unscaled_pr < 0] = 0
-        #print(outputs_unscaled_pr)
 
         outputs_rescaled_pr = (outputs_unscaled_pr - data_mean) / data_std
 
