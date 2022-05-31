@@ -236,12 +236,14 @@ def main(parser_args):
         outputs_unscaled_pr = (np.array(outputs_detach[:,:,2]) * data_std) + data_mean
 
         # Precipitation constraint
+        print(outputs_unscaled_pr)
         outputs_unscaled_pr[outputs_unscaled_pr < 0] = 0
+        print(outputs_unscaled_pr)
 
         outputs_rescaled_pr = (outputs_unscaled_pr - data_mean) / data_std
 
         # normalize
-        outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs) 
+        outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs)
 
         loss = criterion(outputs.float(), data_out)
         optimizer.zero_grad()
@@ -285,8 +287,6 @@ def main(parser_args):
     pbar.attach(engine_train, output_transform=lambda x: {"loss": x})
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
-
-    #trainer.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
     saved_model_path = "./saved_model_lag_" + str(parser_args.time_lag)
     if os.path.isdir(saved_model_path):
