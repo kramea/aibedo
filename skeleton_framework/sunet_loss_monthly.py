@@ -246,8 +246,6 @@ def main(parser_args):
         outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs)'''
 
         loss = criterion(outputs.float(), data_out)
-        writer.add_scalars("Loss/train", loss, engine_train.state.epoch)
-        writer.close()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -279,6 +277,8 @@ def main(parser_args):
         metrics = evaluator.state.metrics
         print(
             f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.4f}")
+        writer.add_scalars("Loss/train", metrics['mse'], engine_train.state.epoch)
+        writer.close()
 
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_validation_results(engine):
