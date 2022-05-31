@@ -179,6 +179,8 @@ def main(parser_args):
 
     dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict = get_dataloader(parser_args)
 
+    writer = SummaryWriter()
+
     criterion = torch.nn.MSELoss()
 
     print("Dataloader train size", len(dataloader_train.dataset[0].shape))
@@ -231,7 +233,7 @@ def main(parser_args):
         unet.train()
         outputs = unet(data_in)
 
-        outputs_detach = outputs.detach().cpu().numpy()
+        '''outputs_detach = outputs.detach().cpu().numpy()
 
         outputs_unscaled_pr = (np.array(outputs_detach[:,:,2]) * data_std) + data_mean
 
@@ -241,9 +243,10 @@ def main(parser_args):
         outputs_rescaled_pr = (outputs_unscaled_pr - data_mean) / data_std
 
         # normalize
-        outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs)
+        outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs)'''
 
         loss = criterion(outputs.float(), data_out)
+        writer.add_scalar("Loss/train", loss, engine_train.state.epoch)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -251,6 +254,8 @@ def main(parser_args):
         return loss.item()
 
     engine_train = Engine(trainer)
+
+
 
     val_metrics = {
         "mse": Loss(criterion)
@@ -285,6 +290,8 @@ def main(parser_args):
     pbar.attach(engine_train, output_transform=lambda x: {"loss": x})
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
+    writer.flush()
+
 
     saved_model_path = "./saved_model_lag_" + str(parser_args.time_lag)
     if os.path.isdir(saved_model_path):
@@ -315,6 +322,7 @@ def main(parser_args):
     np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/groundtruth_" + str(parser_args.n_epochs) + ".npy",
             groundtruth)
 
+    writer.close()
 
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
