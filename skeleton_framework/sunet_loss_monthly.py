@@ -233,7 +233,7 @@ def main(parser_args):
         unet.train()
         outputs = unet(data_in)
 
-        '''outputs_detach = outputs.detach().cpu().numpy()
+        outputs_detach = outputs.detach().cpu().numpy()
 
         outputs_unscaled_pr = (np.array(outputs_detach[:,:,2]) * data_std) + data_mean
 
@@ -243,7 +243,7 @@ def main(parser_args):
         outputs_rescaled_pr = (outputs_unscaled_pr - data_mean) / data_std
 
         # normalize
-        outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs)'''
+        outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs)
 
         loss = criterion(outputs.float(), data_out)
         optimizer.zero_grad()
@@ -277,7 +277,7 @@ def main(parser_args):
         metrics = evaluator.state.metrics
         print(
             f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.4f}")
-        writer.add_scalars("Loss/train", metrics, engine_train.state.epoch)
+        writer.add_scalars("Loss/precip_pos_train", metrics, engine_train.state.epoch)
         writer.close()
 
     @engine_train.on(Events.EPOCH_COMPLETED)
@@ -286,6 +286,8 @@ def main(parser_args):
         metrics = evaluator.state.metrics
         print(
             f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
+        writer.add_scalars("Loss/precip_pos_validation", metrics, engine_train.state.epoch)
+        writer.close()
 
     pbar = ProgressBar()
     pbar.attach(engine_train, output_transform=lambda x: {"loss": x})
