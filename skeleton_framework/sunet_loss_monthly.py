@@ -277,7 +277,7 @@ def main(parser_args):
         metrics = evaluator.state.metrics
         print(
             f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.4f}")
-        writer.add_scalars("Loss/precip_pos_train", metrics, engine_train.state.epoch)
+        writer.add_scalars("Loss/train", metrics, engine_train.state.epoch)
         writer.close()
 
     @engine_train.on(Events.EPOCH_COMPLETED)
@@ -286,7 +286,7 @@ def main(parser_args):
         metrics = evaluator.state.metrics
         print(
             f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
-        writer.add_scalars("Loss/precip_pos_validation", metrics, engine_train.state.epoch)
+        writer.add_scalars("Loss/validation", metrics, engine_train.state.epoch)
         writer.close()
 
     pbar = ProgressBar()
