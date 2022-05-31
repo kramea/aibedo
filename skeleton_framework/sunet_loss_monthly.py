@@ -218,43 +218,13 @@ def main(parser_args):
     def trainer(engine, batch):
 
         data_in, data_out = batch
-        #batch_month = np.unique(data_in[:, :, 7])
-        #print(data_in[:,:,7])
         batch_month = [[m[0] for m in np.array(data_in[:,:,7])]]
-
-        #print(batch_month)
 
         data_mean = [pr_mean_dict[k] for k in batch_month[0]]
         data_std = [pr_std_dict[k] for k in batch_month[0]]
-        #print(np.array(data_out[:,:,2]).shape)
-        #print(np.array(data_mean).shape)
 
-        dd = (np.array(data_out[:,:,2]) * np.array(data_std)) + data_mean
-        print(dd.shape)
-        print(dd)
-
-        #print("data mean shape", data_mean.shape)
-        #print("data mean values", data_mean)
-
-        #print(data_out.shape)
-        #print(torch.Tensor(np.array(data_mean)).shape)
-
-        #unscaled = data_out[:, :, 2] + torch.Tensor(np.array(data_mean))
-        #print(unscaled)
-
-        #data_in = data_in_initial.cpu().detach().numpy()
-        #print("data in", data_in.shape)
-        #print("input", data_in_initial.shape)
-        # print("output", data_out_initial.shape)
-        #data_in = data_in[:, :, :]
-        # print("input revised", data_in.shape)
-        # data_in, data_out, data_mean, data_std = batch
-        # data_out = data_out_initial[:, :, 0:3]
-        # data_mean = data_in_initial[:, :, 7:10]
-        # data_std = data_in_initial[:, :, 10:]
-        #data_in = torch.Tensor(data_in)
+        unscaled_data_out_pr = (np.array(data_out[:,:,2]) * np.array(data_std)) + data_mean
         data_in = data_in.to(device)
-        #data_out = torch.Tensor(data_out)
         data_out = data_out.to(device)
 
         # data_mean = data_mean.to(device)
@@ -264,15 +234,15 @@ def main(parser_args):
         unet.train()
         outputs = unet(data_in)
 
-
-        # data_out_unscaled = (data_out * data_std) + data_mean
-        # outputs_unscaled = (outputs * data_std) + data_mean
+        outputs_unscaled_pr = (np.array(outputs[:,:,2]) * data_std) + data_mean
 
         # Precipitation constraint
-        # outputs_unscaled[outputs_unscaled[:, :, 2] < 0] = 0
+        outputs_unscaled_pr[outputs_unscaled_pr < 0] = 0
+
+        outputs_rescaled_pr = (outputs_unscaled_pr - data_mean) / data_std
 
         # normalize
-        # outputs = (outputs_unscaled - data_mean) / data_std
+        outputs[:, :, 2] = outputs_rescaled_pr
 
         # outputs = precip_pos(outputs_unscaled)
         # data_out = data_out[:,0:int(data_out.shape[1])-1, :] # removing the extra dimension of one_hot encoding
