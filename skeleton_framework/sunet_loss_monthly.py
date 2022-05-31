@@ -322,7 +322,7 @@ def main(parser_args):
     np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/groundtruth_" + str(parser_args.n_epochs) + ".npy",
             groundtruth)
 
-    writer.close()
+    #writer.close()
 
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
