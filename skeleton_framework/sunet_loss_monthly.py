@@ -179,7 +179,7 @@ def main(parser_args):
 
     dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict = get_dataloader(parser_args)
 
-    writer = SummaryWriter()
+    writer = SummaryWriter("./")
 
     criterion = torch.nn.MSELoss()
 
@@ -246,7 +246,8 @@ def main(parser_args):
         outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs)'''
 
         loss = criterion(outputs.float(), data_out)
-        writer.add_scalar("Loss/train", loss, engine_train.state.epoch)
+        writer.add_scalars("Loss/train", loss, engine_train.state.epoch)
+        writer.close()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -290,8 +291,6 @@ def main(parser_args):
     pbar.attach(engine_train, output_transform=lambda x: {"loss": x})
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
-    writer.flush()
-
 
     saved_model_path = "./saved_model_lag_" + str(parser_args.time_lag)
     if os.path.isdir(saved_model_path):
@@ -321,8 +320,6 @@ def main(parser_args):
             predictions)
     np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/groundtruth_" + str(parser_args.n_epochs) + ".npy",
             groundtruth)
-
-    #writer.close()
 
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
