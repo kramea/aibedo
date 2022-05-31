@@ -103,8 +103,6 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
 
-
-
     meanPr = meanDS.pr.data
     pr_mean_dict = {}
     for m, p in zip(month, meanPr):
@@ -114,43 +112,6 @@ def get_dataloader(parser_args):
     pr_std_dict = {}
     for m, p in zip(month, stdPr):
         pr_std_dict[m] = p
-
-    #print(prdict)
-
-    '''# Mean data
-
-    data_all = []
-    for var in parser_args.meanstd_vars:
-        temp_data = np.reshape(np.concatenate(meanDS[var].data, axis=0), [-1, n_pixels, 1])
-        data_all.append(temp_data)
-    dataset_mean_v1 = np.concatenate(data_all, axis=2)
-
-    data_all = []
-    for c in range(int(len(dataset_out) / len(dataset_mean_v1))):
-        data_all.append(dataset_mean_v1)
-
-    dataset_mean = np.concatenate(data_all, axis=0)
-
-    # Std data
-
-    data_all = []
-    for var in parser_args.meanstd_vars:
-        temp_data = np.reshape(np.concatenate(stdDS[var].data, axis=0), [-1, n_pixels, 1])
-        data_all.append(temp_data)
-    dataset_std_v1 = np.concatenate(data_all, axis=2)
-
-    data_all = []
-    for c in range(int(len(dataset_out) / len(dataset_std_v1))):
-        data_all.append(dataset_std_v1)
-
-    dataset_std = np.concatenate(data_all, axis=0)
-
-    dataset_in, dataset_out, dataset_mean, dataset_std = shuffle_data_meanstd(dataset_in, dataset_out, dataset_mean,
-                                                                              dataset_std)
-
-    if parser_args.time_lag > 0:
-        dataset_in = dataset_in[:-parser_args.time_lag]
-        dataset_out = dataset_out[parser_args.time_lag:]'''
 
     combined_data = np.concatenate((dataset_in, dataset_out), axis=2)
 
