@@ -277,7 +277,7 @@ def main(parser_args):
         metrics = evaluator.state.metrics
         print(
             f"Training Results - Epoch: {engine_train.state.epoch}  Avg loss: {metrics['mse']:.4f}")
-        writer.add_scalars("Loss/train", metrics['mse'].item(), engine_train.state.epoch)
+        writer.add_scalars("Loss/train", metrics['mse'].item(), engine_train.state.epoch.item())
         writer.close()
 
     @engine_train.on(Events.EPOCH_COMPLETED)
