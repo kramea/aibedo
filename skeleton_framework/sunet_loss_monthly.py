@@ -207,6 +207,8 @@ def main(parser_args):
         outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs)'''
 
         loss = criterion(outputs.float(), data_out)
+
+        print("loss", loss)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
