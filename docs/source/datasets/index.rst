@@ -277,10 +277,10 @@ A simple yet relevant constraint is to ensure negative precipitation (:math:`P`)
 
 Constraint 5. **Global atmospheric mass budget**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Using the hydrostatic balance assumption, surface pressure can be used as a proxy for the mass of the atmosphere. This simple constraint ensures atmospheric mass conservation summed over the globe at each time step.
+Using the hydrostatic balance assumption, surface pressure can be used as a proxy for the mass of the atmosphere. This simple constraint ensures atmospheric mass conservation summed over the globe at yearly time scale.
 
 .. math:: 
-  \sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = 0
+   \sum_{t}^{ 1 yr}\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = 0
 
 where :math:`P_s` is the surface pressure.
 
