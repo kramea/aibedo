@@ -98,6 +98,51 @@ The specific science questions to be addressed by these experiments are:
 * Q6. What is the variability of the climate response?
 * Q7. Can one “optimize” the MCB to achieve particular climate goals?
 
+~~~~~~~~
+Planned MCB Experiments
+~~~~~~~~
+
+The AiBEDO team will participate in this inter-model comparison by contributing CESM2 simulations (outlined in Table 1) with perturbed cloud droplet number concentrations. In addition to the science conducted as part of the above described study, these simulations will serve as validation datasets for the AiBEDO response to cloud perturbations. As these simulations will have strong, out of sample perturbations and well sampled climate responses, they are the ideal test bed for evaluating the AiBEDO's ability to project climate responses to large perturbations in cloud droplet number of the kind required for MCB.
+
+.. list-table:: Table 1. MCB Experiments for model intercomparison
+   :widths: 20 20 20 20 20
+   :header-rows: 1
+
+   * - Experiment ID
+     - Simulation Nickname
+     - Model Configuration
+     - Description
+     - Length (model years x ensemble members)
+   * - E1 
+     - MCB Calibration R1 + R2 + R3
+     - Fixed-SST
+     - Short atmosphere-only experiments aimed at identifying CDNC values in NE Pac (R1), SE Pac (R2), and SE Atl (R3) required to achieve -1.8Wm-2 forcing 
+     - 10 x 5
+   * - E2
+     - E3SM Control
+     - Fully Coupled
+     - Control SSP2-4.5 experiments
+     - 2015 to 2070 x 10
+   * - E3
+     - E3SM Control
+     - Fully Coupled + CDNC Fixed R1
+     - SSP2-4.5 experiments with CDNC forcing applied in the NE tropical Pacific
+     - 2015 to 2070 x 3
+   * - E4
+     - E3SM Control
+     - Fully Coupled + CDNC Fixed R2
+     - SSP2-4.5 experiments with CDNC forcing applied in the SE tropical Pacific
+     - 2015 to 2070 x 3
+   * - E5
+     - E3SM Control
+     - Fully Coupled + CDNC Fixed R3
+     - SSP2-4.5 experiments with CDNC forcing applied in the SE tropical Atlantic
+     - 2015 to 2070 x 3
+   * - E6
+     - E3SM Control
+     - Fully Coupled + CDNC Fixed R1 + R2 + R3
+     - SSP2-4.5 experiments with CDNC forcing applied in the NE Pac, SE Pac, and SE Atl
+     - 2015 to 2070 x 10
 ..   
 	Question for Kalai and Hansi:
 
@@ -106,12 +151,41 @@ The specific science questions to be addressed by these experiments are:
 	do you want figure showing shiptracks?
 
 ------------------
-Stage 2: AIbedo ML Model Perturbations
+Stage 2: AiBEDO ML Model Perturbations
 ------------------ 
 
-------------------
-Stage 3:  Projections on Tipping Point Impacts:
------------------- 
+Following successful training and validation of AiBEDO, we will use the model to generate cloud perturbation scenarios targeting key regional climate signals that may be associated with climate tipping points. These scenarios will then be tested in MCB CDNC perturbation experiments to verify the AiBEDO results and further study the physical mechanisms underlying the responses.
+
+Table 2 describes examples of proposed regional climate responses we will target using AiBEDO and CESM2 experiments.
+
+.. list-table:: Table 2. Regional perturbations targeted using AiBEDO
+   :widths: 20 20 20
+   :header-rows: 1
+
+   * - Region
+     - Associated tipping point/climate response of interest
+     - Variables changes
+   * - West Antarctic
+     - West Antarctic ice sheet collapse
+     - Antarctic surface temperature increase
+   * - North Atlantic
+     - Atlantic Meridional Overturning Circulation (AMOC) collapse
+     - North Atlantic precipitation increase; Arctic surface temperature increase
+   * - Arctic
+     - Greenlandic ice sheet collapse; Arctic sea ice loss
+     - Arctic surface temperature increase
+   * - Amazon
+     - Southern Amazon drought and rainforest loss
+     - South American precipitation decrease
+   * - NH Mid-latitudes
+     - Jet shift
+     - Midlatitude sea level pressure
+
+
+..
+	------------------
+	Stage 3:  Projections on Tipping Point Impacts:
+	------------------ 
 
 ------------------
 References
@@ -121,8 +195,8 @@ References
 2.      Mcnutt, Marcia, et al. Climate Intervention: Reflecting Sunlight to Cool Earth. Washington, D.C.: National Academies Press, 2015. https://doi.org/10.17226/18988.
 3.      Latham, John, Keith Bower, Tom Choularton, Hugh Coe, Paul Connolly, Gary Cooper, Tim Craft, et al. “Marine Cloud Brightening.” Philosophical Transactions of the Royal Society A: Mathematical, Physical and Engineering Sciences 370, no. 1974 (September 13, 2012): 4217–62. https://doi.org/10.1098/rsta.2012.0086.
 4.	Jones, A., and J. M. Haywood. “Sea-Spray Geoengineering in the HadGEM2-ES Earth-System Model: Radiative Impact and Climate Response.” Atmospheric Chemistry and Physics 12, no. 22 (November 16, 2012): 10887–98. https://doi.org/10.5194/acp-12-10887-2012.
-5.      Jones, Andy, Jim Haywood, and Olivier Boucher. “Climate Impacts of Geoengineering Marine Stratocumulus Clouds.” Journal of Geophysical Research 114, no. D10 (May 27, 2009): D10106. https://doi.org/10.1029/2008JD011450.
-6.      Rasch, Philip J, John Latham, and Chih-Chieh (Jack) Chen. “Geoengineering by Cloud Seeding: Influence on Sea Ice and Climate System.” Environmental Research Letters 4, no. 4 (October 2009): 045112. https://doi.org/10.1088/1748-9326/4/4/045112.
+1.      Jones, Andy, Jim Haywood, and Olivier Boucher. “Climate Impacts of Geoengineering Marine Stratocumulus Clouds.” Journal of Geophysical Research 114, no. D10 (May 27, 2009): D10106. https://doi.org/10.1029/2008JD011450.
+2.      Rasch, Philip J, John Latham, and Chih-Chieh (Jack) Chen. “Geoengineering by Cloud Seeding: Influence on Sea Ice and Climate System.” Environmental Research Letters 4, no. 4 (October 2009): 045112. https://doi.org/10.1088/1748-9326/4/4/045112.
 
 
 
