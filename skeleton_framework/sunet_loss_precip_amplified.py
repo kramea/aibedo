@@ -214,7 +214,7 @@ def main(parser_args):
 
         loss = criterion(outputs.float(), data_out)
 
-        print("loss", loss)
+        #print("loss", loss)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
