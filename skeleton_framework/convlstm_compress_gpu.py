@@ -10,7 +10,6 @@ from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
 
 from spherical_unet.models.spherical_convlstm.convlstm import *
-from spherical_unet.models.spherical_convlstm.convlstm_multilayer_ts2 import *
 from spherical_unet.models.spherical_convlstm.convlstm_unet import *
 from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
 from spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
@@ -136,8 +135,7 @@ def main(parser_args):
 
     n_pixels = icosahedron_nodes_calculator(parser_args.depth)
 
-    model = SphericalConvLSTMAutoEncoder(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,len(parser_args.input_vars), len(parser_args.output_vars))
-    #model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, len(parser_args.input_vars), len(parser_args.output_vars))
+    model = SphericalConvLSTMUnet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type, parser_args.kernel_size, len(parser_args.input_vars), len(parser_args.output_vars))
     model, device = init_device(parser_args.device, model)
     print("Device", device)
     #model = model.to(device)
@@ -193,14 +191,14 @@ def main(parser_args):
 
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
-    saved_model_path = "./saved_model_convlstmunet_" + str(parser_args.time_length)
+    saved_model_path = "./saved_model_gpu_convlstmunet_" + str(parser_args.time_length)
     if os.path.isdir(saved_model_path):
         shutil.rmtree(saved_model_path)
 
     os.mkdir(saved_model_path)
 
     torch.save(model.state_dict(),
-               "./saved_model_convlstmunet_" + str(parser_args.time_length) + "/convlstm_state_" + str(parser_args.n_epochs) + ".pt")
+               "./saved_model_gpu_convlstmunet_" + str(parser_args.time_length) + "/convlstm_state_" + str(parser_args.n_epochs) + ".pt")
 
     # Prediction code
 
@@ -216,8 +214,8 @@ def main(parser_args):
         predictions = np.concatenate((predictions, pred_numpy), axis=0)
         groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
 
-    np.save("./saved_model_convlstmunet_"+str(parser_args.time_length)+"/prediction_"+str(parser_args.n_epochs)+".npy", predictions)
-    np.save("./saved_model_convlstmunet_"+str(parser_args.time_length)+"/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
+    np.save("./saved_model_gpu_convlstmunet_"+str(parser_args.time_length)+"/prediction_"+str(parser_args.n_epochs)+".npy", predictions)
+    np.save("./saved_model_gpu_convlstmunet_"+str(parser_args.time_length)+"/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
 
 
 if __name__ == "__main__":

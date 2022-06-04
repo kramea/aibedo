@@ -8,7 +8,7 @@ from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
 
 from spherical_unet.models.spherical_convlstm.convlstm import *
-from spherical_unet.models.spherical_convlstm.convlstm_unet import *
+from spherical_unet.models.spherical_convlstm.convlstm_ae import *
 from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
 from spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
 from spherical_unet.layers.chebyshev import SphericalChebConv
@@ -98,7 +98,8 @@ def main(parser_args):
         #(2) Load data
         dataset = np.load(in_temp_npy_file)
         print(np.shape(dataset))
-        #dataset = normalize(dataset, "in")
+        #dataset = normalize(dataset, "in") 
+        # it seems loss decrease is somewhat oscilating if we don't normalize again.
         dataset_out = np.load(out_temp_npy_file)
         #dataset_out = normalize(dataset_out, "out")
         
@@ -108,7 +109,8 @@ def main(parser_args):
         # shuffle
         dataset, dataset_out = shuffle_data(dataset, dataset_out)
         # collect only last timestep from output
-        dataset_out = dataset_out[:,-1:,:,:]
+        #only tas
+        dataset_out = dataset_out[:,:,0:1,:] #N,B,C,vertex
 
         print("Timelength of input: "+str(time_length))
         print("Shape: (1) Input ",np.shape(dataset),"(2) Output ", np.shape(dataset_out))
@@ -158,9 +160,9 @@ def main(parser_args):
                 ))
             if epoch%5==0:
                 if epoch == 0:
-                    os.mkdir("./saved_model_convlstmunet_"+str(time_length)+"/")
+                    os.mkdir("./convlstmae_"+str(time_length)+"/")
                 #save model
-                torch.save(model.state_dict(), "./saved_model_convlstmunet_"+str(time_length)+"/convlstm_state_"+str(epoch)+".pt")
+                torch.save(model.state_dict(), "./convlstmae_"+str(time_length)+"/convlstm_state_"+str(epoch)+".pt")
                 
                 #test with testset
                 with torch.no_grad():
@@ -170,8 +172,8 @@ def main(parser_args):
                     test_loss = criterion(outputs.float(), gt_outputs.float())
                     prediction = outputs.detach().numpy()
                     groundtruth = gt_outputs.detach().numpy()
-                np.save("./saved_model_convlstmunet_"+str(time_length)+"/prediction_"+str(epoch)+"_"+str(test_loss)+".npy", prediction)
-                np.save("./saved_model_convlstmunet_"+str(time_length)+"/groundtruth_"+str(epoch)+"_"+str(test_loss)+".npy", groundtruth)
+                np.save("./convlstmae_"+str(time_length)+"/prediction_"+str(epoch)+"_"+str(test_loss)+".npy", prediction)
+                np.save("./convlstmae_"+str(time_length)+"/groundtruth_"+str(epoch)+"_"+str(test_loss)+".npy", groundtruth)
 
         end = time.time()
         print(f"Runtime of the program is {end - start}")
