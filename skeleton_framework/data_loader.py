@@ -29,6 +29,27 @@ def shuffle_data(d1, d2):
     d2_out2 = np.concatenate(d2_out, axis=0)
     return d1_out2, d2_out2
 
+def shuffle_data_meanstd(d1, d2, d3, d4):
+    n=len(d1)
+    m=len(d2)
+    assert(n == m)
+    idx = [ i for i in range(m)]
+    random.shuffle(idx)
+    d1_out = []
+    d2_out = []
+    d3_out = []
+    d4_out = []
+    for i in idx:
+        d1_out.append(d1[i:i+1])
+        d2_out.append(d2[i:i+1])
+        d3_out.append(d3[i:i + 1])
+        d4_out.append(d4[i:i + 1])
+    d1_out2 = np.concatenate(d1_out, axis=0)
+    d2_out2 = np.concatenate(d2_out, axis=0)
+    d3_out2 = np.concatenate(d3_out, axis=0)
+    d4_out2 = np.concatenate(d4_out, axis=0)
+    return d1_out2, d2_out2, d3_out2, d4_out2
+
 def normalize(data, parameter):
     data_ = copy.deepcopy(data)
     if len(np.shape(data)) == 4:

@@ -41,9 +41,12 @@ def create_parser():
 
     parser.add_argument("--input_file", default=None, type=str)
     parser.add_argument("--output_file", default=None, type=str)
+    parser.add_argument("--mean_file", default=None, type=str)
+    parser.add_argument("--std_file", default=None, type=str)
     parser.add_argument("--output_path", default="output_sunet", type=str)
     parser.add_argument("--input_vars", default=None, nargs="+")
     parser.add_argument("--output_vars", default=None, nargs="+")
+    parser.add_argument("--meanstd_vars", default=None, nargs="+")
     parser.add_argument("--generation_only", default=False, type=bool)
 
     parser.add_argument("--earlystopping_patience", default=None, type=int)

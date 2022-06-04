@@ -15,7 +15,9 @@ def overall_loss (output, ground_truth, constraint_variables):
 
 # setting any negative precip value to positive, used after each forward pass
 def precip_pos(output):
-
+    '''
+    variables used here are precipitation
+    '''
     # shape of model output [time, resolution, fields ]
 
     # fields are [surf temp, surf pressure, precip]
@@ -30,6 +32,10 @@ def precip_pos(output):
 
 # check if balance between evap and precip is balanced, at every point, after each forward pass
 def moisture_budget(output, constraint_variables):
+    
+    '''
+    variables used here are precipitation and evaporation (need the latter from UVic in a separate file)
+    '''
 
     # shape of output [time, resolution, fields ]
 
@@ -49,6 +55,10 @@ def moisture_budget(output, constraint_variables):
 
 
 def mass_budget(output, ground_truth):
+    
+     '''
+    variable used here are surface pressure (from model prediction and ground truth)
+    '''
 
     # summation across all spatial points at time t from the model must be equal to the ground truth for surface_pres
 
@@ -63,12 +73,21 @@ def mass_budget(output, ground_truth):
     return loss_mass
 
 def trop_energy_budget():
+    
+     '''
+    this loss has been replaced. This function is redundant 
+    '''
 
     # too many terms. Needs further simplication
 
     return None
 
 def climate_energy_budget(output, ground_truth, constraint_variables):
+    
+     '''
+    variables used here are surface temperature (from model predictions and ground truth) and radiation (need a file from UVic - it is at 
+    isosph.CESM2_FB_totSum.nc
+    '''
 
     # sum up upto a year or more?
 
@@ -77,7 +96,7 @@ def climate_energy_budget(output, ground_truth, constraint_variables):
     loss_climate_energy = np.zeros(output.shape[0], output.shape[1])
 
     for time in range(0, output.shape[0]):
-
+       # energy_budget = radiation - lambda * surface temperature (model - ground truth)
        energy_budget = constraint_variables[time, :, 1] - lambda_feedback * (output[time, :, 2] - ground_truth[time, :, 2])
 
         loss_climate_energy[time, :] = loss_climate_energy[time, :] + energy_budget
