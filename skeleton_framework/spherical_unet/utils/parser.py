@@ -85,6 +85,6 @@ def parse_config(parser):
                 if arg_dict[key] is None:
                     arg_dict[key] = value
     for key, value in arg_dict.items():
-        if key != "device" and key != "type" and key != "sequence_length" and key != "prediction_shift" and arg_dict[key] is None:
+        if key!="meanstd_vars" and key != "device" and key != "type" and key != "sequence_length" and key != "prediction_shift" and key != "mean_file" and key!="std_file"  and arg_dict[key] is None:
             raise ValueError("The value of {} is set to None. Please define it in the config yaml file or in the command line.".format(key))
     return args
