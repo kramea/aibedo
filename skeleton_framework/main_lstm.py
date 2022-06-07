@@ -10,9 +10,11 @@ from torchsummary import summary
 
 def load_data(file_path, input_time_length, name_of_variable):
     ds = xr.open_dataset(file_path)
-    data = ds[name_of_variable]  #size = [timesteps: vertexs]
+    data = np.asarray(ds[name_of_variable])  #size = [timesteps: vertexs]
+    
     input_file = [[data[i+j] for i in range(3)] for j in range(0,len(data)-input_time_length)] #size = (N,input_file_length)
     output_file = [ [i] for i in data[input_time_length:]] #size = (N, 1) : N is number of files
+
     return input_file, output_file
 
 
@@ -80,34 +82,34 @@ def main():
     #(1) input parameters : Soo(Todo): consider to  make it as parser_arg
     file_path = "./data/annual_avg_output.nc"
     input_file_length = 3
-    name_of_variable = 'tas' # choose among ['tas', 'psl', 'pr']
+    name_of_variable = 'tas_pre' # choose among ['tas', 'psl', 'pr']
     output_path = "./lstm_"+str(name_of_variable)+"_ts_"+str(input_file_length)+"/"
-    n_layers = 10
-    hidden_dim = 1024
+    n_layers = 4
+    hidden_dim = 256
     embedding_dim = 162
     input_size = 162
     output_size = 162
-    learning_rate = 0.1
+    learning_rate = 0.001
     n_epochs = 50
-    batch_size = 50
+    batch_size = 40
     clip = 5
 
     #(2) load data: input_file (N, time_length, input_dims), output_file (N, 1, output_dims)
     input_file, output_file = load_data(file_path, input_file_length, name_of_variable)
     #Split the first 80% of the timesteps into training data, and the rest into test data (in chronological order).
     n = len(input_file)
-    input_file_tr,input_file_te = input_file[:int(0.8*n)], input_file[int(0.8*n):]
-    output_file_tr,output_file_te = output_file[:int(0.8*n)], output_file[int(0.8*n):]
+    input_file_tr,input_file_te = input_file[:int(0.67*n)], input_file[int(0.67*n):]
+    output_file_tr,output_file_te = output_file[:int(0.67*n)], output_file[int(0.67*n):]
+    dataset_tr, dataset_out_tr  = input_file_tr, output_file_tr
+    dataset_te, dataset_out_te  = input_file_te, output_file_te
     #shuffle #Soo(Todo): ask to Kalai. Do we shuffle before we divide train/test or after(the way it is implemented here)?
-    dataset_tr, dataset_out_tr  = shuffle_data(input_file_tr, output_file_tr)
-    dataset_te, dataset_out_te  = shuffle_data(input_file_te, output_file_te)
+   # dataset_tr, dataset_out_tr  = shuffle_data(input_file_tr, output_file_tr)
+   # dataset_te, dataset_out_te  = shuffle_data(input_file_te, output_file_te)
     print("(1) Train-set \n input size:",  np.shape(dataset_tr), "output size:" ,np.shape(dataset_out_tr))
     print("(2) Test-set \n input size:",  np.shape(dataset_te), "output size:" ,np.shape(dataset_out_te))
 
     #(3) Define model
-    if os.path.isdir(output_path): 
-        shutil.rmtree(output_path)
-    else:
+    if not os.path.isdir(output_path): 
         os.mkdir(output_path)    
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
