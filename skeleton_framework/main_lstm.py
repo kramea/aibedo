@@ -8,12 +8,31 @@ from torchsummary import summary
 
 #refered: https://blog.floydhub.com/long-short-term-memory-from-zero-to-hero-with-pytorch/
 
+# convert an array of values into a dataset matrix
+def create_dataset(dataset, look_back=1):
+    dataX, dataY = [], []
+    for i in range(len(dataset)-look_back-1):
+        a = dataset[i:(i+look_back)]
+        dataX.append(a)
+        dataY.append(dataset[i + look_back])
+    return np.array(dataX), np.array(dataY)
+
+
+def moving_average(x, w):
+    x_out = []
+    _ , n = np.shape(x)
+    for i in range(n):
+        x_out.append(np.convolve(x[:,i], np.ones(w), 'valid') / w)
+    return np.asarray(x_out)
+
+
 def load_data(file_path, input_time_length, name_of_variable):
     ds = xr.open_dataset(file_path)
     data = np.asarray(ds[name_of_variable])  #size = [timesteps: vertexs]
-    
-    input_file = [[data[i+j] for i in range(3)] for j in range(0,len(data)-input_time_length)] #size = (N,input_file_length)
-    output_file = [ [i] for i in data[input_time_length:]] #size = (N, 1) : N is number of files
+    print(np.shape(data))
+    data = moving_average(data, 20)
+    print(np.shape(data))
+    input_file, output_file  = create_dataset(data, 3)
 
     return input_file, output_file
 
@@ -35,8 +54,6 @@ def shuffle_data(d1, d2):
     return d1_out2, d2_out2
 
 
-def moving_average(x, w):
-    return np.convolve(x, np.ones(w), 'valid') / w
 
 class LSTM(nn.Module):
     def __init__(self, input_size, output_size, embedding_dim, hidden_dim, n_layers, drop_prob=0.5):
@@ -56,8 +73,8 @@ class LSTM(nn.Module):
         batch_size = x.size(0)
         embeds = self.embedding(x)
         embeds = self.relu(embeds)
-        embeds = x
-        lstm_out, hidden = self.lstm(embeds, hidden)
+        
+        lstm_out, hidden = self.lstm(x, hidden)
         d1,d2,_ = lstm_out.size()
         lstm_out = lstm_out.contiguous().view(d1*d2, -1)
         lstm_out = lstm_out.contiguous().view(-1, self.hidden_dim)
@@ -84,27 +101,25 @@ def main():
     input_file_length = 3
     name_of_variable = 'tas_pre' # choose among ['tas', 'psl', 'pr']
     output_path = "./lstm_"+str(name_of_variable)+"_ts_"+str(input_file_length)+"/"
-    n_layers = 4
+    n_layers = 7
     hidden_dim = 256
-    embedding_dim = 162
-    input_size = 162
-    output_size = 162
+    embedding_dim = 256
+    input_size = 146
+    output_size = 146
     learning_rate = 0.001
-    n_epochs = 50
-    batch_size = 40
+    n_epochs = 500
+    batch_size = 4
     clip = 5
 
     #(2) load data: input_file (N, time_length, input_dims), output_file (N, 1, output_dims)
     input_file, output_file = load_data(file_path, input_file_length, name_of_variable)
     #Split the first 80% of the timesteps into training data, and the rest into test data (in chronological order).
     n = len(input_file)
-    input_file_tr,input_file_te = input_file[:int(0.67*n)], input_file[int(0.67*n):]
-    output_file_tr,output_file_te = output_file[:int(0.67*n)], output_file[int(0.67*n):]
-    dataset_tr, dataset_out_tr  = input_file_tr, output_file_tr
-    dataset_te, dataset_out_te  = input_file_te, output_file_te
+    input_file_tr,input_file_te = input_file[:int(0.8*n)], input_file[int(0.8*n):]
+    output_file_tr,output_file_te = output_file[:int(0.8*n)], output_file[int(0.8*n):]
     #shuffle #Soo(Todo): ask to Kalai. Do we shuffle before we divide train/test or after(the way it is implemented here)?
-   # dataset_tr, dataset_out_tr  = shuffle_data(input_file_tr, output_file_tr)
-   # dataset_te, dataset_out_te  = shuffle_data(input_file_te, output_file_te)
+    dataset_tr, dataset_out_tr  = shuffle_data(input_file_tr, output_file_tr)
+    dataset_te, dataset_out_te  = shuffle_data(input_file_te, output_file_te)
     print("(1) Train-set \n input size:",  np.shape(dataset_tr), "output size:" ,np.shape(dataset_out_tr))
     print("(2) Test-set \n input size:",  np.shape(dataset_te), "output size:" ,np.shape(dataset_out_te))
 
@@ -114,7 +129,7 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     num_data, time_steps, input_dims = np.shape(input_file)
-    model = LSTM(input_size, output_size, embedding_dim, hidden_dim, n_layers, drop_prob=0.2)
+    model = LSTM(input_size, output_size, embedding_dim,   hidden_dim, n_layers, drop_prob=0.2)
     lr = learning_rate
     optimizer = optim.Adam(model.parameters(), lr=lr)
     print(model)
