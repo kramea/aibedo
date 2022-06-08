@@ -14,7 +14,7 @@ def create_dataset(dataset, look_back=1):
     for i in range(len(dataset)-look_back-1):
         a = dataset[i:(i+look_back)]
         dataX.append(a)
-        dataY.append(dataset[i + look_back])
+        dataY.append([dataset[i + look_back]])
     return np.array(dataX), np.array(dataY)
 
 
@@ -26,11 +26,11 @@ def moving_average(x, w):
     return np.asarray(x_out)
 
 
-def load_data(file_path, input_time_length, name_of_variable):
+def load_data(file_path, input_time_length, name_of_variable, average_window):
     ds = xr.open_dataset(file_path)
     data = np.asarray(ds[name_of_variable])  #size = [timesteps: vertexs]
     print(np.shape(data))
-    data = moving_average(data, 20)
+    data = moving_average(data, average_window)
     print(np.shape(data))
     input_file, output_file  = create_dataset(data, 3)
 
@@ -74,7 +74,7 @@ class LSTM(nn.Module):
         embeds = self.embedding(x)
         embeds = self.relu(embeds)
         
-        lstm_out, hidden = self.lstm(x, hidden)
+        lstm_out, hidden = self.lstm(embeds, hidden)
         d1,d2,_ = lstm_out.size()
         lstm_out = lstm_out.contiguous().view(d1*d2, -1)
         lstm_out = lstm_out.contiguous().view(-1, self.hidden_dim)
@@ -99,20 +99,21 @@ def main():
     #(1) input parameters : Soo(Todo): consider to  make it as parser_arg
     file_path = "./data/annual_avg_output.nc"
     input_file_length = 3
-    name_of_variable = 'tas_pre' # choose among ['tas', 'psl', 'pr']
+    name_of_variable = 'psl_pre' # choose among ['tas', 'psl', 'pr']
     output_path = "./lstm_"+str(name_of_variable)+"_ts_"+str(input_file_length)+"/"
     n_layers = 7
     hidden_dim = 256
-    embedding_dim = 256
-    input_size = 146
-    output_size = 146
+    embedding_dim = 164
     learning_rate = 0.001
-    n_epochs = 500
-    batch_size = 4
+    n_epochs = 100
+    batch_size = 70
     clip = 5
-
+    average_window=20
     #(2) load data: input_file (N, time_length, input_dims), output_file (N, 1, output_dims)
-    input_file, output_file = load_data(file_path, input_file_length, name_of_variable)
+    input_file, output_file = load_data(file_path, input_file_length, name_of_variable, average_window)
+    print(np.shape(input_file), np.shape(output_file))
+    _, _, input_size = np.shape(input_file)
+    _, _, output_size = np.shape(output_file)
     #Split the first 80% of the timesteps into training data, and the rest into test data (in chronological order).
     n = len(input_file)
     input_file_tr,input_file_te = input_file[:int(0.8*n)], input_file[int(0.8*n):]
@@ -120,6 +121,7 @@ def main():
     #shuffle #Soo(Todo): ask to Kalai. Do we shuffle before we divide train/test or after(the way it is implemented here)?
     dataset_tr, dataset_out_tr  = shuffle_data(input_file_tr, output_file_tr)
     dataset_te, dataset_out_te  = shuffle_data(input_file_te, output_file_te)
+    print(name_of_variable)
     print("(1) Train-set \n input size:",  np.shape(dataset_tr), "output size:" ,np.shape(dataset_out_tr))
     print("(2) Test-set \n input size:",  np.shape(dataset_te), "output size:" ,np.shape(dataset_out_te))
 
@@ -173,7 +175,7 @@ def main():
             train_loss,
             validation_loss
             ))
-        if epoch%5==0:
+        if epoch%50==0 and epoch>0:
             #save model
             torch.save(model.state_dict(), output_path+"/lstm_"+str(epoch)+".pt")
             #test with testset
