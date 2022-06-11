@@ -261,12 +261,19 @@ where :math:`L` is the latent heat of vaporization (:math:`2.4536 10^6` J/kg), :
 
 Constraint 3. **Global moisture budget**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This relationship balances the moisture flux in to (evaporation) and out of (precipitation) the atmosphere over the globe at each time step, thus ensuring conservation of moisture in the atmosphere.
+This relationship balances the moisture flux in to (evaporation) and out of (precipitation) the atmosphere with the change in atmospheric moisture content over the globe at each time step, thus ensuring conservation of moisture in the atmosphere.
 
 .. math:: 
-  \sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} = 0
+  \sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} = \int_{lat=90S}^{90N} \int_{lon=180W}^{180E} \frac{-1}{g}\frac{\partial}{\partial t} \sum_{lev = 0}^{p_s} q_{lev,lat,lon} dp \Delta A_{lat,lon}
 
-where :math:`P` is the precipitation and :math:`E` is the evaporation.
+where :math:`P` is the precipitation, :math:`E` is the evaporation, :math:`q` is the specific humidity, and :math:`p_s` is the surface pressure.
+
+The moisture storage term can be roughly approximated the climatological mean global mean P-E, which we subtract from the P-E we calculate for a given month of AiBEDO output such that
+
+.. math:: 
+  \sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} - \epsilon_q \approx 0
+
+where :math:`\epsilon_q` is the climatological :math:`\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon}`
 
 Constraint 4. **Non-negative precipitation**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -277,12 +284,19 @@ A simple yet relevant constraint is to ensure negative precipitation (:math:`P`)
 
 Constraint 5. **Global atmospheric mass budget**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Using the hydrostatic balance assumption, surface pressure can be used as a proxy for the mass of the atmosphere. This simple constraint ensures atmospheric mass conservation summed over the globe at yearly time scale.
+Using the hydrostatic balance assumption, surface pressure can be used as a proxy for the mass of the atmosphere. This simple constraint ensures atmospheric mass conservation summed over the globe for monthly mean data.
 
 .. math:: 
-   \sum_{t}^{ 1 yr}\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = 0
+   \sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = C + \Delta t\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(M)_{lat,lon} \Delta A_{lat, lon}
 
-where :math:`P_s` is the surface pressure.
+where :math:`P_s` is the surface pressure and :math:`M` is the mass flux into the atmosphere. We assume that the mass flux into the atmosphere is predominantly water vapour, such that we can assume :math:`M = E`.
+
+Similar to constraint 5, we assume :math:`C` plus the mass flux term can be approximated by the climatological mean :math:`P_s`, which we subtract from the :math:`P_s` for a given month of AiBEDO output such that
+
+.. math:: 
+  \int_A \frac{-1}{g}p_s dA - (C + \epsilon_E) = 0
+
+where :math:`C + \epsilon_E` is the climatological average of :math:`\int_A \frac{-1}{g}p_s dA`.
 
 Denormalizing
 ~~~~~~~~~~~~~~~
