@@ -184,3 +184,11 @@ To run the same code with GPUs, add the ``--gpu`` flag and provide the actual GP
 Visualizing Spherical U-Net Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+We use ``cartopy`` package to visualize the results of (Temporal) Spherical U-Net model. After the model is trained, the predictions of test datasets are stored as ``.npy`` files. We also need the corresponding input or output ``netCDF4`` file to read the preprocessed latitude and longitude values to plot. We use different colormaps for each output variable: ``rainbow`` for Air Temperature, ``Spectral`` for Surface Pressure and ``bwr`` for Precipitation. The Jupyter notebook for generating the visualization can be found `here <https://github.com/kramea/aibedo/blob/sunet/skeleton_framework/Viz_sunet.ipynb>`_. 
+
+Here, the code randomly chooses a snapshot of time from the test dataset to visualize. An example visualization is shown below:
+
+.. figure::
+    results_tutorial_sunet.png
+
+    Figure 1. Visualization of Spherical U-Net Output
