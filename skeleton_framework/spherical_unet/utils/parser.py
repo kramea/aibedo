@@ -48,6 +48,7 @@ def create_parser():
     parser.add_argument("--output_vars", default=None, nargs="+")
     parser.add_argument("--meanstd_vars", default=None, nargs="+")
     parser.add_argument("--generation_only", default=False, type=bool)
+    parser.add_argument("--model_file", default=False, type=str)
 
     parser.add_argument("--earlystopping_patience", default=None, type=int)
 
