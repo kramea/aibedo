@@ -104,15 +104,8 @@ def main(parser_args):
 
     weights_file = torch.load(parser_args.model_file)
 
-    #ckpt = torch.load("./saved_model_lag_4/unet_state_4.pt")
-    #weights_file = torch.load("./saved_model_lag_4/unet_state_1.pt")
-
-    #print(weights_file.keys())
 
     weights_file = {key.replace("module.", ""): value for key, value in weights_file.items()}
-
-    #print(weights_file.keys())
-
 
     unet.load_state_dict(weights_file, strict=False)
     unet, device = init_device(parser_args.device, unet)
