@@ -44,10 +44,6 @@ def get_dataloader(parser_args):
     n_pixels = icosahedron_nodes_calculator(glevel)
     time_length = int(parser_args.time_length)
 
-    print("Grid level:", glevel)
-    print("N pixels:", n_pixels)
-    print("time length:", time_length)
-
     inDS = xr.open_dataset(parser_args.input_file)
     outDS = xr.open_dataset(parser_args.output_file)
 
@@ -106,9 +102,10 @@ def main(parser_args):
                              parser_args.kernel_size, len(parser_args.input_vars)*parser_args.time_length, len(parser_args.output_vars))
 
 
+    weights_file = torch.load(parser_args.model_file)
 
     #ckpt = torch.load("./saved_model_lag_4/unet_state_4.pt")
-    weights_file = torch.load("./saved_model_lag_4/unet_state_1.pt")
+    #weights_file = torch.load("./saved_model_lag_4/unet_state_1.pt")
 
     #print(weights_file.keys())
 
