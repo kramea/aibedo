@@ -13,6 +13,7 @@ from spherical_unet.utils.initialization import init_device
 from spherical_unet.utils.samplings import icosahedron_nodes_calculator
 from argparse import Namespace
 from pathlib import Path
+import re
 import time
 
 from ignite.contrib.handlers.param_scheduler import create_lr_scheduler_with_warmup
@@ -101,6 +102,10 @@ def main(parser_args):
     unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,
                              parser_args.kernel_size, len(parser_args.input_vars)*parser_args.time_length, len(parser_args.output_vars))
 
+    modelfilename = Path(parser_args.output_file).stem
+    p = re.compile('compress.isosph.(.*).historical.r1i1p1f1.Output')
+    modelname = p.findall(modelfilename)[0]
+
 
     weights_file = torch.load(parser_args.model_file)
 
@@ -120,8 +125,8 @@ def main(parser_args):
         predictions = np.concatenate((predictions, pred_numpy), axis=0)
         groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
 
-    np.save("pred.npy", predictions)
-    np.save("gt.npy", groundtruth)
+    np.save((modelname + "_predictions.npy"), predictions)
+    np.save((modelname + "_groundtruth.npy"), groundtruth)
 
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
