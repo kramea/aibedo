@@ -83,7 +83,7 @@ def get_dataloader(parser_args):
 
     #dataset_out_lstm = dataset_out[:len(dataset_out)-time_length, :, :]
 
-    dataset_in_lstm, dataset_out_lstm = shuffle_data(dataset_in_lstm, dataset_out_lstm)
+    # dataset_in_lstm, dataset_out_lstm = shuffle_data(dataset_in_lstm, dataset_out_lstm)
 
 
     combined_data = np.concatenate((dataset_in_lstm, dataset_out_lstm), axis=2)
