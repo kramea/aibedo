@@ -43,8 +43,13 @@ unet.load_state_dict(weights_file, strict=False)
 unet.eval()
 
 inPredict = dataset_in[0:1]
-groundTruth = dataset_out[0:1]
+outPredict = dataset_out[0:1]
 
 preds = unet(torch.Tensor(inPredict))
 
 pred_numpy = preds.detach().cpu().numpy()
+
+np.save((modelname + "_predictions.npy", pred_numpy))
+np.save((modelname + "_groundtruth.npy", outPredict))
+
+
