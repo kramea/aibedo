@@ -49,7 +49,7 @@ preds = unet(torch.Tensor(inPredict))
 
 pred_numpy = preds.detach().cpu().numpy()
 
-np.save((modelname + "_predictions.npy", pred_numpy))
-np.save((modelname + "_groundtruth.npy", outPredict))
+np.save((modelname + "_predictions.npy"), pred_numpy)
+np.save((modelname + "_groundtruth.npy"), outPredict)
 
 
