@@ -216,7 +216,7 @@ def main(parser_args):
         groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
 
     np.save("./saved_model" + "/prediction_"+str(parser_args.n_epochs)+".npy", predictions)
-    np.save("./saved_model" + str(parser_args.time_lag) + "/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
+    np.save("./saved_model" + "/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
 
 
 
