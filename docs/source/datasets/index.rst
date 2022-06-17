@@ -245,19 +245,12 @@ This weakens the constraint as there is significant uncertainty within CMIP6 in 
 
 Constraint 2. **Precipitation energy budget**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This is the energetic constraint on global precipitation. Annual mean global precipitation changes are constrained by this relationship. Globally averaged annual mean radiative cooling of the atmosphere must be balanced by latent heat flux due to condensation and sensible heat flux from the surface (Allen and Ingram, 2002; Jakob et al., 2019). 
+This is the energetic constraint on global precipitation. Globally mean radiative cooling of the atmosphere must be balanced by warming of atmosphere due to latent heat flux and sensible heat flux from the surface (Allen and Ingram, 2002; Jakob et al., 2019). Considering hemispheric asymmetries and seasonal cycle this budget can be written as follows - 
 
 .. math:: 
-  \sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta LP + \Delta SH) = \sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta R_{TOA} - \Delta R_{SFC})
+  \sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (PL + SH + R_{TOA} -R_{SFC})_{lat,lon} \Delta A_{lat,lon} - \epsilon_E \approx 0
 
-This can be written as -
-
-.. math::
-  \sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta LP + \Delta SH - \Delta R_{TOA} + \Delta R_{SFC}) = 0
-  
-where :math:`L` is the latent heat of vaporization (:math:`2.4536 10^6` J/kg), :math:`P` is the precipitation, :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the upwelling TOA radiation, :math:`R_{SFC}` is the upwelling surface radiation. :math:`\Delta` represents anomalies of respective variable. 
-
-
+where :math:`\epsilon_E` is the climatological :math:`\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (PL + SH + R_{TOA} -R_{SFC})_{lat,lon} \Delta A_{lat,lon}`, :math:`L` is the latent heat of vaporization (2.4536106 J/kg), :math:`P` is the precipitation, :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the net radiation at top of the atmosphere and :math:`R_{SFC}` is the net surface radiation.  
 
 Constraint 3. **Global moisture budget**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
