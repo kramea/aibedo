@@ -190,14 +190,16 @@ def main(parser_args):
 
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
-    saved_model_path = "./saved_model_lag_" + str(parser_args.time_lag)
+    saved_model_path = "./saved_model"
     if os.path.isdir(saved_model_path):
         shutil.rmtree(saved_model_path)
         os.mkdir(saved_model_path)
     else:
         os.mkdir(saved_model_path)
 
-    torch.save(unet.state_dict(), "./saved_model_lag_" + str(parser_args.time_lag) + "/unet_state_" + str(parser_args.n_epochs) + ".pt")
+    torch.save(unet.state_dict(), "./saved_model" + "/unet_state_" + str(parser_args.n_epochs) + ".pt")
+
+    torch.save(unet, "./saved_model" + "/unet_model_" + str(parser_args.n_epochs) + ".pt")
 
     # Prediction code
 
@@ -213,8 +215,10 @@ def main(parser_args):
         predictions = np.concatenate((predictions, pred_numpy), axis=0)
         groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
 
-    np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/prediction_"+str(parser_args.n_epochs)+".npy", predictions)
-    np.save("./saved_model_lag_" + str(parser_args.time_lag) + "/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
+    np.save("./saved_model" + "/prediction_"+str(parser_args.n_epochs)+".npy", predictions)
+    np.save("./saved_model" + str(parser_args.time_lag) + "/groundtruth_"+str(parser_args.n_epochs)+".npy", groundtruth)
+
+
 
 
 
