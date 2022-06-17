@@ -11,6 +11,7 @@ Then install all the relevant packages:
 
 ```
 pip install -r requirements.txt
+conda install -c conda-forge cartopy
 ```
 
 Jupyter notebook and python script can be used to generate predictions. 
