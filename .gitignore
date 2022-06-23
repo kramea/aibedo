@@ -155,4 +155,11 @@ cython_debug/
 
 # End of https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks
 # Pycharm
-.idea/
+.idea
+.idea/**
+
+# logging
+aibedo_salva/out_dir/**
+aibedo_salva/out_dir/wandb/**
+aibedo_salva/out_dir/logs/**
+aibedo_salva/configs/local/default.yaml

@@ -1,0 +1,10 @@
+_target_: aibedo_salva.datamodules.icosahedron_dm.IcosahedronDatamodule
+defaults:
+  - _self_
+  - base_data_config.yaml   # general, datamodule independent, parameters (e.g. data_dir, batch size, etc.)
+
+order: 5
+time_lag: 0                # dummy for s-convlstm
+time_length: 2             # >=1 for s-convlstm
+partition: [0.8, 0.1, 0.1] # partition for training, validation, test
+

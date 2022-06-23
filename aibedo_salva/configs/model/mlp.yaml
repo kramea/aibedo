@@ -1,0 +1,14 @@
+_target_: aibedo_salva.models.MLP.AIBEDO_MLP
+
+defaults:
+  - _self_
+  - base_model_config.yaml   # general, model independent, parameters
+  - /input_transform: flatten.yaml
+  - /optimizer: adamw.yaml
+
+hidden_dims: [512, 256, 256]
+# hidden_dims: [1024, 512, 256]
+net_normalization: "layer_norm"
+activation_function: "Gelu"
+dropout: 0.0
+residual: False

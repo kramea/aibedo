@@ -22,12 +22,11 @@ def create_parser():
     parser.add_argument("--config-file", dest="config_file", type=argparse.FileType(mode="r"))
 
     parser.add_argument("--pooling_class", default=None, type=str)
-    #parser.add_argument("--n_pixels", default=None, type=int)
+    # parser.add_argument("--n_pixels", default=None, type=int)
     parser.add_argument("--depth", default=None, type=int)
     parser.add_argument("--laplacian_type", default=None, type=str)
     parser.add_argument("--time_lag", default=None, type=int)
     parser.add_argument("--time_length", default=None, type=int)
-    
 
     parser.add_argument("--type", default=None, type=str)
     parser.add_argument("--sequence_length", default=None, type=int)
@@ -50,11 +49,9 @@ def create_parser():
     parser.add_argument("--meanstd_vars", default=None, nargs="+")
     parser.add_argument("--generation_only", default=False, type=bool)
 
-
     parser.add_argument("--earlystopping_patience", default=None, type=int)
 
     parser.add_argument("--gpu", dest="device", nargs="*")
-
 
     return parser
 
@@ -87,6 +84,8 @@ def parse_config(parser):
                 if arg_dict[key] is None:
                     arg_dict[key] = value
     for key, value in arg_dict.items():
-        if key!="meanstd_vars" and key != "device" and key != "type" and key != "sequence_length" and key != "prediction_shift" and key != "mean_file" and key!="std_file"  and arg_dict[key] is None:
-            raise ValueError("The value of {} is set to None. Please define it in the config yaml file or in the command line.".format(key))
+        if key != "model_file" and key != "meanstd_vars" and key != "device" and key != "type" and key != "sequence_length" and key != "prediction_shift" and key != "mean_file" and key != "std_file" and \
+                arg_dict[key] is None:
+            raise ValueError(
+                f"The value of {key} is set to None. Please define it in the config yaml file or in the command line.")
     return args
