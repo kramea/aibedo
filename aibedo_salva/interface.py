@@ -5,7 +5,7 @@ import hydra
 import torch
 from omegaconf import DictConfig, OmegaConf
 
-from aibedo_salva.data_transform.normalization import Normalizer
+from aibedo_salva.data_transforms.normalization import Normalizer
 from aibedo_salva.datamodules.abstract_datamodule import AIBEDO_DataModule
 from aibedo_salva.models.base_model import BaseModel
 
