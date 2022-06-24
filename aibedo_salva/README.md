@@ -1,7 +1,6 @@
 # Environment
     conda env create -f env.yaml   # create new environment will all dependencies
     conda activate aibedo_salva  # activate the environment called 'climart'
-    python train.py trainer.gpus=0
 
 # Train a model
 
