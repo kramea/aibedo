@@ -8,7 +8,6 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 import xarray as xr
 import numpy as np
-from aibedo_salva.data_transform.normalization import Normalizer
 from aibedo_salva.datamodules.abstract_datamodule import AIBEDO_DataModule
 from aibedo_salva.utilities.utils import get_logger
 from skeleton_framework.data_loader import shuffle_data

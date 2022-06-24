@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
-from aibedo_salva.data_transform.normalization import Normalizer
+from aibedo_salva.data_transforms.normalization import Normalizer
 from aibedo_salva.utilities.utils import get_logger
 
 log = get_logger(__name__)

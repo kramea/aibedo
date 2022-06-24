@@ -11,9 +11,9 @@ from timm.optim import create_optimizer_v2
 from torch import Tensor, nn
 from pytorch_lightning import LightningModule
 import torchmetrics
-from aibedo_salva.data_transform.normalization import NormalizationMethod
+from aibedo_salva.data_transforms.normalization import NormalizationMethod
 
-from aibedo_salva.data_transform.transforms import AbstractTransform
+from aibedo_salva.data_transforms.transforms import AbstractTransform
 from aibedo_salva.utilities.utils import get_logger, to_DictConfig, get_loss
 from skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
 
