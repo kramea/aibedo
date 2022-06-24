@@ -1,6 +1,6 @@
 # Environment
     conda env create -f env.yaml   # create new environment will all dependencies
-    conda activate aibedo_salva  # activate the environment called 'climart'
+    conda activate aibedo_salva  # activate the environment called 'aibedo_salva'
 
 # Train a model
 
