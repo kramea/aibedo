@@ -1,4 +1,4 @@
-data_dir: "/data-ssd/kramea/data_aibedo/"   # Make sure that it is an absolute path!
+data_dir: "/work/data/"   # Make sure that it is an absolute path!
 input_filename: "compress.isosph.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
 input_vars: ['clivi_pre', 'clwvi_pre', 'crelSurf_pre', 'crel_pre', 'cresSurf_pre', 'cres_pre', 'netTOAcs_pre', 'lsMask', 'netSurfcs_pre', 'lcloud_nonorm']
 output_vars: ['tas_pre', 'psl_pre', 'pr_pre']
