@@ -5,6 +5,6 @@ defaults:
 
 order: 5
 time_lag: 0                # dummy for s-convlstm
-time_length: 2             # >=1 for s-convlstm
+time_length: 4             # >=1 for s-convlstm
 partition: [0.8, 0.1, 0.1] # partition for training, validation, test
 
