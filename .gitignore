@@ -157,7 +157,7 @@ cython_debug/
 # Pycharm
 .idea
 .idea/**
-
+aibedo.iml
 # logging
 aibedo_salva/out_dir/**
 aibedo_salva/out_dir/wandb/**
