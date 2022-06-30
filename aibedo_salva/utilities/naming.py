@@ -27,7 +27,7 @@ def get_detailed_name(config) -> str:
     hdims = config.model.get('hidden_dims')
     if hdims is None:
         num_L = config.model.get('num_layers') or config.model.get('depth')
-        if config.config.model.get('hidden_dim') is not None:
+        if config.model.get('hidden_dim') is not None:
             hdims = f"{config.model.get('hidden_dim')}x{num_L}"
     elif all([h == hdims[0] for h in hdims]):
         hdims = f"{hdims[0]}x{len(hdims)}"

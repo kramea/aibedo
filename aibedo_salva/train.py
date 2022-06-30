@@ -1,4 +1,3 @@
-import wandb
 import hydra
 from omegaconf import DictConfig
 
@@ -41,6 +40,7 @@ def run_model(config: DictConfig):
         trainer.test(datamodule=datamodule, ckpt_path='best')
 
     if config.get('logger') and config.logger.get("wandb"):
+        import wandb
         wandb.finish()
 
     final_model = model.load_from_checkpoint(

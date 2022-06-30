@@ -18,7 +18,15 @@ class SphericalUNet(nn.Module):
     """Spherical GCNN Autoencoder.
     """
 
-    def __init__(self, pooling_class, N, depth, laplacian_type, kernel_size,in_channels, out_channels, ratio=1):
+    def __init__(self,
+                 pooling_class,
+                 N,
+                 depth,
+                 laplacian_type,
+                 kernel_size,
+                 in_channels,
+                 out_channels,
+                 ratio=1):
         """Initialization.
 
         Args:
