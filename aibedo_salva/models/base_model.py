@@ -145,6 +145,9 @@ class BaseModel(LightningModule):
     # --------------------- training with PyTorch Lightning
     def on_train_start(self) -> None:
         self.log('Parameter count', float(self.n_params))
+        self.log('Training set size', float(len(self.trainer.datamodule._data_train)))
+        self.log('Validation set size', float(len(self.trainer.datamodule._data_val)))
+
         if self._output_normalizer is None and self.trainer.datamodule.normalizer is not None:
             self.log_text.info(" Dynamically adding the output normalizer from trainer.datamodule")
             self.output_normalizer = self.trainer.datamodule.normalizer.output_normalizer
