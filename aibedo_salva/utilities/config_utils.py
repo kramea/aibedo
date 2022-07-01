@@ -150,6 +150,14 @@ def check_config_values(config: DictConfig):
                 config.model.net_normalization = "none"
             config.model.net_normalization = config.model.net_normalization.lower()
 
+        if config.datamodule.get('order'):
+            if 'compress.isosph5.' in config.datamodule.get('input_filename'):
+                config.datamodule.order = 5
+            elif 'compress.isosph.' in config.datamodule.get('input_filename'):
+                config.datamodule.order = 6
+            else:
+                raise ValueError(f"Unknown order for input_filename {config.datamodule.input_filename}")
+
         if config.logger.get("wandb"):
             if 'callbacks' in config and config.callbacks.get('model_checkpoint'):
                 id_mdl = config.logger.wandb.get('id')
