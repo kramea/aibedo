@@ -46,11 +46,10 @@ def run_model(config: DictConfig):
     final_model = model.load_from_checkpoint(
         trainer.checkpoint_callback.best_model_path,
         datamodule_config=config.datamodule,
-        output_normalizer=datamodule.normalizer.output_normalizer
+        output_normalizer=datamodule.normalizer.output_normalizer if datamodule.normalizer else None,
     )
 
     return final_model
-
 
 @hydra.main(config_path="configs/", config_name="main_config.yaml", version_base=None)
 def main(config: DictConfig):

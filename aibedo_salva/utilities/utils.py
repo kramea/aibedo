@@ -7,7 +7,7 @@ import math
 import os
 
 from types import SimpleNamespace
-from typing import Union, Sequence, List, Dict, Optional, Callable
+from typing import Union, Sequence, List, Dict, Optional, Callable, Any
 
 import numpy as np
 import torch
@@ -139,3 +139,10 @@ def rgetattr(obj, attr, *args):
         return getattr(obj, attr, *args)
 
     return functools.reduce(_getattr, [obj] + attr.split('.'))
+
+
+# Errors
+def raise_error_if_invalid_value(value: Any, possible_values: Sequence[Any], name: str = None):
+    if value not in possible_values:
+        name = name or (value.__name__ if hasattr(value, '__name__') else 'value')
+        raise ValueError(f"{name} must be one of {possible_values}, but was {value}")
