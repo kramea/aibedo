@@ -32,19 +32,21 @@ from torchvision import transforms
 
 def sunet_collate(batch):
     batchShape = batch[0].shape
-    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr, 3 mean, 3 std
+    varlimit = batchShape[1] - 4  # 3 output variables: tas, psl, pr, 3 mean, 3 std
 
     data_in_array = np.array([item[:, 0:varlimit] for item in batch])  # includes mean and std
     # data_out_array = np.array([item[:, varlimit:] for item in batch])
-    data_out_array = np.array([item[:, varlimit:] for item in batch])
+    data_out_array = np.array([item[:, varlimit:-1] for item in batch])
+    data_loss_array = np.array([item[:, -1] for item in batch])
     #data_mean_array = np.array([item[:, varlimit-6:varlimit-3] for item in batch])
     # data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
 
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
+    data_loss = torch.Tensor(data_loss_array)
     #data_mean = torch.Tensor(data_mean_array)
     # data_std = torch.Tensor(data_std_array)
-    return [data_in, data_out]
+    return [data_in, data_out, data_loss]
     #return [data_in_array, data_out_array]
 
 
@@ -57,16 +59,20 @@ def get_dataloader(parser_args):
     print("Grid level:", glevel)
     print("N pixels:", n_pixels)
     print("time length:", time_length)
-
+    print("Reading started")
     inDS = xr.open_dataset(parser_args.input_file)
     outDS = xr.open_dataset(parser_args.output_file)
+    lossDS = xr.open_dataset(parser_args.output_file)
     meanDS = xr.open_dataset(parser_args.mean_file)
     stdDS = xr.open_dataset(parser_args.std_file)
-    peErr = xr.open_dataset(parser_args.pe_err)
-    psErr = xr.open_dataset(parser_args.ps_err)
-    peStd = xr.open_dataset(parser_args.pe_std)
-    psStd = xr.open_dataset(parser_args.ps_std)
+    peErr = np.load(parser_args.pe_err)
+    psErr = np.load(parser_args.ps_err)
 
+    #peErr = xr.open_dataset(parse_args.pe_err)
+    #psErr = xr.open_dataset(parser_args.ps_err)
+    #peStd = xr.open_dataset(parser_args.pe_std)
+    #psStd = xr.open_dataset(parser_args.ps_std)
+    print("Reading ended")
 
     lon_list = inDS.lon.data
     lat_list = inDS.lat.data
@@ -100,13 +106,19 @@ def get_dataloader(parser_args):
     dataset_in = np.concatenate(data_all, axis=2)
 
     print("dataset with month", dataset_in.shape)
-
+    print("Output data begin")
     # Output data
     data_all = []
     for var in parser_args.output_vars:
         temp_data = np.reshape(np.concatenate(outDS[var].data, axis=0), [-1, n_pixels, 1])
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
+
+    data_all = []
+    for var in parser_args.loss_vars:
+        temp_data = np.reshape(np.concatenate(outDS[var].data, axis=0), [-1, n_pixels, 1])
+        data_all.append(temp_data)
+    dataset_loss = np.concatenate(data_all, axis=2)
 
     meanPr = meanDS.pr.data
     pr_mean_dict = {}
@@ -127,28 +139,42 @@ def get_dataloader(parser_args):
     ps_std_dict = {}
     for m, p in zip(month, stdPs):
         ps_std_dict[m] = p
+    
+    meanEv = meanDS.evspsbl.data
+    Ev_mean_dict = {}
+    for m, p in zip(month, meanEv):
+        Ev_mean_dict[m] = p
+
+    stdEv = stdDS.evspsbl.data
+    Ev_std_dict = {}
+    for m, p in zip(month, stdEv):
+        Ev_std_dict[m] = p
 
     # Pe_err/std, Ps_err/std terms
-    # peErr = stdDS.ps.data
+    #peErr = peErr.pr.data # there is no pr data in current peErr file. Need to find the right file and then find the variable. TBD
+    # pe_err_dict={}
+    # ps_err_dict = {}
 
+ 
     pe_err_dict = {}
-    for m, p in zip(month, peErr:
+    for m, p in zip(month, peErr):
         pe_err_dict[m] = p
     '''
     pe_errstd_dict = {}
     for m, p in zip(month, peStd:
         pe_errstd_dict[m] = p
     '''
+    #psErr = psErr.ps.data # there is no pr data in current peErr file. Need to find the right file and then find the variable. TBD
     ps_err_dict = {}
-    for m, p in zip(month, psErr:
+    for m, p in zip(month, psErr):
         ps_err_dict[m] = p
     '''
     ps_errstd_dict = {}
     for m, p in zip(month, psStd:
         ps_errstd_dict[m] = p
     '''
-
-    combined_data = np.concatenate((dataset_in, dataset_out), axis=2)
+    print("Output data end")
+    combined_data = np.concatenate((dataset_in, dataset_out, dataset_loss), axis=2)
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
@@ -156,11 +182,15 @@ def get_dataloader(parser_args):
 
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12,
                                   collate_fn=sunet_collate)
+    
     dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12,
                                        collate_fn=sunet_collate)
     dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12,
                                  collate_fn=sunet_collate)
-    return dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict, ps_mean_dict, ps_std_dict, pe_err_dict, ps_err_dict
+    
+    print("Data loader")
+    #return dataloader_train, pr_mean_dict, pr_std_dict, ps_mean_dict, ps_std_dict, pe_err_dict, ps_err_dict
+    return dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict, ps_mean_dict, ps_std_dict, pe_err_dict, ps_err_dict, Ev_mean_dict, Ev_std_dict
 
 
 def main(parser_args):
@@ -173,9 +203,8 @@ def main(parser_args):
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
 
-    dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict, ps_mean_dict, ps_std_dict, \
-    pe_err_dict, ps_err_dict = get_dataloader(parser_args)
-
+    dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict, ps_mean_dict, ps_std_dict, pe_err_dict, ps_err_dict,Ev_mean_dict, Ev_std_dict = get_dataloader(parser_args)
+    print('In the training loop')
     writer = SummaryWriter("./")
 
     criterion = torch.nn.MSELoss() # why two losses?
@@ -216,11 +245,14 @@ def main(parser_args):
 
     def trainer(engine, batch):
 
-        data_in, data_out = batch
+        data_in, data_out, data_loss = batch
         batch_month = [[m[0] for m in np.array(data_in[:,:,7])]]
         # for precipitation
         pr_data_mean = [pr_mean_dict[k] for k in batch_month[0]]
         pr_data_std = [pr_std_dict[k] for k in batch_month[0]]
+        # for evaporation
+        Ev_data_mean = [Ev_mean_dict[k] for k in batch_month[0]]
+        Ev_data_std = [Ev_std_dict[k] for k in batch_month[0]]
         # for surface pressure
         ps_data_mean = [ps_mean_dict[k] for k in batch_month[0]]
         ps_data_std = [ps_std_dict[k] for k in batch_month[0]]
@@ -228,10 +260,22 @@ def main(parser_args):
         PE_Err = [pe_err_dict[k] for k in batch_month[0]]
         #for PeErr
         PS_Err = [ps_err_dict[k] for k in batch_month[0]]
+        
+        #var_tmp = np.mean(pr_data_mean[1])
+        #print(var_tmp)
+
+        #print(pr_data_std.shape)
+        #print(ps_data_mean.shape)
+        #print(ps_data_std.shape)
 
         # unscaling fields
+        print(data_loss.shape)
+        print(data_out.shape)
+        #data_loss = data_loss.reshape(data_loss.shape[0], data_loss[1], 0)
         unscaled_data_out_pr = (np.array(data_out[:,:,2]) * np.array(pr_data_std)) + pr_data_mean
         unscaled_data_out_ps = (np.array(data_out[:, :, 1]) * np.array(ps_data_std)) + ps_data_mean
+        unscaled_data_out_evap = (np.array(data_loss[:, :]) * np.array(Ev_data_std)) + Ev_data_mean
+
         # where is the evpsbl (evaporation) -- Ask Kalai
 
         data_in = data_in.to(device)
@@ -240,28 +284,46 @@ def main(parser_args):
         optimizer.zero_grad()
         unet.train()
         outputs = unet(data_in)
-
+        
+        loss_coeff = parser_args.loss_weight
+        print(loss_coeff)
         '''
         Added section begins
         '''
 
         outputs_detach = outputs.detach().cpu().numpy()
-        
+        data_std = pr_data_std
+        data_mean = pr_data_mean
         ## constraint 4 - precipitation constraint
         
         outputs_unscaled_pr = (np.array(outputs_detach[:,:,2]) * data_std) + data_mean
 
         outputs_unscaled_pr[outputs_unscaled_pr < 0] = 0
 
+        loss_pr = np.zeros(int(len(batch_month[0])))
+        print(loss_pr)
+        loss_ps = np.zeros(int(len(batch_month[0])))
+        print(loss_ps)
+
+        var_tmp =np.mean( outputs_unscaled_pr[0,:])
+        print(var_tmp)
+        print(PE_Err)
+        #var_tmp2 = np.mean(PE_Err[0])
+        #print(var_tmp2)
+
         ## constraint 3 - global moisture constraint
         # average monthly and then subtract from PE_Err
         ## constraint 5 - mass conservation constraint
         # average monthly and then subtract from PS_Err
         # assumption: the order in outputs are aligned to the order in the batch/mean
-        for i in range(batch_month[0].shape):
-            loss_pr[i,:] = np.mean(outputs_unscaled_pr[i,:]) - PE_Err[i] # need to subtract evaporation
-            loss_ps[i,:] = np.mean(outputs_unscaled_ps[i,:] - PS_Err[i]
-        
+        for i in range(len(batch_month[0])):
+            #print(type(outputs_unscaled_pr[i,:]))
+            #print((len(PE_Err)))
+            #print(PE_Err[i])
+            print('applying loss')
+            loss_pr[i] = np.mean(outputs_unscaled_pr[i,:] - unscaled_data_out_evap[i,:]) - np.mean(PE_Err[i]) # need to subtract evaporation
+            loss_ps[i] = np.mean(unscaled_data_out_ps[i,:]) - np.mean(PS_Err[i])
+            print('applied loss') 
         # rescaling needed for other terms as well.
         outputs_rescaled_pr =  ((outputs_unscaled_pr - pr_data_mean) / pr_data_std) # some regularizer
         
@@ -270,7 +332,7 @@ def main(parser_args):
         
         # update a new loss function with adding constraints
         
-        loss_constraints = np.mean(loss_pr) + np.mean(loss_ps) # check in with Kalai what to do about this
+        loss_constraints = loss_coeff[2] * np.mean(loss_pr) + loss_coeff[3] * np.mean(loss_ps) # check in with Kalai what to do about this
         
         '''
         Added section ends
