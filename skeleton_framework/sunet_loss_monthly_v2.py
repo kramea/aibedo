@@ -298,7 +298,7 @@ def main(parser_args):
         
         outputs_unscaled_pr = (np.array(outputs_detach[:,:,2]) * data_std) + data_mean
 
-        outputs_unscaled_pr[outputs_unscaled_pr < 0] = 0
+        loss_coeff[3] * outputs_unscaled_pr[outputs_unscaled_pr < 0] = 0
 
         loss_pr = np.zeros(int(len(batch_month[0])))
         print(loss_pr)
@@ -332,7 +332,7 @@ def main(parser_args):
         
         # update a new loss function with adding constraints
         
-        loss_constraints = loss_coeff[2] * np.mean(loss_pr) + loss_coeff[3] * np.mean(loss_ps) # check in with Kalai what to do about this
+        loss_constraints = loss_coeff[2] * np.mean(loss_pr) + loss_coeff[4] * np.mean(loss_ps) # check in with Kalai what to do about this
         
         '''
         Added section ends
