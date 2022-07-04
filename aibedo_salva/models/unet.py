@@ -3,13 +3,15 @@ Spherical Graph Convolutional Neural Network with UNet autoencoder architecture.
 """
 
 # pylint: disable=W0221
+import torch
 
 from aibedo_salva.skeleton_framework.spherical_unet.layers.samplings.equiangular_pool_unpool import Equiangular
 from aibedo_salva.skeleton_framework.spherical_unet.layers.samplings.healpix_pool_unpool import Healpix
 from aibedo_salva.skeleton_framework.spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
 from aibedo_salva.skeleton_framework.spherical_unet.models.spherical_unet.decoder import Decoder
 from aibedo_salva.skeleton_framework.spherical_unet.models.spherical_unet.encoder import Encoder
-from aibedo_salva.skeleton_framework.spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
+from aibedo_salva.skeleton_framework.spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, \
+    get_healpix_laplacians, get_icosahedron_laplacians
 
 from aibedo_salva.models.base_model import BaseModel
 
@@ -53,6 +55,7 @@ class SphericalUNet(BaseModel):
         shared_kwargs = dict(laps=self.laps, kernel_size=self.hparams.kernel_size)
         self.encoder = Encoder(self.pooling_class.pooling, in_channels=self.num_input_features, **shared_kwargs)
         self.decoder = Decoder(self.pooling_class.unpooling, out_channels=self.num_output_features, **shared_kwargs)
+        self.example_input_array = torch.randn((1, N, self.num_input_features))
 
     def forward(self, x):
         """Forward Pass.
@@ -66,4 +69,3 @@ class SphericalUNet(BaseModel):
         x_encoder = self.encoder(x)
         output = self.decoder(*x_encoder)
         return output
-
