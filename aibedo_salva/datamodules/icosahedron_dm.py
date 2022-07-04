@@ -90,23 +90,27 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         """Load data. Set internal variables: self._data_train, self._data_val, self._data_test."""
         glevel = self.hparams.order
         time_length = self.hparams.time_length
+        train_frac, val_frac, test_frac = self.hparams.partition
+        train_data = val_data = test_data = None
 
         log.info(f"Grid level: {glevel}, # of pixels: {self.n_pixels}, time length: {time_length}")
 
-        combined_train_data = self._process_nc_dataset(self.hparams.input_filename, shuffle=True)
+        if stage in ["fit", None] or test_frac not in self._possible_test_sets:
+            combined_train_data = self._process_nc_dataset(self.hparams.input_filename, shuffle=True)
+            train_data, val_data = train_test_split(combined_train_data, train_size=train_frac, random_state=self.hparams.seed)
 
-        train_frac, val_frac, test_frac = self.hparams.partition
-        train_data, temp = train_test_split(combined_train_data, train_size=train_frac, random_state=self.hparams.seed)
         if test_frac in self._possible_test_sets:
-            val_data = temp
             if test_frac == 'merra2':
-                test_input_fname = "compress.isosph.MERRA2_Input_Exp8_fixed.nc"
+                sphere = "isosph5." if 'isosph5.' in self.hparams.input_filename else "isosph."
+                test_input_fname = f"compress.{sphere}MERRA2_Input_Exp8_fixed.nc"
+            else:
+                raise ValueError(f"Unknown test_frac: {test_frac}")
             if stage in ["test", "predict"]:
                 test_data = self._process_nc_dataset(test_input_fname, shuffle=False)
             else:
                 test_data = self._data_test  # no_op
         else:
-            val_data, test_data = train_test_split(temp, test_size=test_frac / (val_frac + test_frac),
+            val_data, test_data = train_test_split(val_data, test_size=test_frac / (val_frac + test_frac),
                                                    random_state=self.hparams.seed)
 
         self._data_train = train_data
@@ -115,7 +119,8 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         self._data_predict = test_data
 
         # Data has shape (#examples, #pixels, #channels)
-        if test_data is None:
+
+        if stage in ["fit", None]:
             log.info(f"Dataset sizes train: {train_data.shape[0]}, val: {val_data.shape[0]}")
         else:
-            log.info(f"Dataset sizes train: {train_data.shape[0]}, val: {val_data.shape[0]}, test: {test_data.shape[0]}")
+            log.info(f"Dataset test size: {test_data.shape[0]}")
