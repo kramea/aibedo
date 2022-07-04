@@ -2,7 +2,6 @@
 
 import numpy as np
 from pygsp.graphs import NNGraph  # prevent circular import in Python < 3.5
-from pygsp import utils
 
 
 def _import_trimesh():
@@ -15,6 +14,43 @@ def _import_trimesh():
                           'Original exception: {}'.format(e))
     return trimesh
 
+def xyz2latlon(x, y, z):
+    r"""
+    Taken from PyGSP:
+
+    Convert 3D spherical coordinates to latitude and longitude.
+
+    Parameters
+    ----------
+    x, y, z : array_like
+        3D coordinates.
+
+    Returns
+    -------
+    lat : :class:`numpy.ndarray`
+        Latitude in [-π/2, π/2].
+    lon : :class:`numpy.ndarray`
+        Longitude in [0, 2π[.
+
+    See Also
+    --------
+    latlon2xyz : inverse transformation
+
+    Examples
+    --------
+    >>> utils.xyz2latlon(1, 0, 0)
+    (0.0, 0.0)
+    >>> utils.xyz2latlon(0, 1, 0)
+    (0.0, 1.5707963267948966)
+    >>> utils.xyz2latlon(0, 0, 1)
+    (1.5707963267948966, 0.0)
+
+    """
+    lon = np.arctan2(y, x)
+    lon += (lon < 0) * 2*np.pi  # signed [-π,π] to unsigned [0,2π[
+    lon[lon == 2*np.pi] = 0  # 2*np.pi-x == 2*np.pi if x < np.spacing(2*np.pi)
+    lat = np.arctan2(z, np.sqrt(x**2 + y**2))
+    return lat, lon
 
 class SphereIcosahedral(NNGraph):
     r"""Sphere sampled as a subdivided icosahedron.
@@ -115,7 +151,7 @@ class SphereIcosahedral(NNGraph):
 
         super(SphereIcosahedral, self).__init__(vertices, **kwargs)
 
-        lat, lon = utils.xyz2latlon(*vertices.T)
+        lat, lon = xyz2latlon(*vertices.T)
         self.signals['lat'] = lat
         self.signals['lon'] = lon
 
