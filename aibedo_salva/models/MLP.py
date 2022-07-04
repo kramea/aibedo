@@ -47,7 +47,8 @@ class AIBEDO_MLP(BaseModel):
     def forward(self, X: Tensor) -> Tensor:
         flattened_X = self.input_transform.batched_transform(X)
         flattened_Y = self.mlp(flattened_X)
-        return flattened_Y.view(X.shape[0], self.spatial_dim, self.num_output_features)
+        Y = flattened_Y.view(X.shape[0], self.spatial_dim, self.num_output_features)
+        return Y
 
     def train_step_initial_log_dict(self) -> Dict[str, float]:
         log_dict = dict()

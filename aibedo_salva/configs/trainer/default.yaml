@@ -3,9 +3,9 @@ _target_: pytorch_lightning.Trainer
 gpus: 1    # -1 for all available GPUs. If you want to use CPU, set to 0.
 
 min_epochs: 1
-max_epochs: 10
+max_epochs: 15
 
-gradient_clip_val: 1.0
+gradient_clip_val: 2.0
 
 resume_from_checkpoint: null
 precision: 32                 # 32 or 16

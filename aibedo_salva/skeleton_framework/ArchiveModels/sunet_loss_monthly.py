@@ -63,12 +63,6 @@ def get_dataloader(parser_args):
     meanDS = xr.open_dataset(parser_args.mean_file)
     stdDS = xr.open_dataset(parser_args.std_file)
 
-    # Amplify Precipitation
-    outDS.pr.data = outDS.pr.data*10**8
-    meanDS.pr.data = meanDS.pr.data*10**8
-    stdDS.pr.data = stdDS.pr.data*10**8
-
-
     lon_list = inDS.lon.data
     lat_list = inDS.lat.data
 
@@ -146,7 +140,7 @@ def main(parser_args):
 
     dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict = get_dataloader(parser_args)
 
-    writer = SummaryWriter("./")
+    writer = SummaryWriter("/")
 
     criterion = torch.nn.MSELoss()
 
@@ -200,7 +194,7 @@ def main(parser_args):
         unet.train()
         outputs = unet(data_in)
 
-        outputs_detach = outputs.detach().cpu().numpy()
+        '''outputs_detach = outputs.detach().cpu().numpy()
 
         outputs_unscaled_pr = (np.array(outputs_detach[:,:,2]) * data_std) + data_mean
 
@@ -210,11 +204,11 @@ def main(parser_args):
         outputs_rescaled_pr =  ((outputs_unscaled_pr - data_mean) / data_std) # some regularizer
 
         # normalize
-        outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs)
+        outputs[:, :, 2] = torch.from_numpy(outputs_rescaled_pr).to(outputs)'''
 
         loss = criterion(outputs.float(), data_out)
 
-        #print("loss", loss)
+        print("loss", loss)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()

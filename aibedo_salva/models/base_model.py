@@ -5,7 +5,6 @@ from typing import Optional, List, Any, Dict
 import hydra
 import numpy as np
 import torch
-import torch.nn.functional as F
 from omegaconf import DictConfig
 from timm.optim import create_optimizer_v2
 from torch import Tensor, nn
@@ -15,7 +14,7 @@ from aibedo_salva.data_transforms.normalization import NormalizationMethod
 
 from aibedo_salva.data_transforms.transforms import AbstractTransform
 from aibedo_salva.utilities.utils import get_logger, to_DictConfig, get_loss
-from skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
+from aibedo_salva.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
 
 
 class BaseModel(LightningModule):

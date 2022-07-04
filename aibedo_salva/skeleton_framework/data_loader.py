@@ -1,9 +1,6 @@
 import numpy as np
-import pandas as pd
-import cartopy.crs as ccrs
-import h5py
 import xarray as xr
-import copy, os, time, random
+import copy, time, random
 
 
 def load_ncdf(path_to_ncdf):
@@ -100,7 +97,7 @@ def temporal_conversion(data, time):
 
 
 def load_ncdf_to_SphereIcosahedral(data_path, glevel=5, dvar=None):
-    from skeleton_framework.interpolate import interpolate_SphereIcosahedral
+    from aibedo_salva.skeleton_framework.interpolate import interpolate_SphereIcosahedral
     # data_path = "/Users/sookim/aibedo_salva/skeleton_framework/data/Processed_CESM2_r1i1p1f1_historical_Input.nc"
     ds = xr.open_dataset(data_path)
     print(list(ds.data_vars))

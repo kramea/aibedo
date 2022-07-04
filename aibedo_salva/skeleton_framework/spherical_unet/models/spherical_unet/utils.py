@@ -4,7 +4,7 @@
 import torch.nn.functional as F
 from torch import nn
 
-from spherical_unet.layers.chebyshev import SphericalChebConv
+from aibedo_salva.skeleton_framework.spherical_unet.layers.chebyshev import SphericalChebConv
 
 
 class SphericalChebBN(nn.Module):

@@ -163,3 +163,5 @@ aibedo_salva/out_dir/**
 aibedo_salva/out_dir/wandb/**
 aibedo_salva/out_dir/logs/**
 aibedo_salva/configs/local/default.yaml
+# secrets (e.g. AWS)
+_secrets.py

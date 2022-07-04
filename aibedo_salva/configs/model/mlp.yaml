@@ -6,7 +6,7 @@ defaults:
   - /input_transform: flatten.yaml
   - /optimizer: adamw.yaml
 
-hidden_dims: [512, 256, 256]
+hidden_dims: [512, 512, 512]
 # hidden_dims: [1024, 512, 256]
 net_normalization: "layer_norm"
 activation_function: "Gelu"

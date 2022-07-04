@@ -9,7 +9,7 @@ from pygsp.graphs import SphereEquiangular
 from scipy import sparse
 from scipy.sparse import coo_matrix
 
-from spherical_unet.utils.samplings import (
+from aibedo_salva.skeleton_framework.spherical_unet.utils.samplings import (
     equiangular_bandwidth,
     equiangular_dimension_unpack,
     healpix_resolution_calculator,

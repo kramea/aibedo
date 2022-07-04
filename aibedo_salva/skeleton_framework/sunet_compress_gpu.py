@@ -4,8 +4,7 @@ import xarray as xr
 import os, shutil
 import torch
 import torch.optim as optim
-from torchsummary import summary
-from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral, shuffle_data
+from data_loader import shuffle_data
 # from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
 from spherical_unet.utils.parser import create_parser, parse_config
 from spherical_unet.utils.initialization import init_device
@@ -14,18 +13,12 @@ from argparse import Namespace
 from pathlib import Path
 import time
 
-from ignite.contrib.handlers.param_scheduler import create_lr_scheduler_with_warmup
-from ignite.contrib.handlers.tensorboard_logger import GradsHistHandler, OptimizerParamsHandler, OutputHandler, \
-    TensorboardLogger, WeightsHistHandler
 from ignite.engine import Engine, Events, create_supervised_evaluator
-from ignite.handlers import EarlyStopping, TerminateOnNan
 from ignite.metrics import EpochMetric, Accuracy, Loss
 from sklearn.model_selection import train_test_split
 from torch import nn, optim
-from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
-from torchvision import transforms
+# from torchvision import transforms
 
 def sunet_collate(batch):
 
