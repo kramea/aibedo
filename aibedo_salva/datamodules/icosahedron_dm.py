@@ -45,12 +45,11 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             raise ValueError(
                 f"partition must sum to 1, but it sums to {self.hparams.partition[0] + self.hparams.partition[1] + self.hparams.partition[2]}")
 
-    def _concat_variables_into_channel_dim(self, data: xr.Dataset, variables: List[str]) -> np.ndarray:
+    def _concat_variables_into_channel_dim(self, data: xr.Dataset, variables: List[str], filename=None) -> np.ndarray:
         """Concatenate xarray variables into numpy channel dimension (last)."""
         data_all = []
         for var in variables:
             var_data = data[var].data
-            print(self.hparams.input_filename,var, var_data.shape, self.n_pixels)
             temp_data = np.reshape(np.concatenate(var_data, axis=0), [-1, self.n_pixels, 1])
             data_all.append(temp_data)
         dataset = np.concatenate(data_all, axis=2)
@@ -59,7 +58,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
     def _process_nc_dataset(self, input_filename: str, shuffle: bool = False):
         # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
         #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
-        output_fname = input_filename.replace("Input.Exp8_fixed.nc", "Output.nc")
+        output_fname = input_filename.replace('Input_Exp8', 'Input.Exp8').replace("Input.Exp8_fixed.nc", "Output.nc")
         input_file = os.path.join(self.hparams.data_dir, input_filename)
         output_file = os.path.join(self.hparams.data_dir, output_fname)
         inDS = xr.open_dataset(input_file)
@@ -73,9 +72,9 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         in_channels, out_channels = len(in_vars), len(out_vars)
 
         # Input data
-        dataset_in = self._concat_variables_into_channel_dim(inDS, in_vars)
+        dataset_in = self._concat_variables_into_channel_dim(inDS, in_vars, input_file)
         # Output data
-        dataset_out = self._concat_variables_into_channel_dim(outDS, out_vars)
+        dataset_out = self._concat_variables_into_channel_dim(outDS, out_vars, output_file)
 
         if shuffle:
             dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
