@@ -14,6 +14,7 @@ def _import_trimesh():
                           'Original exception: {}'.format(e))
     return trimesh
 
+
 def xyz2latlon(x, y, z):
     r"""
     Taken from PyGSP:
@@ -47,10 +48,11 @@ def xyz2latlon(x, y, z):
 
     """
     lon = np.arctan2(y, x)
-    lon += (lon < 0) * 2*np.pi  # signed [-π,π] to unsigned [0,2π[
-    lon[lon == 2*np.pi] = 0  # 2*np.pi-x == 2*np.pi if x < np.spacing(2*np.pi)
-    lat = np.arctan2(z, np.sqrt(x**2 + y**2))
+    lon += (lon < 0) * 2 * np.pi  # signed [-π,π] to unsigned [0,2π[
+    lon[lon == 2 * np.pi] = 0  # 2*np.pi-x == 2*np.pi if x < np.spacing(2*np.pi)
+    lat = np.arctan2(z, np.sqrt(x ** 2 + y ** 2))
     return lat, lon
+
 
 class SphereIcosahedral(NNGraph):
     r"""Sphere sampled as a subdivided icosahedron.
@@ -101,6 +103,7 @@ class SphereIcosahedral(NNGraph):
     --------
 
     """
+
     def __init__(self, subdivisions=2, dual=False, **kwargs):
         self.subdivisions = subdivisions
         self.dual = dual
@@ -111,7 +114,7 @@ class SphereIcosahedral(NNGraph):
             [-1, φ, 0], [1, φ, 0], [-1, -φ, 0], [1, -φ, 0],
             [0, -1, φ], [0, 1, φ], [0, -1, -φ], [0, 1, -φ],
             [φ, 0, -1], [φ, 0, 1], [-φ, 0, -1], [-φ, 0, 1],
-        ]) / np.sqrt(φ**2+1)
+        ]) / np.sqrt(φ ** 2 + 1)
         faces = np.array([
             # Faces around vertex 0.
             [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
@@ -150,10 +153,9 @@ class SphereIcosahedral(NNGraph):
             normalize(vertices)
 
         super(SphereIcosahedral, self).__init__(vertices, **kwargs)
-
-        lat, lon = xyz2latlon(*vertices.T)
-        self.signals['lat'] = lat
-        self.signals['lon'] = lon
+        # lat, lon = xyz2latlon(*vertices.T)
+        # self.signals['lat'] = lat
+        # self.signals['lon'] = lon
 
     def _get_extra_repr(self):
         attrs = {
