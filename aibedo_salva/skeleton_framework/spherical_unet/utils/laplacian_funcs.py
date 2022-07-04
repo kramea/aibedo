@@ -3,9 +3,7 @@
 
 import numpy as np
 import torch
-from pygsp.graphs import SphereHealpix
-from pygsp.graphs import SphereIcosahedral
-from pygsp.graphs import SphereEquiangular
+
 from scipy import sparse
 from scipy.sparse import coo_matrix
 
@@ -74,6 +72,7 @@ def get_icosahedron_laplacians(nodes, depth, laplacian_type):
     Returns:
         laps (list): increasing list of laplacians.
     """
+    from aibedo_salva.utilities.sphereicosahedral import SphereIcosahedral
     laps = []
     order = icosahedron_order_calculator(nodes)
     for _ in range(depth):
