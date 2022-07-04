@@ -127,23 +127,8 @@ class SphericalChebConv(nn.Module):
             kernel_size (int): polynomial degree. Defaults to 3.
         """
         super().__init__()
-        self.register_buffer("laplacian", lap)
+        self.register_buffer("laplacian", lap, persistent=False)
         self.chebconv = ChebConv(in_channels, out_channels, kernel_size)
-
-    def state_dict(self, *args, **kwargs):
-        """! WARNING !
-
-        This function overrides the state dict in order to be able to save the model.
-        This can be removed as soon as saving sparse matrices has been added to Pytorch.
-        """
-        state_dict = super().state_dict(*args, **kwargs)
-        del_keys = []
-        for key in state_dict:
-            if key.endswith("laplacian"):
-                del_keys.append(key)
-        for key in del_keys:
-            del state_dict[key]
-        return state_dict
 
     def forward(self, x):
         """Forward pass.
