@@ -22,17 +22,19 @@ def create_parser():
     parser.add_argument("--config-file", dest="config_file", type=argparse.FileType(mode="r"))
 
     parser.add_argument("--pooling_class", default=None, type=str)
-    # parser.add_argument("--n_pixels", default=None, type=int)
+    #parser.add_argument("--n_pixels", default=None, type=int)
     parser.add_argument("--depth", default=None, type=int)
     parser.add_argument("--laplacian_type", default=None, type=str)
     parser.add_argument("--time_lag", default=None, type=int)
     parser.add_argument("--time_length", default=None, type=int)
+    
 
     parser.add_argument("--type", default=None, type=str)
     parser.add_argument("--sequence_length", default=None, type=int)
     parser.add_argument("--prediction_shift", default=None, type=int)
 
     parser.add_argument("--partition", default=None, nargs="+")
+    parser.add_argument("--loss_weight", default = None, nargs="+")
     parser.add_argument("--batch_size", default=None, type=int)
     parser.add_argument("--learning_rate", default=None, type=float)
     parser.add_argument("--n_epochs", default=None, type=int)
@@ -42,16 +44,23 @@ def create_parser():
     parser.add_argument("--output_file", default=None, type=str)
     parser.add_argument("--mean_file", default=None, type=str)
     parser.add_argument("--std_file", default=None, type=str)
-    parser.add_argument("--model_file", default=None, type=str)
+    parser.add_argument("--pe_err", default=None, type=str)
+    parser.add_argument("--pe_std", default=None, type=str)
+    parser.add_argument("--ps_err", default=None, type=str)
+    parser.add_argument("--ps_std", default=None, type=str)
+    #parser.add_argument("--model_file", default=None, type=str)
     parser.add_argument("--output_path", default="output_sunet", type=str)
     parser.add_argument("--input_vars", default=None, nargs="+")
     parser.add_argument("--output_vars", default=None, nargs="+")
+    parser.add_argument("--loss_vars", default=None, nargs="+")
     parser.add_argument("--meanstd_vars", default=None, nargs="+")
     parser.add_argument("--generation_only", default=False, type=bool)
+
 
     parser.add_argument("--earlystopping_patience", default=None, type=int)
 
     parser.add_argument("--gpu", dest="device", nargs="*")
+
 
     return parser
 
@@ -84,8 +93,6 @@ def parse_config(parser):
                 if arg_dict[key] is None:
                     arg_dict[key] = value
     for key, value in arg_dict.items():
-        if key != "model_file" and key != "meanstd_vars" and key != "device" and key != "type" and key != "sequence_length" and key != "prediction_shift" and key != "mean_file" and key != "std_file" and \
-                arg_dict[key] is None:
-            raise ValueError(
-                f"The value of {key} is set to None. Please define it in the config yaml file or in the command line.")
+        if key!="meanstd_vars" and key != "device" and key != "type" and key != "sequence_length" and key != "prediction_shift" and key != "mean_file" and key!="std_file"  and arg_dict[key] is None:
+            raise ValueError("The value of {} is set to None. Please define it in the config yaml file or in the command line.".format(key))
     return args
