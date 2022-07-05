@@ -7,6 +7,11 @@ AIBEDO is a hybrid AI framework to capture the effects of cloud properties on gl
 
 For a detailed documentation of AIBEDO, on the model architecture, dashboard, datasets and scenarios, please visit https://aibedo.readthedocs.io/
 
+## Environment
+    conda env create -f environment.yaml   # create new environment with all dependencies
+    conda activate aibedo  # activate the environment called 'aibedo'
+
+
 ## Concept
 
 Clouds play a vital role both in modulating Earth's radiation budget and shaping the coupled circulation of the atmosphere and ocean, driving regional changes in temperature and precipitation. The climate response to clouds is one of the largest uncertainties in state-of-the-art Earth System Models (ESMs) when producing decadal climate projections. This limitation becomes apparent when handling scenarios with large changes in cloud properties, e.g., 1) presence of greenhouse gases->loss of clouds or 2) engineered intervention like cloud brightening->increased cloud reflectivity.

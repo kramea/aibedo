@@ -38,7 +38,6 @@ def all_esm_runs():
     args = sys.argv[1:]
     main_overrides = [
         'datamodule.partition=[0.85, 0.15, merra2]',
-        "seed=7",
     ] + list(args)
     print(main_overrides)
 
