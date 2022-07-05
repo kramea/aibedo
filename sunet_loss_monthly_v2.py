@@ -184,7 +184,7 @@ def get_dataloader(parser_args):
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
             parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
-    N_workers = 8
+    N_workers = 6
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=N_workers,
                                   collate_fn=sunet_collate)
 
@@ -432,7 +432,7 @@ if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
     wandb.init(project='AIBEDO',
                entity='salv47',
-               mode='enabled' if USE_WANDB else "disabled",
+               mode='online' if USE_WANDB else "disabled",
                tags=['physics-constraints', 'unet'],
                name=f"{PARSER_ARGS.loss_weight}_weight", reinit=True, resume="allow")
     main(PARSER_ARGS)
