@@ -184,7 +184,7 @@ def get_dataloader(parser_args):
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
             parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
-    N_workers = 6
+    N_workers = 8
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=N_workers,
                                   collate_fn=sunet_collate)
 
@@ -382,7 +382,6 @@ def main(parser_args):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
         wandb.log({"train/loss": metrics['mse'], 'step':engine_train.state.iteration})
-    '''
 
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_training_results(engine):
@@ -393,6 +392,7 @@ def main(parser_args):
         writer.add_scalars("Loss/train", metrics, engine_train.state.epoch)
         wandb.log({"train/loss": metrics['mse'], 'epoch':engine_train.state.epoch})
         #writer.close()
+    '''
 
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_validation_results(engine):
