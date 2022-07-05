@@ -336,8 +336,10 @@ def main(parser_args):
         outputs[:, :, 2] = outputs_rescaled_pr # torch.from_numpy(outputs_rescaled_pr).to(outputs)
         
         # update a new loss function with adding constraints
-        
-        loss_constraints = loss_coeff[2] * loss_pr.mean() + loss_coeff[4] * loss_ps.mean() # check in with Kalai what to do about this
+
+        loss_pr_contribution = loss_coeff[2] * loss_pr.mean()
+        loss_ps_contribution = loss_coeff[4] * loss_ps.mean()
+        loss_constraints = loss_pr_contribution + loss_ps_contribution # check in with Kalai what to do about this
         
         '''
         Added section ends
@@ -352,7 +354,16 @@ def main(parser_args):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        print("loss", loss.item())
+        wandb.log(
+            {"train/loss": loss, 'train/loss_mse': loss_mse.item(),
+             'train/loss_constraints': loss_constraints.item(),
+             'train/loss_pr': loss_pr_contribution.item(),
+             'train/loss_ps': loss_ps_contribution.item(),
+             'step': engine.state.iteration,
+             'epoch': engine.state.epoch
+             }
+        )
+
         return loss.item()
 
     engine_train = Engine(trainer)
@@ -365,11 +376,13 @@ def main(parser_args):
 
     evaluator = create_supervised_evaluator(unet, metrics=val_metrics, device=device)
 
+    '''
     @engine_train.on(Events.ITERATION_COMPLETED(every=10))
     def log_training_results_iteration(engine):
         evaluator.run(dataloader_train)
         metrics = evaluator.state.metrics
         wandb.log({"train/loss": metrics['mse'], 'step':engine_train.state.iteration})
+    '''
 
     @engine_train.on(Events.EPOCH_COMPLETED)
     def log_training_results(engine):
