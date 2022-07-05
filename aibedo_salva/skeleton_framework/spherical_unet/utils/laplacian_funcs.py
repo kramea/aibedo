@@ -72,7 +72,7 @@ def get_icosahedron_laplacians(nodes, depth, laplacian_type):
     Returns:
         laps (list): increasing list of laplacians.
     """
-    from aibedo_salva.utilities.sphereicosahedral import SphereIcosahedral
+    from aibedo_salva.skeleton_framework.spherical_unet.utils.sphereicosahedral import SphereIcosahedral
     laps = []
     order = icosahedron_order_calculator(nodes)
     for _ in range(depth):
@@ -95,6 +95,7 @@ def get_healpix_laplacians(nodes, depth, laplacian_type):
     Returns:
         laps (list): increasing list of laplacians.
     """
+    from pygsp.graphs import SphereHealpix
     laps = []
     for i in range(depth):
         pixel_num = nodes
@@ -116,6 +117,7 @@ def get_equiangular_laplacians(nodes, depth, ratio, laplacian_type):
     Returns:
         laps (list): increasing list of laplacians
     """
+    from pygsp.graphs import SphereEquiangular
     laps = []
     pixel_num = nodes
     for _ in range(depth):
