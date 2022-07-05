@@ -184,12 +184,13 @@ def get_dataloader(parser_args):
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
             parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
-    dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=12,
+    N_workers = 8
+    dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=N_workers,
                                   collate_fn=sunet_collate)
-    
-    dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12,
+
+    dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=N_workers,
                                        collate_fn=sunet_collate_evaluation)
-    dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=12,
+    dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=N_workers,
                                  collate_fn=sunet_collate_evaluation)
     
     print("Data loader")
