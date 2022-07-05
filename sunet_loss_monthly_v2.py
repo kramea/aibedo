@@ -362,17 +362,7 @@ def main(parser_args):
         "mse": Loss(criterion)
     }
 
-    # evaluator = create_supervised_evaluator(unet, metrics=val_metrics, device=device)
-    def evaluate_step(engine, batch):
-        data_in, data_out, data_loss = batch
-        unet.eval()
-        with torch.no_grad():
-            outputs = unet(data_in.to(device))
-        return outputs, data_out.to(device)
-
-    evaluator = Engine(evaluate_step)
-    for name, metric in val_metrics.items():
-        metric.attach(evaluator, name)
+    evaluator = create_supervised_evaluator(unet, metrics=val_metrics, device=device)
 
     @engine_train.on(Events.ITERATION_COMPLETED(every=10))
     def log_training_results_iteration(engine):
