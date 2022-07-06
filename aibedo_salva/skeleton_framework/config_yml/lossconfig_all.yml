@@ -7,7 +7,7 @@ IMAGE PARAMS:
 
 MODEL PARAMS:
   partition: [0.8,0.1,0.1]
-  loss_weight: [ 0.0, 0.0, 1e5, 1.0, 0.01 ]
+  loss_weight: [ 0.0, 0.0, 100000, 1.0, 0.01 ]
   batch_size: 10
   learning_rate: 0.0001
   n_epochs: 15
