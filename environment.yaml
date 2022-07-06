@@ -32,6 +32,7 @@ dependencies:
     - hydra-core==1.2.0
     - omegaconf==2.2.2
     - pytorch-ignite==0.4.9
+    - sklearn
     - timm==0.5.4
     - trimesh==3.12.7
     - wandb==0.12.20
