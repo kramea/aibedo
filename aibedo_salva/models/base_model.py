@@ -72,12 +72,22 @@ class BaseModel(LightningModule):
         self._start_validation_epoch_time = self._start_test_epoch_time = self._start_epoch_time = None
         # Metrics
         # self.train_mse = torchmetrics.MeanSquaredError(squared=True)
-        self.val_metrics = nn.ModuleDict({
-            'val/mse': torchmetrics.MeanSquaredError(squared=True),
+        self._val_metrics = nn.ModuleDict({
+                'val/mse': torchmetrics.MeanSquaredError(squared=True),
         })
-        self.test_metrics = nn.ModuleDict({
-            'test/mse': torchmetrics.MeanSquaredError(squared=True),
-        })
+        self._test_metrics = None
+
+    @property
+    def test_set_name(self) -> str:
+        return self.trainer.datamodule.test_set_name if hasattr(self.trainer.datamodule, 'test_set_name') else 'test'
+
+    @property
+    def test_metrics(self):
+        if self._test_metrics is None:
+            self._test_metrics = nn.ModuleDict({
+                f'{self.test_set_name}/mse': torchmetrics.MeanSquaredError(squared=True),
+            })
+        return self._test_metrics
 
     @property
     def n_params(self):

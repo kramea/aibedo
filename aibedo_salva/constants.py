@@ -6,7 +6,7 @@ CLIMATE_MODELS_ALL = [
     "CMCC-CM2-SR5",
     "CanESM5",
     "E3SM-1-1",
-    'E3SM-1-1-ECA',
+  # TODO: fix  'E3SM-1-1-ECA',
     "FGOALS-g3",
     "GFDL-CM4",
     "GFDL-ESM4",
