@@ -338,8 +338,8 @@ def main(parser_args):
             loss_ps += unscaled_data_out_ps[i, :].mean() - PS_Err[i].mean()
         loss_pr, loss_ps = loss_pr / len(batch_month[0]), loss_ps / len(batch_month[0])
         # update a new loss function with adding constraints
-        loss_pr_contribution = loss_coeff[2] * F.relu(loss_pr)
-        loss_ps_contribution = loss_coeff[4] * F.relu(loss_ps)
+        loss_pr_contribution = loss_coeff[2] * torch.abs(loss_pr)
+        loss_ps_contribution = loss_coeff[4] * torch.abs(loss_ps)
         loss_constraints = loss_pr_contribution + loss_ps_contribution  # check in with Kalai what to do about this
 
         loss_mse = criterion(predictions.float(), data_targets)
