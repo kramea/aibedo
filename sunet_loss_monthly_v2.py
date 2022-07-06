@@ -185,7 +185,7 @@ def get_dataloader(parser_args):
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
             parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
-    N_workers = 6
+    N_workers = 8
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=N_workers,
                                   collate_fn=sunet_collate)
 
@@ -310,10 +310,10 @@ def main(parser_args):
         if loss_coeff[3] > 0:
             preds_unscaled_pr = F.relu(preds_unscaled_pr)
         #        loss_coeff[3] * outputs_unsdcale_pr[outputs_unscaled_pr < 0] = 0
-
-        loss_pr = np.zeros(int(len(batch_month[0])))
-        # print(loss_pr)
-        loss_ps = np.zeros(int(len(batch_month[0])))
+        # rescaling needed for other terms as well.
+        preds_rescaled_pr = ((preds_unscaled_pr - pr_data_mean) / pr_data_std)
+        # normalize
+        predictions[:, :, PR_IDX] = preds_rescaled_pr  # torch.from_numpy(outputs_rescaled_pr).to(outputs)
         # print(loss_ps)
 
         var_tmp = preds_unscaled_pr[0, :].mean()
@@ -327,23 +327,19 @@ def main(parser_args):
         ## constraint 5 - mass conservation constraint
         # average monthly and then subtract from PS_Err
         # assumption: the order in outputs are aligned to the order in the batch/mean
+        loss_pr = 0.0
+        loss_ps = 0.0
         for i in range(len(batch_month[0])):
             # print(type(outputs_unscaled_pr[i,:]))
             # print((len(PE_Err)))
             # print(PE_Err[i])
-            loss_pr[i] = (preds_unscaled_pr[i, :] - unscaled_data_out_evap[i, :]).mean() - PE_Err[
-                i].mean()  # need to subtract evaporation
-            loss_ps[i] = unscaled_data_out_ps[i, :].mean() - PS_Err[i].mean()
-        # rescaling needed for other terms as well.
-        preds_rescaled_pr = ((preds_unscaled_pr - pr_data_mean) / pr_data_std)  # some regularizer
-
-        # normalize
-        predictions[:, :, PR_IDX] = preds_rescaled_pr  # torch.from_numpy(outputs_rescaled_pr).to(outputs)
-
+            # need to subtract evaporation
+            loss_pr += (preds_unscaled_pr[i, :] - unscaled_data_out_evap[i, :]).mean() - PE_Err[i].mean()
+            loss_ps += unscaled_data_out_ps[i, :].mean() - PS_Err[i].mean()
+        loss_pr, loss_ps = loss_pr / len(batch_month[0]), loss_ps / len(batch_month[0])
         # update a new loss function with adding constraints
-
-        loss_pr_contribution = loss_coeff[2] * loss_pr.mean()
-        loss_ps_contribution = loss_coeff[4] * loss_ps.mean()
+        loss_pr_contribution = loss_coeff[2] * loss_pr
+        loss_ps_contribution = loss_coeff[4] * loss_ps
         loss_constraints = loss_pr_contribution + loss_ps_contribution  # check in with Kalai what to do about this
 
         '''
@@ -418,10 +414,10 @@ def main(parser_args):
     else:
         os.mkdir(saved_model_path)
 
-    torch.save(unet.state_dict(),
-               "./saved_model_lag_" + str(parser_args.time_lag) + "/unet_state_" + str(
-                   parser_args.n_epochs) + f"{parser_args.loss_weight}.pt")
-
+    f_model_weights = f"saved_model_lag_{parser_args.time_lag}_model_{parser_args.n_epochs}_{parser_args.loss_weight}.pt"
+    torch.save(unet.state_dict(), f_model_weights)
+    print(f"Saved model to {f_model_weights}")
+    wandb.save(f_model_weights)
     # Prediction code
 
     # model.load_state_dict(model.state_dict())
