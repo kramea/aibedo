@@ -28,7 +28,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         # The following makes all args available as, e.g.: self.hparams.order, self.hparams.batch_size
         self.save_hyperparameters(ignore=[])
         self.n_pixels = icosahedron_nodes_calculator(self.hparams.order)
-        self._possible_test_sets = ['merra2']
+        self._possible_test_sets = ['merra2', 'era5']
         self._check_args()
 
     def _check_args(self):
@@ -55,12 +55,9 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         dataset = np.concatenate(data_all, axis=2)
         return dataset
 
-    def _process_nc_dataset(self, input_filename: str, shuffle: bool = False):
-        # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
-        #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
-        output_fname = input_filename.replace('Input_Exp8', 'Input.Exp8').replace("Input.Exp8_fixed.nc", "Output.nc")
+    def _process_nc_dataset(self, input_filename: str, output_filename: str, shuffle: bool = False):
         input_file = os.path.join(self.hparams.data_dir, input_filename)
-        output_file = os.path.join(self.hparams.data_dir, output_fname)
+        output_file = os.path.join(self.hparams.data_dir, output_filename)
         inDS = xr.open_dataset(input_file)
         outDS = xr.open_dataset(output_file)
 
@@ -96,17 +93,25 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         log.info(f"Grid level: {glevel}, # of pixels: {self.n_pixels}, time length: {time_length}")
 
         if stage in ["fit", None] or test_frac not in self._possible_test_sets:
-            combined_train_data = self._process_nc_dataset(self.hparams.input_filename, shuffle=True)
+            # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
+            #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
+            fname_in = self.hparams.input_filename
+            fname_out = fname_in.replace("Input.Exp8_fixed.nc", "Output.nc")
+            combined_train_data = self._process_nc_dataset(fname_in, fname_out, shuffle=True)
             train_data, val_data = train_test_split(combined_train_data, train_size=train_frac, random_state=self.hparams.seed)
 
         if test_frac in self._possible_test_sets:
+            sphere = "isosph5." if 'isosph5.' in self.hparams.input_filename else "isosph."
             if test_frac == 'merra2':
-                sphere = "isosph5." if 'isosph5.' in self.hparams.input_filename else "isosph."
                 test_input_fname = f"compress.{sphere}MERRA2_Input_Exp8_fixed.nc"
+                test_output_fname = f"compress.{sphere}MERRA2_Output.nc"
+            elif test_frac == 'era5':
+                test_input_fname = f"compress.{sphere}ERA5_Input_Exp8.nc"
+                test_output_fname = f"compress.{sphere}ERA5_Output_PrecipCon.nc"
             else:
                 raise ValueError(f"Unknown test_frac: {test_frac}")
             if stage in ["test", "predict"]:
-                test_data = self._process_nc_dataset(test_input_fname, shuffle=False)
+                test_data = self._process_nc_dataset(test_input_fname, test_output_fname, shuffle=False)
             else:
                 test_data = self._data_test  # no_op
         else:
