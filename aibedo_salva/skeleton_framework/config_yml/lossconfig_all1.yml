@@ -10,7 +10,7 @@ MODEL PARAMS:
   loss_weight: [ 0.0, 0.0, 100000, 1.0, 0.01 ]
   batch_size: 10
   learning_rate: 0.0001
-  n_epochs: 15
+  n_epochs: 25
   kernel_size: 3
 
 INPUT PARAMS:
