@@ -338,13 +338,9 @@ def main(parser_args):
             loss_ps += unscaled_data_out_ps[i, :].mean() - PS_Err[i].mean()
         loss_pr, loss_ps = loss_pr / len(batch_month[0]), loss_ps / len(batch_month[0])
         # update a new loss function with adding constraints
-        loss_pr_contribution = loss_coeff[2] * loss_pr
-        loss_ps_contribution = loss_coeff[4] * loss_ps
+        loss_pr_contribution = loss_coeff[2] * F.relu(loss_pr)
+        loss_ps_contribution = loss_coeff[4] * F.relu(loss_ps)
         loss_constraints = loss_pr_contribution + loss_ps_contribution  # check in with Kalai what to do about this
-
-        '''
-        Added section ends
-        '''
 
         loss_mse = criterion(predictions.float(), data_targets)
 
@@ -360,6 +356,8 @@ def main(parser_args):
              'train/loss_constraints': loss_constraints.item(),
              'train/loss_pr': loss_pr_contribution.item(),
              'train/loss_ps': loss_ps_contribution.item(),
+             'train/loss_pr_raw': float(loss_pr),
+             'train/loss_ps_raw': float(loss_ps),
              'step': engine.state.iteration,
              'epoch': engine.state.epoch
              }
