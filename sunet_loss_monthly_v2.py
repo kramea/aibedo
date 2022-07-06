@@ -24,6 +24,8 @@ from torchvision import transforms
 
 USE_WANDB = True  # set to false to disable it
 
+PS_IDX = 1
+PR_IDX = 2
 def sunet_collate(batch):
     batchShape = batch[0].shape
     varlimit = batchShape[1] - 4  # 3 output variables: tas, psl, pr, 3 mean, 3 std
@@ -32,15 +34,16 @@ def sunet_collate(batch):
     # data_out_array = np.array([item[:, varlimit:] for item in batch])
     data_out_array = np.array([item[:, varlimit:-1] for item in batch])
     data_loss_array = np.array([item[:, -1] for item in batch])
-    #data_mean_array = np.array([item[:, varlimit-6:varlimit-3] for item in batch])
+    # data_mean_array = np.array([item[:, varlimit-6:varlimit-3] for item in batch])
     # data_std_array = np.array([item[:, varlimit + 6:] for item in batch])
 
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
     data_loss = torch.Tensor(data_loss_array)
-    #data_mean = torch.Tensor(data_mean_array)
+    # data_mean = torch.Tensor(data_mean_array)
     # data_std = torch.Tensor(data_std_array)
     return [data_in, data_out, data_loss]
+
 
 def sunet_collate_evaluation(batch):
     batchShape = batch[0].shape
@@ -52,7 +55,6 @@ def sunet_collate_evaluation(batch):
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
-
 
 
 def get_dataloader(parser_args):
@@ -72,10 +74,10 @@ def get_dataloader(parser_args):
     peErr = np.load(parser_args.pe_err)
     psErr = np.load(parser_args.ps_err)
 
-    #peErr = xr.open_dataset(parse_args.pe_err)
-    #psErr = xr.open_dataset(parser_args.ps_err)
-    #peStd = xr.open_dataset(parser_args.pe_std)
-    #psStd = xr.open_dataset(parser_args.ps_std)
+    # peErr = xr.open_dataset(parse_args.pe_err)
+    # psErr = xr.open_dataset(parser_args.ps_err)
+    # peStd = xr.open_dataset(parser_args.pe_std)
+    # psStd = xr.open_dataset(parser_args.ps_std)
     print("Reading ended")
 
     lon_list = inDS.lon.data
@@ -84,12 +86,11 @@ def get_dataloader(parser_args):
     in_channels = len(parser_args.input_vars)
     out_channels = len(parser_args.output_vars)
 
-
     # Dictionary of Monthly Precipitation
 
     month = np.arange(12)
 
-    #Pixel-wise month (assigned to each grid)
+    # Pixel-wise month (assigned to each grid)
 
     month_pixel_data = np.reshape(np.repeat(month, n_pixels), [-1, n_pixels, 1])
 
@@ -98,7 +99,6 @@ def get_dataloader(parser_args):
     for var in parser_args.input_vars:
         temp_data = np.reshape(np.concatenate(inDS[var].data, axis=0), [-1, n_pixels, 1])
         data_all.append(temp_data)
-
 
     data_month = []
     for c in range(165):
@@ -143,7 +143,7 @@ def get_dataloader(parser_args):
     ps_std_dict = {}
     for m, p in zip(month, stdPs):
         ps_std_dict[m] = p
-    
+
     meanEv = meanDS.evspsbl.data
     Ev_mean_dict = {}
     for m, p in zip(month, meanEv):
@@ -155,11 +155,10 @@ def get_dataloader(parser_args):
         Ev_std_dict[m] = p
 
     # Pe_err/std, Ps_err/std terms
-    #peErr = peErr.pr.data # there is no pr data in current peErr file. Need to find the right file and then find the variable. TBD
+    # peErr = peErr.pr.data # there is no pr data in current peErr file. Need to find the right file and then find the variable. TBD
     # pe_err_dict={}
     # ps_err_dict = {}
 
- 
     pe_err_dict = {}
     for m, p in zip(month, peErr):
         pe_err_dict[m] = p
@@ -168,7 +167,7 @@ def get_dataloader(parser_args):
     for m, p in zip(month, peStd:
         pe_errstd_dict[m] = p
     '''
-    #psErr = psErr.ps.data # there is no pr data in current peErr file. Need to find the right file and then find the variable. TBD
+    # psErr = psErr.ps.data # there is no pr data in current peErr file. Need to find the right file and then find the variable. TBD
     ps_err_dict = {}
     for m, p in zip(month, psErr):
         ps_err_dict[m] = p
@@ -184,17 +183,18 @@ def get_dataloader(parser_args):
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
             parser_args.partition[1] + parser_args.partition[2]), random_state=43)
 
-    N_workers = 8
+    N_workers = 6
     dataloader_train = DataLoader(train_data, batch_size=parser_args.batch_size, shuffle=True, num_workers=N_workers,
                                   collate_fn=sunet_collate)
 
-    dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=N_workers,
+    dataloader_validation = DataLoader(val_data, batch_size=parser_args.batch_size, shuffle=False,
+                                       num_workers=N_workers,
                                        collate_fn=sunet_collate_evaluation)
     dataloader_test = DataLoader(test_data, batch_size=parser_args.batch_size, shuffle=False, num_workers=N_workers,
                                  collate_fn=sunet_collate_evaluation)
-    
+
     print("Data loader")
-    #return dataloader_train, pr_mean_dict, pr_std_dict, ps_mean_dict, ps_std_dict, pe_err_dict, ps_err_dict
+    # return dataloader_train, pr_mean_dict, pr_std_dict, ps_mean_dict, ps_std_dict, pe_err_dict, ps_err_dict
     return dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict, ps_mean_dict, ps_std_dict, pe_err_dict, ps_err_dict, Ev_mean_dict, Ev_std_dict
 
 
@@ -208,11 +208,12 @@ def main(parser_args):
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
 
-    dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict, ps_mean_dict, ps_std_dict, pe_err_dict, ps_err_dict,Ev_mean_dict, Ev_std_dict = get_dataloader(parser_args)
+    dataloader_train, dataloader_validation, dataloader_test, pr_mean_dict, pr_std_dict, ps_mean_dict, ps_std_dict, pe_err_dict, ps_err_dict, Ev_mean_dict, Ev_std_dict = get_dataloader(
+        parser_args)
     print('In the training loop')
     writer = SummaryWriter("skeleton_framework/")
 
-    criterion = torch.nn.MSELoss() # why two losses?
+    criterion = torch.nn.MSELoss()  # why two losses?
 
     print("Dataloader train size", len(dataloader_train.dataset[0].shape))
 
@@ -231,15 +232,16 @@ def main(parser_args):
         # for glevel = 5,6 --> use 6-layered unet
         from aibedo_salva.skeleton_framework.spherical_unet.models.spherical_unet.unet_model import SphericalUNet
         unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,
-                             parser_args.kernel_size, len(parser_args.input_vars)+1, len(parser_args.output_vars))
+                             parser_args.kernel_size, len(parser_args.input_vars) + 1, len(parser_args.output_vars))
     else:
         print("Generating 3 layered unet")
         # for glevel = 1,2,3,4 --> use 3-layered unet (shllow)
-        from aibedo_salva.skeleton_framework.spherical_unet.models.spherical_unet_shallow.unet_model import SphericalUNet
+        from aibedo_salva.skeleton_framework.spherical_unet.models.spherical_unet_shallow.unet_model import \
+            SphericalUNet
         unet = SphericalUNet(parser_args.pooling_class, n_pixels, 3, parser_args.laplacian_type,
-                             parser_args.kernel_size, len(parser_args.input_vars)+1, len(parser_args.output_vars))
+                             parser_args.kernel_size, len(parser_args.input_vars) + 1, len(parser_args.output_vars))
 
-    #print(unet)
+    # print(unet)
     # unet = unet.to(device)
     unet, device = init_device(parser_args.device, unet)
     lr = parser_args.learning_rate
@@ -250,8 +252,8 @@ def main(parser_args):
 
     def trainer(engine, batch):
 
-        data_in, data_out, data_loss = batch
-        batch_month = [[m[0] for m in np.array(data_in[:,:,7])]]
+        data_in, data_targets, data_loss = batch
+        batch_month = [[m[0] for m in np.array(data_in[:, :, 7])]]
         # for precipitation
         pr_data_mean = torch.from_numpy(np.array([pr_mean_dict[k] for k in batch_month[0]])).to(device)
         pr_data_std = torch.from_numpy(np.array([pr_std_dict[k] for k in batch_month[0]])).to(device)
@@ -263,60 +265,59 @@ def main(parser_args):
         ps_data_std = torch.from_numpy(np.array([ps_std_dict[k] for k in batch_month[0]])).to(device)
         # for PsErr
         PE_Err = torch.from_numpy(np.array([pe_err_dict[k] for k in batch_month[0]])).to(device)
-        #for PeErr
+        # for PeErr
         PS_Err = torch.from_numpy(np.array([ps_err_dict[k] for k in batch_month[0]])).to(device)
-        
-        #var_tmp = np.mean(pr_data_mean[1])
-        #print(var_tmp)
 
-        #print(pr_data_std.shape)
-        #print(ps_data_mean.shape)
-        #print(ps_data_std.shape)
+        # var_tmp = np.mean(pr_data_mean[1])
+        # print(var_tmp)
+
+        # print(pr_data_std.shape)
+        # print(ps_data_mean.shape)
+        # print(ps_data_std.shape)
 
         # unscaling fields
-        #print(data_loss.shape)
-        #print(data_out.shape)
-        #data_loss = data_loss.reshape(data_loss.shape[0], data_loss[1], 0)
-        unscaled_data_out_pr = (data_out[:,:,2] * pr_data_std) + pr_data_mean
-        unscaled_data_out_ps = (data_out[:, :, 1] * ps_data_std) + ps_data_mean
+        # print(data_loss.shape)
+        # print(data_out.shape)
+        # data_loss = data_loss.reshape(data_loss.shape[0], data_loss[1], 0)
         unscaled_data_out_evap = (data_loss[:, :] * Ev_data_std) + Ev_data_mean
 
         # where is the evpsbl (evaporation) -- Ask Kalai
 
         data_in = data_in.to(device)
-        data_out = data_out.to(device)
+        data_targets = data_targets.to(device)
 
         optimizer.zero_grad()
         unet.train()
-        outputs = unet(data_in)
-        
+        predictions = unet(data_in)
+
+        unscaled_data_out_pr = (predictions[:, :, PR_IDX] * pr_data_std) + pr_data_mean
+        unscaled_data_out_ps = (predictions[:, :, PS_IDX] * ps_data_std) + ps_data_mean
+
         loss_coeff = parser_args.loss_weight
-        # print(loss_coeff)
         '''
         Added section begins
         '''
 
-        outputs_detach = outputs.detach().cpu().numpy()
         data_std = pr_data_std
         data_mean = pr_data_mean
-        ## constraint 4 - precipitation constraint
-        
+        ## constraint 4 - precipitation onstraint
+
         # outputs_unscaled_pr = (np.array(outputs_detach[:,:,2]) * data_std) + data_mean
-        outputs_unscaled_pr = (outputs[:,:,2] * torch.tensor(data_std)) + torch.tensor(data_mean)
+        preds_unscaled_pr = (predictions[:, :, PR_IDX] * torch.tensor(data_std)) + torch.tensor(data_mean)
         if loss_coeff[3] > 0:
-            outputs_unscaled_pr = F.relu(outputs_unscaled_pr)
-#        loss_coeff[3] * outputs_unsdcale_pr[outputs_unscaled_pr < 0] = 0
+            preds_unscaled_pr = F.relu(preds_unscaled_pr)
+        #        loss_coeff[3] * outputs_unsdcale_pr[outputs_unscaled_pr < 0] = 0
 
         loss_pr = np.zeros(int(len(batch_month[0])))
-        #print(loss_pr)
+        # print(loss_pr)
         loss_ps = np.zeros(int(len(batch_month[0])))
-        #print(loss_ps)
+        # print(loss_ps)
 
-        var_tmp = outputs_unscaled_pr[0,:].mean()
-        #print(var_tmp)
-        #print(PE_Err)
-        #var_tmp2 = np.mean(PE_Err[0])
-        #print(var_tmp2)
+        var_tmp = preds_unscaled_pr[0, :].mean()
+        # print(var_tmp)
+        # print(PE_Err)
+        # var_tmp2 = np.mean(PE_Err[0])
+        # print(var_tmp2)
 
         ## constraint 3 - global moisture constraint
         # average monthly and then subtract from PE_Err
@@ -324,28 +325,29 @@ def main(parser_args):
         # average monthly and then subtract from PS_Err
         # assumption: the order in outputs are aligned to the order in the batch/mean
         for i in range(len(batch_month[0])):
-            #print(type(outputs_unscaled_pr[i,:]))
-            #print((len(PE_Err)))
-            #print(PE_Err[i])
-            loss_pr[i] = (outputs_unscaled_pr[i,:] - unscaled_data_out_evap[i,:]).mean() - PE_Err[i].mean() # need to subtract evaporation
-            loss_ps[i] = unscaled_data_out_ps[i,:].mean() - PS_Err[i].mean()
+            # print(type(outputs_unscaled_pr[i,:]))
+            # print((len(PE_Err)))
+            # print(PE_Err[i])
+            loss_pr[i] = (preds_unscaled_pr[i, :] - unscaled_data_out_evap[i, :]).mean() - PE_Err[
+                i].mean()  # need to subtract evaporation
+            loss_ps[i] = unscaled_data_out_ps[i, :].mean() - PS_Err[i].mean()
         # rescaling needed for other terms as well.
-        outputs_rescaled_pr =  ((outputs_unscaled_pr - pr_data_mean) / pr_data_std) # some regularizer
-        
+        preds_rescaled_pr = ((preds_unscaled_pr - pr_data_mean) / pr_data_std)  # some regularizer
+
         # normalize
-        outputs[:, :, 2] = outputs_rescaled_pr # torch.from_numpy(outputs_rescaled_pr).to(outputs)
-        
+        predictions[:, :, PR_IDX] = preds_rescaled_pr  # torch.from_numpy(outputs_rescaled_pr).to(outputs)
+
         # update a new loss function with adding constraints
 
         loss_pr_contribution = loss_coeff[2] * loss_pr.mean()
         loss_ps_contribution = loss_coeff[4] * loss_ps.mean()
-        loss_constraints = loss_pr_contribution + loss_ps_contribution # check in with Kalai what to do about this
-        
+        loss_constraints = loss_pr_contribution + loss_ps_contribution  # check in with Kalai what to do about this
+
         '''
         Added section ends
         '''
 
-        loss_mse = criterion(outputs.float(), data_out)
+        loss_mse = criterion(predictions.float(), data_targets)
 
         # updated loss value
 
@@ -367,8 +369,6 @@ def main(parser_args):
         return loss.item()
 
     engine_train = Engine(trainer)
-
-
 
     val_metrics = {
         "mse": Loss(criterion)
@@ -402,13 +402,11 @@ def main(parser_args):
             f"Validation Results - Epoch: {engine_train.state.epoch} Avg loss: {metrics['mse']:.4f}")
         writer.add_scalars("Loss/validation", metrics, engine_train.state.epoch)
         writer.close()
-        wandb.log({"val/mse_epoch": metrics['mse'], 'epoch':engine_train.state.epoch})
-
+        wandb.log({"val/mse_epoch": metrics['mse'], 'epoch': engine_train.state.epoch})
 
     pbar = ProgressBar()
     pbar.attach(engine_train, output_transform=lambda x: {"loss": x})
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
-
 
     saved_model_path = "./saved_model_lag_" + str(parser_args.time_lag)
     if os.path.isdir(saved_model_path):
@@ -418,7 +416,8 @@ def main(parser_args):
         os.mkdir(saved_model_path)
 
     torch.save(unet.state_dict(),
-               "./saved_model_lag_" + str(parser_args.time_lag) + "/unet_state_" + str(parser_args.n_epochs) + f"{parser_args.loss_weight}.pt")
+               "./saved_model_lag_" + str(parser_args.time_lag) + "/unet_state_" + str(
+                   parser_args.n_epochs) + f"{parser_args.loss_weight}.pt")
 
     # Prediction code
 
@@ -441,6 +440,7 @@ def main(parser_args):
     wandb.save(f1)
     wandb.save(f2)
 
+
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
     wandb.init(project='AIBEDO',
@@ -450,4 +450,3 @@ if __name__ == "__main__":
                name=f"{PARSER_ARGS.loss_weight}_weight", reinit=True, resume="allow")
     main(PARSER_ARGS)
     wandb.finish()
-
