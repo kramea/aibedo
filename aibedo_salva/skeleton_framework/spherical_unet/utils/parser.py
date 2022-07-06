@@ -60,7 +60,7 @@ def create_parser():
     parser.add_argument("--earlystopping_patience", default=None, type=int)
 
     parser.add_argument("--gpu", dest="device", nargs="*")
-
+    parser.add_argument("--seed", default=7, type=int)
 
     return parser
 

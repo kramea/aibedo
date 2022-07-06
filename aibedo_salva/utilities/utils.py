@@ -5,6 +5,7 @@ import functools
 import logging
 import math
 import os
+import random
 
 from types import SimpleNamespace
 from typing import Union, Sequence, List, Dict, Optional, Callable, Any
@@ -146,3 +147,13 @@ def raise_error_if_invalid_value(value: Any, possible_values: Sequence[Any], nam
     if value not in possible_values:
         name = name or (value.__name__ if hasattr(value, '__name__') else 'value')
         raise ValueError(f"{name} must be one of {possible_values}, but was {value}")
+
+
+# Random seed (if not using pytorch-lightning)
+def set_seed(seed, device='cuda'):
+    # setting seeds
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if device != 'cpu':
+        torch.cuda.manual_seed(seed)

@@ -22,6 +22,8 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
+from aibedo_salva.utilities.utils import set_seed
+
 USE_WANDB = True  # set to false to disable it
 
 PS_IDX = 1
@@ -203,6 +205,8 @@ def main(parser_args):
     Args:
         parser_args (dict): parsed arguments
     """
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    set_seed(parser_args.seed)
     # (1) Generate model
     # Change here to adapt to your data
     # n_channels=3 for RGB images
@@ -224,7 +228,6 @@ def main(parser_args):
 
     os.mkdir(output_path)
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     n_pixels = icosahedron_nodes_calculator(parser_args.depth)
     if parser_args.depth > 4:
@@ -447,6 +450,8 @@ if __name__ == "__main__":
                entity='salv47',
                mode='online' if USE_WANDB else "disabled",
                tags=['physics-constraints', 'unet'],
-               name=f"{PARSER_ARGS.loss_weight}_weight", reinit=True, resume="allow")
+               group=f"{PARSER_ARGS.loss_weight}_weight",
+               name=f"{PARSER_ARGS.loss_weight}_weight_{PARSER_ARGS.seed}_seed",
+               reinit=True, resume="allow")
     main(PARSER_ARGS)
     wandb.finish()
