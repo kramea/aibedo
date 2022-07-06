@@ -26,7 +26,7 @@ If latitude bandwidth is different from longitude bandwidth then we have:
 import torch.nn as nn
 import torch.nn.functional as F
 
-from deepsphere.utils.samplings import equiangular_calculator
+from aibedo_salva.skeleton_framework.deepsphere.utils.samplings import equiangular_calculator
 
 
 def reformat(x):
