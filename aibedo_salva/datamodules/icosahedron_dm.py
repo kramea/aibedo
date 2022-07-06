@@ -29,6 +29,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         self.save_hyperparameters(ignore=[])
         self.n_pixels = icosahedron_nodes_calculator(self.hparams.order)
         self._possible_test_sets = ['merra2', 'era5']
+        self._esm_name = self.hparams.input_filename.split('.')[2]
         self._check_args()
 
     def _check_args(self):
@@ -124,8 +125,19 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         self._data_predict = test_data
 
         # Data has shape (#examples, #pixels, #channels)
-
         if stage in ["fit", None]:
             log.info(f"Dataset sizes train: {train_data.shape[0]}, val: {val_data.shape[0]}")
         else:
             log.info(f"Dataset test size: {test_data.shape[0]}")
+
+    @property
+    def test_set_name(self) -> str:
+        train_frac, val_frac, test_frac = self.hparams.partition
+        if test_frac == 'merra2':
+            return 'test/MERRA2'
+        elif test_frac == 'era5':
+            return 'test/ERA5'
+        elif isinstance(test_frac, float):
+            return f'test/{self._esm_name}'
+        else:
+            raise ValueError(f"Unknown test_frac: {test_frac}")

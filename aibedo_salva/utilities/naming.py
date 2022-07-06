@@ -66,6 +66,8 @@ def clean_name(class_name, **kwargs) -> str:
 def get_group_name(config) -> str:
     s = get_name_for_hydra_config_class(config.model)
     s = _shared_prefix(config, init_prefix=s)
+    if config.datamodule.get('input_filename'):
+        s += f"_{config.datamodule.input_filename}"
 
     if config.get('normalizer'):
         if config.normalizer.get('spatial_normalization_in') and config.normalizer.get('spatial_normalization_out'):
