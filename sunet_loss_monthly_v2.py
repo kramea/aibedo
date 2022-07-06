@@ -443,7 +443,7 @@ if __name__ == "__main__":
     wandb.init(project='AIBEDO',
                entity='salv47',
                mode='online' if USE_WANDB else "disabled",
-               tags=['physics-constraints', 'unet'],
+               tags=['physics-constraints', 'unet', "runs-comp"],
                group=f"{PARSER_ARGS.loss_weight}_weight",
                name=f"{PARSER_ARGS.loss_weight}_weight_{PARSER_ARGS.seed}_seed",
                reinit=True, resume="allow")
