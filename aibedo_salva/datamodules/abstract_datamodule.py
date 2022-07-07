@@ -1,5 +1,6 @@
 import logging
 from typing import Optional, List, Callable, Sequence
+from omegaconf import DictConfig
 
 import pytorch_lightning as pl
 import torch
@@ -34,6 +35,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                  data_dir: str,
                  input_filename: str = "compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc",
                  normalizer: Optional[Normalizer] = None,
+                 model_config: DictConfig = None,
                  batch_size: int = 64,
                  eval_batch_size: int = 512,
                  num_workers: int = 0,
@@ -51,8 +53,9 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         """
         super().__init__()
         # The following makes all args available as, e.g., self.hparams.batch_size
-        self.save_hyperparameters(ignore=["normalizer"])
+        self.save_hyperparameters(ignore=["normalizer", 'model_config'])
         self.normalizer = normalizer
+        self.model_config = model_config
         self._data_train = self._data_val = self._data_test = self._data_predict = None
         self.lon_list = self.lat_list = None
 

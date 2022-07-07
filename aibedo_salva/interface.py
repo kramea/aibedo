@@ -53,8 +53,9 @@ def get_datamodule(config: DictConfig) -> AIBEDO_DataModule:
         _recursive_=False
     )
     data_module: AIBEDO_DataModule = hydra.utils.instantiate(
-        config.datamodule,
-        normalizer=normalizer
+        config.datamodule, _recursive_=False,
+        normalizer=normalizer,
+        model_config=config.model,
     )
     return data_module
 

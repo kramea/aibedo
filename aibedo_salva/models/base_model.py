@@ -61,8 +61,8 @@ class BaseModel(LightningModule):
         if datamodule_config is not None:
             # Infer the data dimensions
             self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
-            self.num_input_features = in_channels = len(datamodule_config.input_vars)
-            self.num_output_features = out_channels = len(datamodule_config.output_vars)
+            self._num_input_features = in_channels = len(datamodule_config.input_vars)
+            self._num_output_features = out_channels = len(datamodule_config.output_vars)
 
         self.output_normalizer = output_normalizer
 
@@ -76,6 +76,14 @@ class BaseModel(LightningModule):
                 'val/mse': torchmetrics.MeanSquaredError(squared=True),
         })
         self._test_metrics = None
+
+    @property
+    def num_input_features(self) -> int:
+        return self._num_input_features
+
+    @property
+    def num_output_features(self) -> int:
+        return self._num_output_features
 
     @property
     def test_set_name(self) -> str:
