@@ -117,8 +117,9 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         if test_frac in self._possible_test_sets:
             sphere = "isosph5." if 'isosph5.' in self.hparams.input_filename else "isosph."
             if test_frac == 'merra2':
-                test_input_fname = f"compress.{sphere}MERRA2_Input_Exp8_fixed.nc"
-                test_output_fname = f"compress.{sphere}MERRA2_Output.nc"
+                #                  f"compress.{sphere}MERRA2_Input_Exp8_fixed.nc"
+                test_input_fname = f"compress.{sphere}MERRA2_Exp8_Input.2022Jul06.nc"
+                test_output_fname = f"compress.{sphere}MERRA2_Output.2022Jul06.nc"
             elif test_frac == 'era5':
                 test_input_fname = f"compress.{sphere}ERA5_Input_Exp8.nc"
                 test_output_fname = f"compress.{sphere}ERA5_Output_PrecipCon.nc"
