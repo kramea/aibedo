@@ -69,3 +69,14 @@ class SphericalUNet(BaseModel):
         x_encoder = self.encoder(x)
         output = self.decoder(*x_encoder)
         return output
+
+
+class SphericalUNetLSTM(SphericalUNet):
+    """ Spherical GCNN Autoencoder. """
+    def __init__(self, time_length: int, **kwargs):
+        super().__init__(**kwargs)
+        self.time_length = time_length
+
+    @property
+    def num_input_features(self) -> int:
+        return self._num_input_features * self.time_length

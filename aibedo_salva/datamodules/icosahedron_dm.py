@@ -15,7 +15,6 @@ log = get_logger(__name__)
 class IcosahedronDatamodule(AIBEDO_DataModule):
     def __init__(self,
                  order: int = 5,
-                 time_length: int = 2,
                  time_lag: int = 0,
                  partition: Sequence[float] = (0.8, 0.1, 0.1),
                  **kwargs
@@ -29,6 +28,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         self.save_hyperparameters(ignore=[])
         self.n_pixels = icosahedron_nodes_calculator(self.hparams.order)
         self._possible_test_sets = ['merra2', 'era5']
+        # compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc
         self._esm_name = self.hparams.input_filename.split('.')[2]
         self._check_args()
 
@@ -74,24 +74,37 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         # Output data
         dataset_out = self._concat_variables_into_channel_dim(outDS, out_vars, output_file)
 
+        dataset_in, dataset_out = self._model_specific_transform(dataset_in, dataset_out)
         if shuffle:
             dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
-
-        if self.hparams.time_lag > 0:
-            dataset_in = dataset_in[:-self.hparams.time_lag]
-            dataset_out = dataset_out[self.hparams.time_lag:]
 
         combined_data = np.concatenate((dataset_in, dataset_out), axis=2)
         return combined_data
 
+    def _model_specific_transform(self, input_data: np.ndarray, output_data: np.ndarray):
+        if "SphericalUNet" in self.model_config._target_:
+            if self.hparams.time_lag > 0:
+                input_data = input_data[:-self.hparams.time_lag]
+                output_data = output_data[self.hparams.time_lag:]
+        elif "SphericalUNet_LSTM" in self.model_config._target_:
+            new_in_data, new_out_data = [], []
+            time_length = self.model_config.time_length
+            for i in range(0, len(input_data) - time_length):
+                intemp = np.concatenate(input_data[i:i + time_length, :, :], axis=1)
+                new_in_data.append(intemp)
+                new_out_data.append(output_data[i + time_length - 1, :, :])
+
+            input_data, output_data = np.asarray(new_in_data),  np.asarray(new_out_data)
+
+        return input_data, output_data
+
     def setup(self, stage: Optional[str] = None):
         """Load data. Set internal variables: self._data_train, self._data_val, self._data_test."""
         glevel = self.hparams.order
-        time_length = self.hparams.time_length
         train_frac, val_frac, test_frac = self.hparams.partition
         train_data = val_data = test_data = None
 
-        log.info(f"Grid level: {glevel}, # of pixels: {self.n_pixels}, time length: {time_length}")
+        log.info(f"Grid level: {glevel}, # of pixels: {self.n_pixels}")
 
         if stage in ["fit", None] or test_frac not in self._possible_test_sets:
             # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"

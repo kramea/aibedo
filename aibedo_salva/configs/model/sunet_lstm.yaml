@@ -1,0 +1,9 @@
+_target_: aibedo_salva.models.unet.SphericalUNetLSTM
+
+defaults:
+  - _self_
+  - sunet.yaml   # general, model independent, parameters
+  - /input_transform: none.yaml
+  - /optimizer: adamw.yaml
+
+time_length: 4             # >=1 for s-convlstm
