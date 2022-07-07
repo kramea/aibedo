@@ -272,15 +272,18 @@ def save_hydra_config_to_wandb(config: DictConfig):
         log.info("Hydra config will NOT be saved to WandB.")
 
 
-def get_config_from_hydra_compose_overrides(overrides: list) -> DictConfig:
+def get_config_from_hydra_compose_overrides(overrides: list,
+                                            config_path: str = "../../configs",
+                                            config_name: str = "main_config.yaml",
+                                            ) -> DictConfig:
     import hydra
     from hydra.core.global_hydra import GlobalHydra
     overrides = list(set(overrides))
     if '-m' in overrides:
         overrides.remove('-m')  # if multiruns flags are mistakenly in overrides
-    hydra.initialize(config_path="../../configs")
+    hydra.initialize(config_path=config_path, version_base=None)
     try:
-        config = hydra.compose(config_name="main_config.yaml", overrides=overrides)
+        config = hydra.compose(config_name=config_name, overrides=overrides)
     finally:
         GlobalHydra.instance().clear()  # always clean up global hydra
     return config

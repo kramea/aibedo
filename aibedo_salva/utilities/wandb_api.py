@@ -63,73 +63,44 @@ def restore_model_from_wandb_cloud(run_path: str) -> str:
         The ckpt filename that can be used to reload the model locally.
     """
     best_model_path = get_wandb_ckpt_name(run_path)
+    best_model_path = best_model_path.split('/')[-1]
     wandb.restore(best_model_path, run_path=run_path, replace=True, root=os.getcwd())
     return best_model_path
 
 
 def load_hydra_config_from_wandb(
         run_path: str,
-        override_key_value: Union[Sequence[str], dict] = None
+        override_key_value: List[str] = None
 ) -> DictConfig:
     """
     Args:
         run_path (str): the wandb PROJECT/ENTITY/ID (e.g. ID=2r0l33yc) corresponding to the config to-be-reloaded
-        override_key_value: If a dict, every k, v pair is used to override the reloaded (hydra) config,
-                            e.g. pass {datamodule.num_workers: 8} to change the corresponding flag in config.
-                            If a sequence, each element is expected to have a "=" in it, like datamodule.num_workers=8
+        override_key_value: ach element is expected to have a "=" in it, like datamodule.num_workers=8
     """
     run = wandb.Api(timeout=77).run(run_path)
+    overrides = override_key_value if isinstance(override_key_value, list) else []
     # First, try local recovery
     wandb_dir = None
     if 'dirs/wandb_save_dir' in run.config and isdir(run.config['dirs/wandb_save_dir']):
         wandb_dir = pathlib.Path(run.config['dirs/wandb_save_dir'])
     elif 'dirs/wandb_save_dir' in run.summary and isdir(run.summary['dirs/wandb_save_dir']):
         wandb_dir = pathlib.Path(run.summary['dirs/wandb_save_dir'])
-    if wandb_dir is not None and len(
-            [str(d) for d in (wandb_dir / 'wandb').iterdir() if d.is_dir() and run.id in d.name]) > 0:
-        print(f" Attempting local recovery of the config file from {str(wandb_dir)} for run {run.id}")
-        wandb_run_dir = [str(d) for d in (wandb_dir / 'wandb').iterdir() if d.is_dir() and run.id in d.name]
-        wandb_run_dir = wandb_run_dir[0]
-        logging.info(f" Attempting local recovery of the config file from {wandb_run_dir}")
-        if isfile(f"{wandb_run_dir}/files/hydra_config.yaml"):
-            config = OmegaConf.load(f"{wandb_run_dir}/files/hydra_config.yaml")
-        elif isfile(f"{wandb_run_dir}/files/wandb-metadata.json"):
-            with open(f"{wandb_run_dir}/files/wandb-metadata.json", 'r') as f:
-                overrides = json.load(f)['args']
-            overrides += [f'logger.wandb.id={run.id}',
-                          f'logger.wandb.entity={run.entity}',
-                          f'logger.wandb.project={run.project}', f'logger.wandb.group={run.group}']
-            config = get_config_from_hydra_compose_overrides(overrides)
-        else:
-            raise ValueError(f"Trying local recovery from {wandb_dir} and {wandb_run_dir} but"
-                             f" neither hydra_config.yaml nor wandb-metadata.json files were found.")
-    else:
-        # Download from wandb cloud
-        wandb_restore_kwargs = dict(run_path=run_path, replace=True, root=os.getcwd())
-        try:
-            config = OmegaConf.load(wandb.restore("hydra_config.yaml", **wandb_restore_kwargs))
-        except ValueError:  # hydra_config has not been saved to wandb :(
-            overrides = json.load(wandb.restore("wandb-metadata.json", **wandb_restore_kwargs))['args']
-            if len(overrides) == 0:
-                raise ValueError("wandb-metadata.json had no args, are you sure this is correct?")
-                # also wandb-metadata.json is unexpected (was likely overwritten)
-            overrides += [f'logger.wandb.id={run.id}',
-                          f'logger.wandb.entity={run.entity}',
-                          f'logger.wandb.project={run.project}', f'logger.wandb.group={run.group}']
-            config = get_config_from_hydra_compose_overrides(overrides)
+    # Download from wandb cloud
+    wandb_restore_kwargs = dict(run_path=run_path, replace=True, root=os.getcwd())
+    try:
+        wandb.restore("hydra_config.yaml", **wandb_restore_kwargs)
+        kwargs = dict(config_path='../../', config_name="hydra_config.yaml")
+    except ValueError:  # hydra_config has not been saved to wandb :(
+        overrides += json.load(wandb.restore("wandb-metadata.json", **wandb_restore_kwargs))['args']
+        kwargs = dict()
+        if len(overrides) == 0:
+            raise ValueError("wandb-metadata.json had no args, are you sure this is correct?")
+            # also wandb-metadata.json is unexpected (was likely overwritten)
+    overrides += [f'logger.wandb.id={run.id}',
+                  f'logger.wandb.entity={run.entity}',
+                  f'logger.wandb.project={run.project}', f'logger.wandb.group={run.group}']
+    config = get_config_from_hydra_compose_overrides(overrides, **kwargs)
     assert config.logger.wandb.id == run.id, f"{config.logger.wandb.id} != {run.id}"
-
-    if override_key_value is not None:
-        if isinstance(override_key_value, dict):
-            override_dict = override_key_value
-        else:
-            override_dict = dict()
-            for k in override_key_value:
-                k, v = k.split('=')
-                override_dict[k] = v
-
-        for k, v in override_dict.items():
-            rsetattr(config, k, v)
     return config
 
 

@@ -78,10 +78,14 @@ def get_model_and_data(config: DictConfig) -> (BaseModel, AIBEDO_DataModule):
     return model, data_module
 
 
-def reload_model_from_config_and_ckpt(config: DictConfig, model_path: str, load_datamodule: bool = False):
+def reload_model_from_config_and_ckpt(config: DictConfig,
+                                      model_path: str,
+                                      load_datamodule: bool = False,
+                                      ):
     model, data_module = get_model_and_data(config)
     # Reload model
-    model_state = torch.load(model_path)['state_dict']
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model_state = torch.load(model_path, map_location=device)['state_dict']
     model.load_state_dict(model_state)
     if load_datamodule:
         return model, data_module
