@@ -123,12 +123,6 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
      - Variable
      - Description
    * - Input
-     - clwvi
-     - Mass of cloud liquid water in a column
-   * - Input
-     - clivi
-     - Mass of cloud ice water in a column 
-   * - Input
      - cres
      - TOA Cloud radiative effect in shortwave
    * - Input
@@ -146,9 +140,6 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
    * - Input
      - netSurfcs
      - Net Clearsky Surface radiation
-   * - Input
-     - lcloud
-     - Cloud fraction averaged between 1000 hPa and 700 hPa
    * - Output
      - tas
      - 2-metre air temperature
