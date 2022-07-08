@@ -11,6 +11,9 @@ For a detailed documentation of AIBEDO, on the model architecture, dashboard, da
     conda env create -f environment.yaml   # create new environment with all dependencies
     conda activate aibedo  # activate the environment called 'aibedo'
 
+## Getting started
+
+***Please have a look at [this README](aibedo_salva/README.md)***
 
 ## Concept
 
