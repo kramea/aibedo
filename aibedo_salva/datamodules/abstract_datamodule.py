@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Optional, List, Callable, Sequence
 from omegaconf import DictConfig
 
@@ -6,6 +7,7 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
+import xarray as xr
 from aibedo_salva.data_transforms.normalization import Normalizer
 from aibedo_salva.utilities.utils import get_logger
 
@@ -57,7 +59,41 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self.normalizer = normalizer
         self.model_config = model_config
         self._data_train = self._data_val = self._data_test = self._data_predict = None
-        self.lon_list = self.lat_list = None
+        self._possible_test_sets = ['merra2', 'era5']
+        self._set_geographical_metadata()
+
+    def _set_geographical_metadata(self):
+        self._esm_name = self.hparams.input_filename.split('.')[2]
+
+        input_file = os.path.join(self.hparams.data_dir, self.hparams.input_filename)
+        inDS = xr.open_dataset(input_file)
+
+        self.lon_list: np.ndarray = inDS.lon.values
+        self.lat_list: np.ndarray = inDS.lat.values
+        lsmask_round = [(round(x) if x == x else 0.5) for x in inDS.lsMask.values[0]]
+        self.ls_mask = np.array([0 if x < 0 else 1 if x > 1 else x for x in lsmask_round])
+        print(f'LS mask shape: {inDS.lsMask.data.shape}, \n{inDS.lsMask.data[0]} '
+              f'\n******************\n{inDS.lsMask.data[1]}')
+
+    def tropics_mask(self) -> np.ndarray:
+        # tropic = df3[(df3.Lat < 30) & (df3.Lat > -30)]
+        return -30 < self.lat_list & self.lat_list < 30
+
+    def mid_latitudes_mask(self) -> np.ndarray:
+        # temperate = df2[((df2.Lat>30) & (df2.Lat<60)) | ((df2.Lat <-30 ) & (df2.Lat > -60)) ]
+        return (30 < self.lat_list & self.lat_list < 60) | (-60 < self.lat_list & self.lat_list < -30)
+
+    def arctic_mask(self) -> np.ndarray:
+        return self.lat_list > 60
+
+    def antarctic_mask(self) -> np.ndarray:
+        return self.lat_list < -60
+
+    def land_mask(self) -> np.ndarray:
+        return self.ls_mask == 1
+
+    def sea_mask(self) -> np.ndarray:
+        return self.ls_mask == 0
 
     def _shared_dataloader_kwargs(self) -> dict:
         return dict(num_workers=int(self.hparams.num_workers), pin_memory=self.hparams.pin_memory,
