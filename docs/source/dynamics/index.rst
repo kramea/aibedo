@@ -3,12 +3,15 @@
 
 .. _aibedo_clouds:
 
+Climate Dynamics
+================
+
 Clouds and Circulation
-======================
+----------------------
 
 
 Clouds
-------------------
+~~~~~~
 As defined in the AMS Glossary of Meteorology, a cloud is a visible aggregate of minute water droplets and/or ice particles in the atmosphere above the earth's surface\ :sup:`1`. Clouds form in the atmosphere as a result of the condensation of water vapor present in the atmosphere. At any point in time, about 70% of the earth is covered by one or other type of cloud. Clouds are important modifiers of the energy balance of the earth\ :sup:`2`, and are also tracers of the large-scale atmospheric circulation. How clouds modify the very atmospheric circulation in which they are embedded is less well understood, and is an area of active research.
 Clouds exhibit both spatial and temporal variability. Tropical regions of ascending motion are dominated by high-level clouds while subtropical regions of descending motion are dominated by low-level clouds\ :sup:`3`. Figure 1 shows the observed climatological spatial pattern of cloud amount and cloud top pressure from the International Satellite Cloud Climatology Project (ISCCP) dataset. Cloud cover is most substantial over tropical convective regions as well as mid-latitude storm tracks (Figure 1, left panel). Deserts regions generally have fewer clouds, and oceans have more cloud cover than nearby land regions.  The annual mean climatology of cloud top pressure (Figure 1, right panel) reveals that thick clouds with high tops are observed over convergence zones in the deep tropics and storm tracks over the midlatitudes, while subtropical regions of descent are characterized by low-level clouds. 
 
@@ -22,7 +25,7 @@ Clouds exhibit both spatial and temporal variability. Tropical regions of ascend
 
 
 Circulation controls of clouds
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The large-scale circulation influences clouds profoundly, so much so that clouds may be considered tracers of the atmospheric circulation. Over longer time scales, the distribution of clouds is modulated by the internal variability of climate, i.e. clouds fluctuate with changes in large-scale atmospheric dynamic and thermodynamic states.
 
 1.    Mid-tropospheric vertical velocity is the fundamental factor that controls the clouds in the atmosphere. High clouds dominate the ascent regions of the tropical deep convective belt as well as regions of slant-wise convection at the midlatitude storm tracks. On the other hand, low clouds form in descending regions of subtropical anticyclones and cold-air sectors of midlatitude storms/fronts\ :sup:`3`.
@@ -31,7 +34,7 @@ The large-scale circulation influences clouds profoundly, so much so that clouds
 
 
 Cloud effects on circulation
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Clouds alter the radiation budget at the surface as well at top of the atmosphere (TOA) through scattering, absorption, and emission of radiation. The impact of clouds on circulation is mediated through cloud radiative effects (CRE). CRE quantifies the effect of clouds on radiation and is calculated as the difference between all-sky and clear-sky radiative fluxes\ :sup:`2`. 
 
 Clouds reflect a significant amount of incoming solar radiation, which increases the planetary albedo and cools the planet.  This effect is known as the shortwave CRE (CRES). The top-of-atmosphere (TOA) and surface CRES is most pronounced over the midlatitude storm tracks, over subtropical oceanic regions where low clouds dominate, and at the Inter-Tropical Convergence Zone (ITCZ) of the deep tropics (Figure 2, left column). 
@@ -49,7 +52,7 @@ CREs, and fluctuations therein, may either cool or warm the atmosphere causing, 
 
 
 Coupling between clouds and the circulation
--------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The large-scale circulation drives the formation and distribution of clouds, and clouds affect the large-scale circulation through CREs. This cloud - large-scale circulation coupling (Figure 3) is a less understood part of the climate system, and is an area of ongoing research in the climate science community. 
  
 .. figure:: images/CloudFeedbacks.png
@@ -61,13 +64,13 @@ The large-scale circulation drives the formation and distribution of clouds, and
 A multitude of planetary-scale atmospheric circulation changes is anticipated with the increase in greenhouse gas concentrations in the atmosphere\ :sup:`11-16`. These circulation changes will determine the regional distribution of climate change impacts, including regional precipitation change. However, climate model projections of the circulation response to increasing atmospheric greenhouse gas involve large uncertainties at the regional level. The fundamental challenge of climate science involves reducing this uncertainty, a substantial fraction of which is due to cloud feedbacks and the climate response to this feedback. The poor agreement of models in simulating cloud feedbacks likely stems from an incomplete understanding of how clouds and the large-scale circulation interact.
 
 
- CMIP6 cloud and circulation biases
--------------------------------------
+CMIP6 cloud and circulation biases
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 Fluctuation Dissipation Theorem
-===============================
+-------------------------------
 
 Fluctuation Dissipation Theorem (FDT) for the climate system posits that the climate system response to relatively small perturbations can be estimated using a climate response operator derived from the statistics of unforced climate variability. That is, the response of a variable :math:`X` to a forcing :math:`\delta f` can be estimated as 
 
@@ -86,7 +89,7 @@ We are therefore aiming to use the internal variability relationships between cl
 
 
 References
-==========
+----------
 
 “Cloud - Glossary of Meteorology.” Accessed March 31, 2022. https://glossary.ametsoc.org/wiki/Cloud .
 
