@@ -73,9 +73,9 @@ class SphericalUNet(BaseModel):
 
 class SphericalUNetLSTM(SphericalUNet):
     """ Spherical GCNN Autoencoder. """
-    def __init__(self, time_length: int, **kwargs):
+    def __init__(self, time_len: int, **kwargs):
+        self.time_length = time_len
         super().__init__(**kwargs)
-        self.time_length = time_length
 
     @property
     def num_input_features(self) -> int:

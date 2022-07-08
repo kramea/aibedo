@@ -1,30 +1,22 @@
-from models.cnn import CNN
 import numpy as np
 import xarray as xr
 import os, shutil
 import torch
 import torch.optim as optim
-from torchsummary import summary
-from data_loader import load_ncdf, normalize, load_ncdf_to_SphereIcosahedral, shuffle_data
+from aibedo_salva.skeleton_framework.data_loader import shuffle_data
 # from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
-from spherical_unet.utils.parser import create_parser, parse_config
-from spherical_unet.utils.initialization import init_device
-from spherical_unet.utils.samplings import icosahedron_nodes_calculator
+from aibedo_salva.skeleton_framework.spherical_unet.utils.parser import create_parser, parse_config
+from aibedo_salva.skeleton_framework.spherical_unet.utils.initialization import init_device
+from aibedo_salva.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
 from argparse import Namespace
 from pathlib import Path
 import time
 
-from ignite.contrib.handlers.param_scheduler import create_lr_scheduler_with_warmup
-from ignite.contrib.handlers.tensorboard_logger import GradsHistHandler, OptimizerParamsHandler, OutputHandler, \
-    TensorboardLogger, WeightsHistHandler
 from ignite.engine import Engine, Events, create_supervised_evaluator
-from ignite.handlers import EarlyStopping, TerminateOnNan
 from ignite.metrics import EpochMetric, Accuracy, Loss
 from sklearn.model_selection import train_test_split
 from torch import nn, optim
-from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 
@@ -74,21 +66,17 @@ def get_dataloader(parser_args):
 
     new_in_data = []
     new_out_data = []
-    for i in range(0, len(dataset_in)-time_length):
+    for i in range(0, len(dataset_in) - time_length):
         intemp = np.concatenate(dataset_in[i:i + time_length, :, :], axis=1)
         new_in_data.append(intemp)
-        new_out_data.append(dataset_out[i+time_length-1, :, :])
-
+        new_out_data.append(dataset_out[i + time_length - 1, :, :])
 
     dataset_in_lstm = np.asarray(new_in_data)
     dataset_out_lstm = np.asarray(new_out_data)
 
-
-
-    #dataset_out_lstm = dataset_out[:len(dataset_out)-time_length, :, :]
+    # dataset_out_lstm = dataset_out[:len(dataset_out)-time_length, :, :]
 
     dataset_in_lstm, dataset_out_lstm = shuffle_data(dataset_in_lstm, dataset_out_lstm)
-
 
     combined_data = np.concatenate((dataset_in_lstm, dataset_out_lstm), axis=2)
 
@@ -135,15 +123,17 @@ def main(parser_args):
     if parser_args.depth > 4:
         print("Generating 6 layered unet")
         # for glevel = 5,6 --> use 6-layered unet
-        from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
+        from aibedo_salva.skeleton_framework.spherical_unet.models.spherical_unet.unet_model import SphericalUNet
         unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,
-                             parser_args.kernel_size, len(parser_args.input_vars)*parser_args.time_length, len(parser_args.output_vars))
+                             parser_args.kernel_size, len(parser_args.input_vars) * parser_args.time_length,
+                             len(parser_args.output_vars))
     else:
         print("Generating 3 layered unet")
         # for glevel = 1,2,3,4 --> use 3-layered unet (shllow)
-        from spherical_unet.models.spherical_unet_shallow.unet_model import SphericalUNet
+        from aibedo_salva.skeleton_framework.spherical_unet.models.spherical_unet_shallow.unet_model import SphericalUNet
         unet = SphericalUNet(parser_args.pooling_class, n_pixels, 3, parser_args.laplacian_type,
-                             parser_args.kernel_size, len(parser_args.input_vars)* parser_args.time_length, len(parser_args.output_vars))
+                             parser_args.kernel_size, len(parser_args.input_vars) * parser_args.time_length,
+                             len(parser_args.output_vars))
 
     print(unet)
     # unet = unet.to(device)
@@ -210,7 +200,8 @@ def main(parser_args):
     torch.save(unet.state_dict(),
                "./saved_model_lag_" + str(parser_args.time_length) + "/unet_state_" + str(parser_args.n_epochs) + ".pt")
 
-    torch.save(unet, "./saved_model_lag_" + str(parser_args.time_length) + "/unet_model_" + str(parser_args.n_epochs) + ".pt")
+    torch.save(unet,
+               "./saved_model_lag_" + str(parser_args.time_length) + "/unet_model_" + str(parser_args.n_epochs) + ".pt")
 
     # Prediction code
 
@@ -235,6 +226,3 @@ def main(parser_args):
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
     main(PARSER_ARGS)
-
-
-

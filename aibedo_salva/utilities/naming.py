@@ -56,6 +56,8 @@ def clean_name(class_name, **kwargs) -> str:
         s = 'GraphNet'
     elif "CNN_Net" in class_name:
         s = 'CNN'
+    elif "SphericalUNetLSTM" in class_name:
+        s = 'SUNet2'
     elif "SphericalUNet" in class_name:
         s = 'SUNet'
     else:
