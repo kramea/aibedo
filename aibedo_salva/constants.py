@@ -14,12 +14,13 @@ CLIMATE_MODELS_ALL = [
     "MIROC-ES2L",
     "MIROC6",
     "MPI-ESM-1-2-HAM",
-    "MPI-ESM-1-2-HR",
-    "MPI-ESM-1-2-LR",
+    "MPI-ESM1-2-HR",
+    "MPI-ESM1-2-LR",
     "MRI-ESM2-0",
     "SAM0-UNICON",
-
 ]
+
+
 
 if __name__ == '__main__':
     print('" "'.join(CLIMATE_MODELS_ALL))
