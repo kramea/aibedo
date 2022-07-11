@@ -13,7 +13,7 @@ For a detailed documentation of AIBEDO, on the model architecture, dashboard, da
 
 ## Getting started
 
-***Please have a look at [this README](aibedo_salva/README.md)***
+***Please have a look at [this README](aibedo/README.md)***
 
 ## Concept
 

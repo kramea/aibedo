@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 import wandb
 import os
-from aibedo_salva.utilities.wandb_api import get_runs_df, hasnt_tags, filter_wandb_runs
+from aibedo.utilities.wandb_api import get_runs_df, hasnt_tags, filter_wandb_runs
 
 os.environ['WANDB_CONSOLE'] = 'off'
 

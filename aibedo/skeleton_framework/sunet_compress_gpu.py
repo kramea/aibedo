@@ -3,11 +3,11 @@ import xarray as xr
 import os, shutil
 import torch
 import torch.optim as optim
-from aibedo.skeleton_framework.data_loader import shuffle_data
+from data_loader import shuffle_data
 # from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
-from aibedo.skeleton_framework.spherical_unet.utils.parser import create_parser, parse_config
-from aibedo.skeleton_framework.spherical_unet.utils.initialization import init_device
-from aibedo.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
+from spherical_unet.utils.parser import create_parser, parse_config
+from spherical_unet.utils.initialization import init_device
+from spherical_unet.utils.samplings import icosahedron_nodes_calculator
 from argparse import Namespace
 from pathlib import Path
 import time
@@ -17,8 +17,9 @@ from ignite.metrics import EpochMetric, Accuracy, Loss
 from sklearn.model_selection import train_test_split
 from torch import nn, optim
 from torch.utils.data import DataLoader
-from torchvision import transforms
 
+
+# from torchvision import transforms
 
 def sunet_collate(batch):
     batchShape = batch[0].shape
@@ -64,21 +65,13 @@ def get_dataloader(parser_args):
         data_all.append(temp_data)
     dataset_out = np.concatenate(data_all, axis=2)
 
-    new_in_data = []
-    new_out_data = []
-    for i in range(0, len(dataset_in) - time_length):
-        intemp = np.concatenate(dataset_in[i:i + time_length, :, :], axis=1)
-        new_in_data.append(intemp)
-        new_out_data.append(dataset_out[i + time_length - 1, :, :])
+    dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
 
-    dataset_in_lstm = np.asarray(new_in_data)
-    dataset_out_lstm = np.asarray(new_out_data)
+    if parser_args.time_lag > 0:
+        dataset_in = dataset_in[:-parser_args.time_lag]
+        dataset_out = dataset_out[parser_args.time_lag:]
 
-    # dataset_out_lstm = dataset_out[:len(dataset_out)-time_length, :, :]
-
-    dataset_in_lstm, dataset_out_lstm = shuffle_data(dataset_in_lstm, dataset_out_lstm)
-
-    combined_data = np.concatenate((dataset_in_lstm, dataset_out_lstm), axis=2)
+    combined_data = np.concatenate((dataset_in, dataset_out), axis=2)
 
     train_data, temp = train_test_split(combined_data, train_size=parser_args.partition[0], random_state=43)
     val_data, test_data = train_test_split(temp, test_size=parser_args.partition[2] / (
@@ -123,17 +116,15 @@ def main(parser_args):
     if parser_args.depth > 4:
         print("Generating 6 layered unet")
         # for glevel = 5,6 --> use 6-layered unet
-        from aibedo.skeleton_framework.spherical_unet.models.spherical_unet.unet_model import SphericalUNet
+        from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
         unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,
-                             parser_args.kernel_size, len(parser_args.input_vars) * parser_args.time_length,
-                             len(parser_args.output_vars))
+                             parser_args.kernel_size, len(parser_args.input_vars), len(parser_args.output_vars))
     else:
         print("Generating 3 layered unet")
         # for glevel = 1,2,3,4 --> use 3-layered unet (shllow)
-        from aibedo.skeleton_framework.spherical_unet.models.spherical_unet_shallow.unet_model import SphericalUNet
+        from spherical_unet.models.spherical_unet_shallow.unet_model import SphericalUNet
         unet = SphericalUNet(parser_args.pooling_class, n_pixels, 3, parser_args.laplacian_type,
-                             parser_args.kernel_size, len(parser_args.input_vars) * parser_args.time_length,
-                             len(parser_args.output_vars))
+                             parser_args.kernel_size, len(parser_args.input_vars), len(parser_args.output_vars))
 
     print(unet)
     # unet = unet.to(device)
@@ -190,18 +181,16 @@ def main(parser_args):
 
     engine_train.run(dataloader_train, max_epochs=parser_args.n_epochs)
 
-    saved_model_path = "./saved_model_lag_" + str(parser_args.time_length)
+    saved_model_path = "./saved_model"
     if os.path.isdir(saved_model_path):
         shutil.rmtree(saved_model_path)
         os.mkdir(saved_model_path)
     else:
         os.mkdir(saved_model_path)
 
-    torch.save(unet.state_dict(),
-               "./saved_model_lag_" + str(parser_args.time_length) + "/unet_state_" + str(parser_args.n_epochs) + ".pt")
+    torch.save(unet.state_dict(), "./saved_model" + "/unet_state_" + str(parser_args.n_epochs) + ".pt")
 
-    torch.save(unet,
-               "./saved_model_lag_" + str(parser_args.time_length) + "/unet_model_" + str(parser_args.n_epochs) + ".pt")
+    torch.save(unet, "./saved_model" + "/unet_model_" + str(parser_args.n_epochs) + ".pt")
 
     # Prediction code
 
@@ -217,10 +206,8 @@ def main(parser_args):
         predictions = np.concatenate((predictions, pred_numpy), axis=0)
         groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
 
-    np.save("./saved_model_lag_" + str(parser_args.time_length) + "/prediction_" + str(parser_args.n_epochs) + ".npy",
-            predictions)
-    np.save("./saved_model_lag_" + str(parser_args.time_length) + "/groundtruth_" + str(parser_args.n_epochs) + ".npy",
-            groundtruth)
+    np.save("./saved_model" + "/prediction_" + str(parser_args.n_epochs) + ".npy", predictions)
+    np.save("./saved_model" + "/groundtruth_" + str(parser_args.n_epochs) + ".npy", groundtruth)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,134 @@
+import logging
+import os
+from typing import Optional, List, Callable, Sequence
+from omegaconf import DictConfig
+
+import pytorch_lightning as pl
+import torch
+from torch.utils.data import DataLoader
+import numpy as np
+import xarray as xr
+from aibedo.data_transforms.normalization import Normalizer
+from aibedo.utilities.utils import get_logger
+
+log = get_logger(__name__)
+
+
+class AIBEDO_DataModule(pl.LightningDataModule):
+    """
+    ----------------------------------------------------------------------------------------------------------
+    A DataModule implements 5 key methods:
+        - prepare_data (things to do on 1 GPU/TPU, not on every GPU/TPU in distributed mode)
+        - setup (things to do on every accelerator in distributed mode)
+        - train_dataloader (the training dataloader)
+        - val_dataloader (the validation dataloader(s))
+        - test_dataloader (the test dataloader(s))
+
+    This allows you to share a full dataset without explaining how to download,
+    split, transform and process the data
+
+    Read the docs:
+        https://pytorch-lightning.readthedocs.io/en/latest/extensions/datamodules.html
+    """
+
+    def __init__(self,
+                 input_vars: Sequence[str],
+                 output_vars: Sequence[str],
+                 data_dir: str,
+                 input_filename: str = "compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc",
+                 normalizer: Optional[Normalizer] = None,
+                 model_config: DictConfig = None,
+                 batch_size: int = 64,
+                 eval_batch_size: int = 512,
+                 num_workers: int = 0,
+                 pin_memory: bool = True,
+                 verbose: bool = True,
+                 seed: int = 43,
+                 ):
+        """
+        Args:
+            data_dir (str):  A path to the data folder that contains the input and output files.
+            batch_size (int): Batch size for the training dataloader
+            eval_batch_size (int): Batch size for the test and validation dataloader's
+            num_workers (int): Dataloader arg for higher efficiency
+            pin_memory (bool): Dataloader arg for higher efficiency
+        """
+        super().__init__()
+        # The following makes all args available as, e.g., self.hparams.batch_size
+        self.save_hyperparameters(ignore=["normalizer", 'model_config'])
+        self.normalizer = normalizer
+        self.model_config = model_config
+        self._data_train = self._data_val = self._data_test = self._data_predict = None
+        self._possible_test_sets = ['merra2', 'era5']
+        self._set_geographical_metadata()
+
+    def _set_geographical_metadata(self):
+        self._esm_name = self.hparams.input_filename.split('.')[2]
+
+        input_file = os.path.join(self.hparams.data_dir, self.hparams.input_filename)
+        inDS = xr.open_dataset(input_file)
+
+        self.lon_list: np.ndarray = inDS.lon.values
+        self.lat_list: np.ndarray = inDS.lat.values
+        lsmask_round = [(round(x) if x == x else 0.5) for x in inDS.lsMask.values[0]]
+        self.ls_mask = np.array([0 if x < 0 else 1 if x > 1 else x for x in lsmask_round])
+        print(f'LS mask shape: {inDS.lsMask.data.shape}, \n{inDS.lsMask.data[0]} '
+              f'\n******************\n{inDS.lsMask.data[1]}')
+
+    def tropics_mask(self) -> np.ndarray:
+        # tropic = df3[(df3.Lat < 30) & (df3.Lat > -30)]
+        return -30 < self.lat_list & self.lat_list < 30
+
+    def mid_latitudes_mask(self) -> np.ndarray:
+        # temperate = df2[((df2.Lat>30) & (df2.Lat<60)) | ((df2.Lat <-30 ) & (df2.Lat > -60)) ]
+        return (30 < self.lat_list & self.lat_list < 60) | (-60 < self.lat_list & self.lat_list < -30)
+
+    def arctic_mask(self) -> np.ndarray:
+        return self.lat_list > 60
+
+    def antarctic_mask(self) -> np.ndarray:
+        return self.lat_list < -60
+
+    def land_mask(self) -> np.ndarray:
+        return self.ls_mask == 1
+
+    def sea_mask(self) -> np.ndarray:
+        return self.ls_mask == 0
+
+    def _shared_dataloader_kwargs(self) -> dict:
+        return dict(num_workers=int(self.hparams.num_workers), pin_memory=self.hparams.pin_memory,
+                    collate_fn=sunet_collate)
+
+    def _shared_eval_dataloader_kwargs(self) -> dict:
+        return dict(**self._shared_dataloader_kwargs(), batch_size=self.hparams.eval_batch_size, shuffle=False)
+
+    def train_dataloader(self):
+        return DataLoader(
+            dataset=self._data_train,
+            batch_size=self.hparams.batch_size,
+            shuffle=True,
+            **self._shared_dataloader_kwargs(),
+        )
+
+    def val_dataloader(self):
+        return DataLoader(
+            dataset=self._data_val, **self._shared_eval_dataloader_kwargs()
+        ) if self._data_val is not None else None
+
+    def test_dataloader(self) -> DataLoader:
+        return DataLoader(dataset=self._data_test, **self._shared_eval_dataloader_kwargs())
+
+    def predict_dataloader(self) -> DataLoader:
+        return DataLoader(dataset=self._data_predict, **self._shared_eval_dataloader_kwargs())
+
+
+def sunet_collate(batch):
+    batchShape = batch[0].shape
+    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
+
+    data_in_array = np.array([item[:, 0:varlimit] for item in batch])
+    data_out_array = np.array([item[:, varlimit:] for item in batch])
+
+    data_in = torch.Tensor(data_in_array)
+    data_out = torch.Tensor(data_out_array)
+    return [data_in, data_out]

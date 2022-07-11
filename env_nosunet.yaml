@@ -1,4 +1,4 @@
-name: aibedo_salva
+name: aibedo
 channels:
   - pytorch
   - conda-forge

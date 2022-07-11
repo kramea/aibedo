@@ -1,6 +1,6 @@
 from boto3 import Session
 from _secrets import AWS_ACCESS_KEY, AWS_SECRET_KEY
-from aibedo_salva.constants import CLIMATE_MODELS_ALL
+from aibedo.constants import CLIMATE_MODELS_ALL
 
 data_dir = 'data'
 session = Session(

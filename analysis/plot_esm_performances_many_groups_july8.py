@@ -5,8 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-from aibedo_salva.utilities.wandb_api import get_runs_df, hasnt_tags, groupby
-from aibedo_salva.utilities.plotting import set_labels_and_ticks, RollingCmaps, RollingLineFormats
+from aibedo.utilities.wandb_api import get_runs_df, hasnt_tags, groupby
+from aibedo.utilities.plotting import set_labels_and_ticks, RollingCmaps, RollingLineFormats
 
 thresh = None
 save_dir = None  # r"C:\Users\salva\OneDrive\Documentos\Bachelor\MILA\figures"

@@ -6,9 +6,9 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 # from spherical_unet.models.spherical_unet.unet_model import SphericalUNet
-from aibedo_salva.skeleton_framework.spherical_unet.utils.parser import create_parser, parse_config
-from aibedo_salva.skeleton_framework.spherical_unet.utils.initialization import init_device
-from aibedo_salva.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
+from aibedo.skeleton_framework.spherical_unet.utils.parser import create_parser, parse_config
+from aibedo.skeleton_framework.spherical_unet.utils.initialization import init_device
+from aibedo.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
 from argparse import Namespace
 from pathlib import Path
 import time
@@ -22,7 +22,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
-from aibedo_salva.utilities.utils import set_seed
+from aibedo.utilities.utils import set_seed
 
 USE_WANDB = True  # set to false to disable it
 
@@ -233,13 +233,13 @@ def main(parser_args):
     if parser_args.depth > 4:
         print("Generating 6 layered unet")
         # for glevel = 5,6 --> use 6-layered unet
-        from aibedo_salva.skeleton_framework.spherical_unet.models.spherical_unet.unet_model import SphericalUNet
+        from aibedo.skeleton_framework.spherical_unet.models.spherical_unet.unet_model import SphericalUNet
         unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,
                              parser_args.kernel_size, len(parser_args.input_vars) + 1, len(parser_args.output_vars))
     else:
         print("Generating 3 layered unet")
         # for glevel = 1,2,3,4 --> use 3-layered unet (shllow)
-        from aibedo_salva.skeleton_framework.spherical_unet.models.spherical_unet_shallow.unet_model import \
+        from aibedo.skeleton_framework.spherical_unet.models.spherical_unet_shallow.unet_model import \
             SphericalUNet
         unet = SphericalUNet(parser_args.pooling_class, n_pixels, 3, parser_args.laplacian_type,
                              parser_args.kernel_size, len(parser_args.input_vars) + 1, len(parser_args.output_vars))
