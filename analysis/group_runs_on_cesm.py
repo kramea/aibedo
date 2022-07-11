@@ -13,8 +13,10 @@ entity, project = 'salv47', "AIBEDO"
 prefix = entity + '/' + project
 version = 0
 
+base_data_file = "compress.isosph.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
 filter_by_hparams = {
-    'datamodule/input_filename': "compress.isosph.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc",
+  #  "model/name": "FNO",
+    'datamodule/input_filename': base_data_file,
 }
 filters = [
     'has_finished', hasnt_tags(['physics-constraints'])
@@ -28,6 +30,7 @@ runs_df: pd.DataFrame = get_runs_df(
     order='+summary_metrics.val/mse_epoch',
     verbose=0)
 
+do_care_about_hparams = ['model', 'optim', 'scheduler']
 dont_care_vals = ['seed', 'name', 'tags', 'group',
                   'model/params_trainable', 'model/params_not_trainable', 'model/params_total',
                   'model/input_transform/output_normalization',
@@ -85,7 +88,7 @@ def name_hparam_diff(diff: pd.Series):
     return diff_to_ref_str.rstrip('_')
 
 
-print('Reference runs:\n', reference_runs[['id', 'model/name', 'model/hidden_dims']])
+print('Reference runs:\n', reference_runs[['id', 'model/name']])
 for i, (name, group) in enumerate(grouped_df):
     group_IDs = list(group.id)
 
@@ -104,22 +107,22 @@ for i, (name, group) in enumerate(grouped_df):
         # print(f'Diff to ref run group {model_name}: ------------------>\n', diff_to_ref_str)
 
     any_group_run = api.run(f"{prefix}/{group.iloc[0]['id']}")
-    hparas = {k:v for k, v in any_group_run.config.items() if 'model/' in k}
-    other_esm_runs = filter_wandb_runs(hyperparam_filter=hparas, wandb_api=api)
-    print(f'Other esm runs: {len(other_esm_runs)} for hparams {hparas}')
-    for run in other_esm_runs:
+    # Get all runs with same hyperparams as this group (only for HP types in do_care_about_hparams)
+    hparas = {k: v for k, v in any_group_run.config.items() if any([f'{hp}/' in k for hp in do_care_about_hparams])}
+    for k in dont_care_vals:
+        hparas.pop(k, None)
+
+    esm_runs_for_hparam_set = filter_wandb_runs(
+        hyperparam_filter=hparas,
+       # filter_functions=[lambda r: r.config['datamodule/input_filename'] != base_data_file],
+        wandb_api=api)
+    print(f'ESM runs: {len(esm_runs_for_hparam_set)} for hparams {hparas}')
+    for run in esm_runs_for_hparam_set:
         if f"group/v{version}" in run.config:
-            continue
+            pass
         print(model_name, run.id)
         run.config[f"group/v{version}"] = diff_to_ref_str
         try:
             run.update()
         except wandb.errors.CommError:
             logging.warning('---------------------------> FAILED:', run.id, '\n', '---' * 20)
-
-'''
-    hparas = {}
-    for c in group.columns[group.columns.str.startswith('model/')]:
-        if group.iloc[0][c] != NAN_DUMMY_VALUE:
-            hparas[c] = group.iloc[0][c]
-'''
