@@ -10,7 +10,7 @@ conda install -c conda-forge cartopy
 conda install  pandas h5py xarray dask netCDF4 bottleneck
 pip install torchsummary
 conda install -c conda-forge trimesh
-
+conda install ignite -c pytorch-nightly
 ```
 
 ## Installation (for GPU)
@@ -26,18 +26,23 @@ conda install  pandas h5py xarray dask netCDF4 bottleneck
 pip install torchsummary
 conda install -c conda-forge trimesh
 pip install pillow==6.1
+conda install ignite -c pytorch-nightly
 ```
 
 ## Execute Spheircal-Unet
 
 ```
-python sphericalunet_endtoend.py --config-file config.example.yml
+python sunet_compress_gpu.py --config-file config_yml/newconfig.compress.yml
 ```
 ## Execute Spherical-Conv-LSTM
 
 ```
-python convlstm_endtoend.py  --config-file config.example.yml
+python sunetlstm_compress_gpu.py  --config-file config_yml/newconfig.compress.yml
 ```
 ## Data
 
 Sample data is already available in the AWS instance. Other datasets are located in S3 Bucket.
+
+## Model file
+
+Temporal spherical U-net model weights file trained with 3-months input (t0, t1, t2) and output (t3) at level-6 spherical grid can be found in S3 Bucket named as unet_state_6.pt. 

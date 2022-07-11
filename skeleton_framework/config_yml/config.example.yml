@@ -1,0 +1,24 @@
+IMAGE PARAMS:
+  pooling_class: "icosahedron"
+  depth: 6
+  laplacian_type: "combinatorial"
+  time_lag: 0 #dummy for s-convlstm
+  time_length: 3 #>=1 for s-convlstm
+
+MODEL PARAMS:
+  partition: [0.5,0.3,0.2]
+  batch_size: 10
+  learning_rate: 0.001 #0.001
+  n_epochs: 50
+  kernel_size: 3
+
+INPUT PARAMS:
+  input_file: "./data/Exp7_CESM2_r1i1p1f1_historical_Input.nc"
+  output_file: "./data/Exp1_CESM2_r1i1p1f1_historical_Output.nc"
+  output_path: "output_sunet"
+  input_vars: ['cres_pre', 'crel_Pre', 'netTOAcs_Pre', 'clivi_pre', 'clwvi_pre','cresSurf_Pre', 'crelSurf_Pre', 'netSurfcs_Pre']          
+  output_vars: ['tas_pre',  'psl_pre', 'pr_pre']
+  generation_only: True
+
+EARLY_STOPPING:
+  earlystopping_patience: 30

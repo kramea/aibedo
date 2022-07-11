@@ -13,6 +13,7 @@ from spherical_unet.utils.initialization import init_device
 from spherical_unet.utils.samplings import icosahedron_nodes_calculator
 from argparse import Namespace
 from pathlib import Path
+import re
 import time
 
 from ignite.contrib.handlers.param_scheduler import create_lr_scheduler_with_warmup
@@ -43,10 +44,6 @@ def get_dataloader(parser_args):
     glevel = int(parser_args.depth)
     n_pixels = icosahedron_nodes_calculator(glevel)
     time_length = int(parser_args.time_length)
-
-    print("Grid level:", glevel)
-    print("N pixels:", n_pixels)
-    print("time length:", time_length)
 
     inDS = xr.open_dataset(parser_args.input_file)
     outDS = xr.open_dataset(parser_args.output_file)
@@ -86,7 +83,7 @@ def get_dataloader(parser_args):
 
     #dataset_out_lstm = dataset_out[:len(dataset_out)-time_length, :, :]
 
-    dataset_in_lstm, dataset_out_lstm = shuffle_data(dataset_in_lstm, dataset_out_lstm)
+    # dataset_in_lstm, dataset_out_lstm = shuffle_data(dataset_in_lstm, dataset_out_lstm)
 
 
     combined_data = np.concatenate((dataset_in_lstm, dataset_out_lstm), axis=2)
@@ -105,17 +102,15 @@ def main(parser_args):
     unet = SphericalUNet(parser_args.pooling_class, n_pixels, 6, parser_args.laplacian_type,
                              parser_args.kernel_size, len(parser_args.input_vars)*parser_args.time_length, len(parser_args.output_vars))
 
+    modelfilename = Path(parser_args.output_file).stem
+    p = re.compile('compress.isosph.(.*).historical.r1i1p1f1.Output')
+    modelname = p.findall(modelfilename)[0]
 
 
-    #ckpt = torch.load("./saved_model_lag_4/unet_state_4.pt")
-    weights_file = torch.load("./saved_model_lag_4/unet_state_1.pt")
+    weights_file = torch.load(parser_args.model_file)
 
-    #print(weights_file.keys())
 
     weights_file = {key.replace("module.", ""): value for key, value in weights_file.items()}
-
-    #print(weights_file.keys())
-
 
     unet.load_state_dict(weights_file, strict=False)
     unet, device = init_device(parser_args.device, unet)
@@ -130,8 +125,8 @@ def main(parser_args):
         predictions = np.concatenate((predictions, pred_numpy), axis=0)
         groundtruth = np.concatenate((groundtruth, data_out.detach().cpu().numpy()), axis=0)
 
-    np.save("pred.npy", predictions)
-    np.save("gt.npy", groundtruth)
+    np.save((modelname + "_predictions.npy"), predictions)
+    np.save((modelname + "_groundtruth.npy"), groundtruth)
 
 if __name__ == "__main__":
     PARSER_ARGS = parse_config(create_parser())
