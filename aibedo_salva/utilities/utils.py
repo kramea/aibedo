@@ -32,6 +32,7 @@ def get_identity_callable(*args, **kwargs) -> Callable:
 
 
 def get_activation_function(name: str, functional: bool = False, num: int = 1):
+    """ Returns the activation function with the given name. """
     name = name.lower().strip()
 
     def get_functional(s: str) -> Optional[Callable]:
@@ -53,13 +54,18 @@ def get_activation_function(name: str, functional: bool = False, num: int = 1):
 
 
 def get_normalization_layer(name, dims, num_groups=None, *args, **kwargs):
+    """ Returns the normalization layer with the given name.
+
+    Args:
+        name: name of the normalization layer. Must be one of ['batch_norm', 'layer_norm' 'group', 'instance', 'none']
+    """
     if not isinstance(name, str) or name.lower() == 'none':
         return None
     elif 'batch_norm' == name:
         return nn.BatchNorm1d(num_features=dims, *args, **kwargs)
     elif 'layer_norm' == name:
         return nn.LayerNorm(dims, *args, **kwargs)
-    elif 'inst' in name:
+    elif 'instance' in name:
         return nn.InstanceNorm1d(num_features=dims, *args, **kwargs)
     elif 'group' in name:
         if num_groups is None:
@@ -74,6 +80,7 @@ def get_normalization_layer(name, dims, num_groups=None, *args, **kwargs):
 
 
 def get_loss(name, reduction='mean'):
+    """ Returns the loss function with the given name. """
     name = name.lower().strip().replace('-', '_')
     if name in ['l1', 'mae', "mean_absolute_error"]:
         loss = nn.L1Loss(reduction=reduction)
@@ -96,6 +103,7 @@ def to_dict(obj: Optional[Union[dict, SimpleNamespace]]):
 
 
 def to_DictConfig(obj: Optional[Union[List, Dict]]):
+    """ Tries to convert the given object to a DictConfig. """
     if isinstance(obj, DictConfig):
         return obj
 
@@ -144,6 +152,7 @@ def rgetattr(obj, attr, *args):
 
 # Errors
 def raise_error_if_invalid_value(value: Any, possible_values: Sequence[Any], name: str = None):
+    """ Raises an error if the given value (optionally named by `name`) is not one of the possible values. """
     if value not in possible_values:
         name = name or (value.__name__ if hasattr(value, '__name__') else 'value')
         raise ValueError(f"{name} must be one of {possible_values}, but was {value}")
@@ -151,9 +160,39 @@ def raise_error_if_invalid_value(value: Any, possible_values: Sequence[Any], nam
 
 # Random seed (if not using pytorch-lightning)
 def set_seed(seed, device='cuda'):
+    """
+    Sets the random seed for the given device.
+    If using pytorch-lightning, preferably to use pl.seed_everything(seed) instead.
+    """
     # setting seeds
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     if device != 'cpu':
         torch.cuda.manual_seed(seed)
+
+
+# Checkpointing
+def get_epoch_ckpt_or_last(ckpt_files: List[str], epoch: int = None):
+    if epoch is None:
+        if 'last.ckpt' in ckpt_files:
+            model_ckpt_filename = 'last.ckpt'
+        else:
+            ckpt_epochs = [int(name.replace('epoch', '')[:3]) for name in ckpt_files]
+            # Use checkpoint with latest epoch if epoch is not specified
+            max_epoch = max(ckpt_epochs)
+            model_ckpt_filename = [name for name in ckpt_files if str(max_epoch) in name][0]
+        logging.warning(f"Multiple ckpt files exist: {ckpt_files}. Using latest epoch: {model_ckpt_filename}")
+    else:
+        # Use checkpoint with specified epoch
+        model_ckpt_filename = [name for name in ckpt_files if str(epoch) in name]
+        if len(model_ckpt_filename) == 0:
+            raise ValueError(f"There is no ckpt file for epoch={epoch}. Try one of the ones in {ckpt_files}!")
+        model_ckpt_filename = model_ckpt_filename[0]
+    return model_ckpt_filename
+
+def get_local_ckpt_path(config: DictConfig, **kwargs):
+    ckpt_direc = config.callbacks.model_checkpoint.dirpath
+    ckpt_filenames = [f for f in os.listdir(ckpt_direc) if os.path.isfile(os.path.join(ckpt_direc, f))]
+    filename = get_epoch_ckpt_or_last(ckpt_filenames, **kwargs)
+    return os.path.join(ckpt_direc, filename)

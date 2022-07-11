@@ -21,12 +21,22 @@ class AIBEDO_MLP(BaseModel):
                  output_activation_function: Optional[Union[str, bool]] = None,
                  *args, **kwargs):
         """
+
         Args:
+            hidden_dims: The hidden dimensions of the MLP (e.g. [100, 100, 100])
+            datamodule_config: The config of the datamodule (e.g. produced by hydra <config>.yaml file parsing)
+            net_normalization: One of ['batch_norm', 'layer_norm', 'none']
+            activation_function: The activation function of the MLP (e.g. 'gelu')
+            dropout: How much dropout to use in the MLP. Default is 0.0 (no dropout)
+            residual (bool): Whether to use residual connections in the MLP. Default is False
+            residual_learnable_lam (bool): Whether to use residual connections with learnable lambdas
             output_activation_function (str, bool, optional): By default no output activation function is used (None).
                 If a string is passed, is must be the name of the desired output activation (e.g. 'softmax')
                 If True, the same activation function is used as defined by the arg `activation_function`.
         """
         super().__init__(datamodule_config=datamodule_config, *args, **kwargs)
+        # The following saves all the args that are passed to the constructor to self.hparams
+        #   e.g. access them with self.hparams.hidden_dims
         self.save_hyperparameters()
 
         self.input_dim = self.num_input_features * self.spatial_dim

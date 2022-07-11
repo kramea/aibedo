@@ -17,8 +17,8 @@ from aibedo_salva.utilities.wandb_api import get_wandb_ckpt_name, load_hydra_con
 def reload_and_test_model(run_id: str,
                           checkpoint_path: str = None,
                           config: DictConfig = None,
-                          entity='salv47',
-                          project='AIBEDO',
+                          entity: str = 'salv47',
+                          project: str = 'AIBEDO',
                           train_model: bool = False,
                           test_model: bool = True,
                           override_kwargs: Sequence[str] = None
@@ -28,6 +28,13 @@ def reload_and_test_model(run_id: str,
         -> If train_model is True, it trains the model (i.e. can be used to resume training).
         -> If test_model is True, it tests the model (i.e. can be used to test a trained model).
 
+    If the model was trained using Wandb logging, reloading it and resuming training or testing will be as easy as:
+        >>> example_run_id = "22ejv03e"
+        >>> reload_and_test_model(run_id=example_run_id, train_model=True, test_model=True)
+
+    To resume training and train for more epochs (e.g. 100), use the following:
+        >>> reload_and_test_model(run_id=example_run_id, train_model=True, override_kwargs=['trainer.max_epochs=100'])
+
     Args:
         run_id (str): Wandb run id
         checkpoint_path (str): An optional local ckpt path to load the weights from. If None, the best one on wandb will be used.
@@ -35,6 +42,8 @@ def reload_and_test_model(run_id: str,
         entity (str): Wandb entity
         project (str): Wandb project
         train_model (bool): Whether to train the model before (optional) testing. Default is False.
+                            If you want to train the model for more epochs, make sure to override the original number of epochs with e.g.
+                            override_kwargs=['trainer.max_epochs=100', ...]
         test_model (bool): Whether to test the model. Default is True.
         override_kwargs: A list of strings (of the form "key=value") to override the given/reloaded config with.
     """

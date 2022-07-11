@@ -34,7 +34,10 @@ def get_wandb_logger(trainer: Trainer) -> WandbLogger:
 
 
 class WatchModel(Callback):
-    """Make wandb watch model at the beginning of the run."""
+    """
+    Make wandb watch model at the beginning of the run.
+    This will log the gradients of the model (as a histogram for each or some weights updates).
+    """
 
     def __init__(self, log: str = "gradients", log_freq: int = 100):
         self.log = log

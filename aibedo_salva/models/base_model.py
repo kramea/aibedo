@@ -28,6 +28,16 @@ class BaseModel(LightningModule):
     It is recommended to define the attribute
         - self.example_input_array = torch.randn(<YourModelInputShape>)  # batch dimension can be anything, e.g. 7
 
+    Args:
+        datamodule_config: DictConfig with the configuration of the datamodule
+        input_transform: AbstractTransform with an optional input transform
+        optimizer: DictConfig with the optimizer configuration (e.g. for AdamW)
+        scheduler: DictConfig with the scheduler configuration (e.g. for CosineAnnealingLR)
+        monitor: str with the name of the metric to monitor, e.g. 'val/mse'
+        mode: str with the mode of the monitor, e.g. 'min' (lower is better)
+        loss_function: str with the name of the loss function, e.g. 'mean_squared_error'
+        name: optional str with a name for the model
+        verbose: Whether to print logs or not
     ------------
     Read the docs regarding LightningModule for more information.:
         https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html
@@ -46,11 +56,14 @@ class BaseModel(LightningModule):
                  verbose: bool = True,
                  ):
         super().__init__()
+        # The following saves all the args that are passed to the constructor to self.hparams
+        #   e.g. access them with self.hparams.monitor
         self.save_hyperparameters()
+        # Get a logger
         self.log_text = get_logger(name=self.__class__.__name__ if name == '' else name)
         self.name = name
         self.verbose = verbose
-        if not self.verbose:
+        if not self.verbose:  # turn off info level logging
             self.log_text.setLevel(logging.WARN)
 
         if input_transform is None or isinstance(input_transform, AbstractTransform):
@@ -99,6 +112,7 @@ class BaseModel(LightningModule):
 
     @property
     def n_params(self):
+        """ Returns the number of parameters in the model """
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
     @property
@@ -161,6 +175,7 @@ class BaseModel(LightningModule):
 
     # --------------------- training with PyTorch Lightning
     def on_train_start(self) -> None:
+        """ Log some info about the model/data at the start of training """
         self.log('Parameter count', float(self.n_params))
         self.log('Training set size', float(len(self.trainer.datamodule._data_train)))
         self.log('Validation set size', float(len(self.trainer.datamodule._data_val)))
@@ -203,13 +218,14 @@ class BaseModel(LightningModule):
         self.log_dict({'epoch': float(self.current_epoch), "time/train": train_time})
 
     # --------------------- evaluation with PyTorch Lightning
-    def _evaluation_step(self, batch: Any, batch_idx: int,
-                         torchmetrics: Optional[nn.ModuleDict] = None,
+    def _evaluation_step(self,
+                         batch: Any, batch_idx: int,
+                         torch_metrics: Optional[nn.ModuleDict] = None,
                          **kwargs):
         X, Y = batch
         preds = self.predict(X)
         log_dict = dict()
-        for metric_name, metric in torchmetrics.items():
+        for metric_name, metric in torch_metrics.items():
             metric(preds, Y)  # compute metrics (need to be in separate line to the following line!)
             log_dict[metric_name] = metric
         self.log_dict(log_dict, on_step=True, on_epoch=True, **kwargs)  # log metric objects
@@ -224,7 +240,7 @@ class BaseModel(LightningModule):
         self._start_validation_epoch_time = time.time()
 
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = None):
-        results = self._evaluation_step(batch, batch_idx, torchmetrics=self.val_metrics, prog_bar=True)
+        results = self._evaluation_step(batch, batch_idx, torch_metrics=self.val_metrics, prog_bar=True)
         return results
 
     def validation_epoch_end(self, outputs: List[Any]) -> dict:
@@ -243,7 +259,7 @@ class BaseModel(LightningModule):
         self._start_test_epoch_time = time.time()
 
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = None):
-        results = self._evaluation_step(batch, batch_idx, torchmetrics=self.test_metrics)
+        results = self._evaluation_step(batch, batch_idx, torch_metrics=self.test_metrics)
         return results
 
     def test_epoch_end(self, outputs: List[Any]):
@@ -255,9 +271,14 @@ class BaseModel(LightningModule):
 
     # ---------------------------------------------------------------------- Optimizers and scheduler(s)
     def _get_optim(self, optim_name: str, **kwargs):
+        """
+        Method that returns the torch.optim optimizer object.
+        May be overridden in subclasses to provide custom optimizers.
+        """
         return create_optimizer_v2(model_or_params=self, opt=optim_name, **kwargs)
 
     def configure_optimizers(self):
+        """ Configure optimizers and schedulers """
         if 'name' not in to_DictConfig(self.hparams.optimizer).keys():
             self.log_text.info(" No optimizer was specified, defaulting to AdamW with 1e-4 lr.")
             self.hparams.optimizer.name = 'adamw'

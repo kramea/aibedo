@@ -70,6 +70,8 @@ def extras(config: DictConfig) -> None:
     - easier access to debug mode
     - forcing debug friendly configuration
     - forcing multi-gpu friendly configuration
+    - checking if config values are valid
+    - init wandb if wandb logging is being used
 
     Credits go to: https://github.com/ashleve/lightning-hydra-template
 
@@ -143,6 +145,7 @@ def extras(config: DictConfig) -> None:
 
 
 def check_config_values(config: DictConfig):
+    """ Check if config values are valid. """
     with open_dict(config):
 
         if "net_normalization" in config.model.keys():
@@ -151,6 +154,7 @@ def check_config_values(config: DictConfig):
             config.model.net_normalization = config.model.net_normalization.lower()
 
         if config.datamodule.get('order'):
+            # Set icosahedron order based on input_filename
             if 'compress.isosph5.' in config.datamodule.get('input_filename'):
                 config.datamodule.order = 5
             elif 'compress.isosph.' in config.datamodule.get('input_filename'):
@@ -160,17 +164,17 @@ def check_config_values(config: DictConfig):
 
         if config.logger.get("wandb"):
             if 'callbacks' in config and config.callbacks.get('model_checkpoint'):
-                id_mdl = config.logger.wandb.get('id')
+                wandb_model_run_id = config.logger.wandb.get('id')
                 d = config.callbacks.model_checkpoint.dirpath
-                if id_mdl is not None:
-                    new_dir = os.path.join(d, id_mdl)
+                if wandb_model_run_id is not None:
+                    # Save model checkpoints to special folder <ckpt-dir>/<wandb-run-id>/
+                    new_dir = os.path.join(d, wandb_model_run_id)
                     config.callbacks.model_checkpoint.dirpath = new_dir
                     os.makedirs(new_dir, exist_ok=True)
                     log.info(f" Model checkpoints will be saved in: {new_dir}")
         else:
             if config.get('callbacks') and 'wandb' in config.callbacks:
-                raise ValueError("You are trying to use wandb callbacks but you haven't set `logger.wandb=True`!")
-
+                raise ValueError("You are trying to use wandb callbacks but you aren't using a wandb logger!")
             # log.warning("Model checkpoints will not be saved because you are not using wandb!")
             config.save_config_to_wandb = False
 
@@ -264,7 +268,6 @@ def save_hydra_config_to_wandb(config: DictConfig):
         log.info(f"Hydra config will be saved to WandB as hydra_config.yaml and in wandb run_dir: {wandb.run.dir}")
         # files in wandb.run.dir folder get directly uploaded to wandb
         filepath = os.path.join(wandb.run.dir, "hydra_config.yaml")
-        print(filepath)
         with open(filepath, "w") as fp:
             OmegaConf.save(config, f=fp.name, resolve=True)
         wandb.save("hydra_config.yaml")
@@ -272,10 +275,29 @@ def save_hydra_config_to_wandb(config: DictConfig):
         log.info("Hydra config will NOT be saved to WandB.")
 
 
-def get_config_from_hydra_compose_overrides(overrides: list,
+def get_config_from_hydra_compose_overrides(overrides: List[str],
                                             config_path: str = "../../configs",
                                             config_name: str = "main_config.yaml",
                                             ) -> DictConfig:
+    """
+    Function to get a Hydra config manually based on a default config file and a list of override strings.
+    This is an alternative to using hydra.main(..) and the command-line for overriding the default config.
+
+    Args:
+        overrides: A list of strings of the form "key=value" to override the default config with.
+        config_path: Relative path to the folder where the default config file is located.
+        config_name: Name of the default config file (.yaml ending).
+
+    Returns:
+        The resulting config object based on the default config file and the overrides.
+
+    Examples:
+
+    .. code-block:: python
+
+        config = get_config_from_hydra_compose_overrides(overrides=['model=mlp', 'model.optimizer.lr=0.001'])
+        print(f"Lr={config.model.optimizer.lr}, MLP hidden_dims={config.model.hidden_dims}")
+    """
     import hydra
     from hydra.core.global_hydra import GlobalHydra
     overrides = list(set(overrides))
@@ -289,7 +311,24 @@ def get_config_from_hydra_compose_overrides(overrides: list,
     return config
 
 
-def get_model_from_hydra_compose_overrides(overrides: list):
+def get_model_from_hydra_compose_overrides(overrides: List[str]):
+    """
+    Function to get a torch model manually based on a default config file and a list of override strings.
+
+    Args:
+        overrides: A list of strings of the form "key=value" to override the default config with.
+
+    Returns:
+        The model instantiated from the resulting config.
+
+    Examples:
+
+    .. code-block:: python
+
+        mlp_model = get_model_from_hydra_compose_overrides(overrides=['model=mlp'])
+        random_mlp_input = torch.randn(1, 100)
+        random_prediction = mlp_model(random_mlp_input)
+    """
     from aibedo_salva.interface import get_model
     cfg = get_config_from_hydra_compose_overrides(overrides)
     return get_model(cfg)

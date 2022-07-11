@@ -10,7 +10,7 @@ import pandas as pd
 from omegaconf import OmegaConf, DictConfig
 
 from aibedo_salva.utilities.config_utils import get_config_from_hydra_compose_overrides
-from aibedo_salva.utilities.utils import rsetattr, get_logger
+from aibedo_salva.utilities.utils import rsetattr, get_logger, get_local_ckpt_path
 
 DF_MAPPING = Callable[[pd.DataFrame], pd.DataFrame]
 log = get_logger(__name__)
@@ -74,17 +74,11 @@ def load_hydra_config_from_wandb(
 ) -> DictConfig:
     """
     Args:
-        run_path (str): the wandb PROJECT/ENTITY/ID (e.g. ID=2r0l33yc) corresponding to the config to-be-reloaded
-        override_key_value: ach element is expected to have a "=" in it, like datamodule.num_workers=8
+        run_path (str): the wandb ENTITY/PROJECT/ID (e.g. ID=2r0l33yc) corresponding to the config to-be-reloaded
+        override_key_value: each element is expected to have a "=" in it, like datamodule.num_workers=8
     """
     run = wandb.Api(timeout=77).run(run_path)
     overrides = override_key_value if isinstance(override_key_value, list) else []
-    # First, try local recovery
-    wandb_dir = None
-    if 'dirs/wandb_save_dir' in run.config and isdir(run.config['dirs/wandb_save_dir']):
-        wandb_dir = pathlib.Path(run.config['dirs/wandb_save_dir'])
-    elif 'dirs/wandb_save_dir' in run.summary and isdir(run.summary['dirs/wandb_save_dir']):
-        wandb_dir = pathlib.Path(run.summary['dirs/wandb_save_dir'])
     # Download from wandb cloud
     wandb_restore_kwargs = dict(run_path=run_path, replace=True, root=os.getcwd())
     try:
@@ -123,18 +117,19 @@ def reload_checkpoint_from_wandb(run_id: str,
     """
     from aibedo_salva.interface import reload_model_from_config_and_ckpt
     run_path = f"{entity}/{project}/{run_id}"
-    wandb_restore_kwargs = dict(run_path=run_path, replace=True, root=os.getcwd())
+    config = load_hydra_config_from_wandb(run_path, override_key_value)
 
-    best_model_path = get_wandb_ckpt_name(run_path, epoch=epoch)
-    if os.path.isfile(best_model_path):
-        best_model_fname = best_model_path
-        logging.info(f" Found a local ckpt for run {run_id} at {best_model_path}, using it instead of wandb.")
+    local_ckpt_path = get_local_ckpt_path(config, epoch=epoch)
+    if os.path.isfile(local_ckpt_path):
+        best_model_fname = best_model_path = local_ckpt_path
+        logging.info(f" Found a local ckpt for run {run_id} at {local_ckpt_path}, using it instead of wandb.")
     else:
+        best_model_path = get_wandb_ckpt_name(run_path, epoch=epoch)
         best_model_fname = best_model_path.split('/')[-1]  # in case the file contains local dir structure
         # IMPORTANT ARGS replace=True: see https://github.com/wandb/client/issues/3247
+        wandb_restore_kwargs = dict(run_path=run_path, replace=True, root=os.getcwd())
         wandb.restore(best_model_fname, **wandb_restore_kwargs)  # download from the cloud
 
-    config = load_hydra_config_from_wandb(run_path, override_key_value)
     assert config.logger.wandb.id == run_id, f"{config.logger.wandb.id} != {run_id}"
 
     try:
@@ -165,12 +160,12 @@ def reupload_run_history(run):
 #
 # Pre-filtering of wandb runs
 #
-def has_finished() -> dict:
-    return {'run.state': "finished"}
+def has_finished(run):
+    return run.state == "finished"
 
 
 def has_final_metric(run) -> bool:
-    return 'test/MERRA2/mse' in run.summary.keys()
+    return 'test/MERRA2/mse_epoch' in run.summary.keys() and 'test/ERA5/mse_epoch' in run.summary.keys()
 
 
 def has_keys(keys: Union[str, List[str]]) -> Callable:
@@ -179,7 +174,7 @@ def has_keys(keys: Union[str, List[str]]) -> Callable:
     return lambda run: all([(k in run.summary.keys() or k in run.config.keys()) for k in keys])
 
 
-def has_max_metric_value(metric: str = 'test/MERRA2/mse', max_metric_value: float = 1.0) -> Callable:
+def has_max_metric_value(metric: str = 'test/MERRA2/mse_epoch', max_metric_value: float = 1.0) -> Callable:
     return lambda run: run.summary[metric] <= max_metric_value
 
 
@@ -243,7 +238,7 @@ str_to_run_pre_filter = {
 # Post-filtering of wandb runs (usually when you need to compare runs)
 #
 def topk_runs(k: int = 5,
-              metric: str = 'val/mse',
+              metric: str = 'val/mse_epoch',
               lower_is_better: bool = True) -> DF_MAPPING:
     if lower_is_better:
         return lambda df: df.nsmallest(k, metric)
@@ -252,7 +247,7 @@ def topk_runs(k: int = 5,
 
 
 def topk_run_of_each_model_type(k: int = 1,
-                                metric: str = 'val/mse',
+                                metric: str = 'val/mse_epoch',
                                 lower_is_better: bool = True) -> DF_MAPPING:
     topk_filter = topk_runs(k, metric, lower_is_better)
 
@@ -274,11 +269,15 @@ def non_unique_cols_dropper(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def groupby(df: pd.DataFrame,
-            group_by: str = 'seed',
-            metrics: List[str] = 'val/mse',
+            group_by: Union[str, List[str]] = 'seed',
+            metrics: List[str] = 'val/mse_epoch',
             keep_columns: List[str] = 'model/name') -> pd.DataFrame:
     """
-
+    Args:
+        df: pandas DataFrame to be grouped
+        group_by: str or list of str defining the columns to group by
+        metrics: list of metrics to compute the group mean and std over
+        keep_columns: list of columns to keep in the resulting grouped DataFrame
     Returns:
         A dataframe grouped by `group_by` with columns
         `metric`/mean and `metric`/std for each metric passed in `metrics` and all columns in `keep_columns` remain intact.
@@ -287,8 +286,10 @@ def groupby(df: pd.DataFrame,
         metrics = [metrics]
     if isinstance(keep_columns, str):
         keep_columns = [keep_columns]
+    if isinstance(group_by, str):
+        group_by = [group_by]
 
-    grouped_df = df.groupby([group_by], as_index=False)
+    grouped_df = df.groupby(group_by, as_index=False)
     agg_metrics = {m: ['mean', 'std'] for m in metrics}
     agg_remain_intact = {c: 'first' for c in keep_columns}
     # cols = [group_by] + keep_columns + metrics + ['id']
@@ -330,7 +331,7 @@ def get_wandb_filters_dict_list_from_list(filters_list) -> dict:
 
 
 def get_best_model_config(
-        metric: str = 'val/mse',
+        metric: str = 'val/mse_epoch',
         mode: str = 'min',
         filters: Union[str, List[Union[Callable, str]]] = 'has_finished',
         entity: str = "salv47",
@@ -348,16 +349,15 @@ def get_best_model_config(
 
 
 def get_run_ids_for_hyperparams(hyperparams: dict,
-                                entity: str = "salv47",
-                                project: str = 'AIBEDO',
-                                wandb_api=None) -> List[str]:
-    runs = filter_wandb_runs(hyperparams, entity, project=project, wandb_api=wandb_api)
+                                **kwargs) -> List[str]:
+    runs = filter_wandb_runs(hyperparams, **kwargs)
     run_ids = [run.id for run in runs]
     return run_ids
 
 
 def filter_wandb_runs(hyperparam_filter: dict = None,
                       filter_functions: Sequence[Callable] = None,
+                      order='-created_at',
                       entity: str = "salv47",
                       project: str = 'AIBEDO',
                       wandb_api=None,
@@ -380,7 +380,7 @@ def filter_wandb_runs(hyperparam_filter: dict = None,
             filters_post[k.replace('.', '/')] = v  # wandb keys are / separated
     filter_wandb_api = hyperparams_list_api(**filter_wandb_api)
     filter_wandb_api = {"$and": filter_wandb_api}  # MongoDB query lang
-    runs = api.runs(f"{entity}/{project}", filters=filter_wandb_api, per_page=100)
+    runs = api.runs(f"{entity}/{project}", filters=filter_wandb_api, per_page=100, order=order)
     n_runs1 = len(runs)
     filters_post_func = has_hyperparam_values(**filters_post)
     runs = [run for run in runs if filters_post_func(run) and all(f(run) for f in filter_functions)]
@@ -394,10 +394,9 @@ def get_runs_df(
         hyperparam_filter: dict = None,
         run_pre_filters: Union[str, List[Union[Callable, str]]] = 'has_finished',
         run_post_filters: Union[str, List[Union[DF_MAPPING, str]]] = None,
-        project: str = 'AIBEDO',
         verbose: int = 1,
         make_hashable_df: bool = False,
-        wandb_api=None
+        **kwargs
 ) -> pd.DataFrame:
     """
 
@@ -417,7 +416,7 @@ def get_runs_df(
     run_post_filters = [(f if callable(f) else str_to_run_post_filter[f.lower()]) for f in run_post_filters]
 
     # Project is specified by <entity/project-name>
-    runs = filter_wandb_runs(hyperparam_filter, run_pre_filters, wandb_api=wandb_api, project=project)
+    runs = filter_wandb_runs(hyperparam_filter, run_pre_filters, **kwargs)
     summary_list = []
     config_list = []
     group_list = []
@@ -477,5 +476,7 @@ def clean_hparams(df: pd.DataFrame):
         getattr(df, new_col).fillna(getattr(df, col), inplace=True)
         # E.g.: all_df.Temp_Rating.fillna(all_df.Farheit, inplace=True)
         del df[col]
+    if 'model/time_length' in df.columns:
+        getattr(df, 'model/time_length').fillna(4.0, inplace=True)
 
     return df

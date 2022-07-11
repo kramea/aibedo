@@ -3,6 +3,7 @@ from omegaconf import DictConfig
 
 
 def _shared_prefix(config: DictConfig, init_prefix: str = "") -> str:
+    """ This is a prefix for naming the runs for a more agreeable logging."""
     s = init_prefix if isinstance(init_prefix, str) else ""
     kwargs = dict(mixer=config.model.mixer._target_) if config.model.get('mixer') else dict()
     s += clean_name(config.model._target_, **kwargs)
@@ -12,6 +13,7 @@ def _shared_prefix(config: DictConfig, init_prefix: str = "") -> str:
 
 
 def get_name_for_hydra_config_class(config: DictConfig) -> str:
+    """ Will return a string that can describe the class of the (sub-)config."""
     if 'name' in config and config.get('name') is not None:
         return config.get('name')
     elif '_target_' in config:
@@ -20,7 +22,7 @@ def get_name_for_hydra_config_class(config: DictConfig) -> str:
 
 
 def get_detailed_name(config) -> str:
-    """ This is a prefix for naming the runs for a more agreeable logging."""
+    """ This is a detailed name for naming the runs for logging."""
     s = config.get("name")
     s = _shared_prefix(config, init_prefix=s) + '_'
 
@@ -43,6 +45,7 @@ def get_detailed_name(config) -> str:
 
 
 def clean_name(class_name, **kwargs) -> str:
+    """ This names the model class paths with a more concise name."""
     if "AFNONet" in class_name:
         if 'mixer' not in kwargs or "AFNO1D_Mixing" in kwargs['mixer']:
             s = 'FNO'
@@ -66,6 +69,10 @@ def clean_name(class_name, **kwargs) -> str:
 
 
 def get_group_name(config) -> str:
+    """
+    This is a group name for wandb logging.
+    On Wandb, the runs of the same group are averaged out when selecting grouping by `group`
+    """
     s = get_name_for_hydra_config_class(config.model)
     s = _shared_prefix(config, init_prefix=s)
     if config.datamodule.get('input_filename'):
