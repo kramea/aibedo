@@ -98,10 +98,10 @@ def main(parser_args):
         #(2) Load data
         dataset = np.load(in_temp_npy_file)
         print(np.shape(dataset))
-        #dataset = normalize(dataset, "in") 
+        dataset = normalize(dataset, "in") 
         # it seems loss decrease is somewhat oscilating if we don't normalize again.
         dataset_out = np.load(out_temp_npy_file)
-        #dataset_out = normalize(dataset_out, "out")
+        dataset_out = normalize(dataset_out, "out")
         
 
         dataset = temporal_conversion(dataset, time_length)
@@ -180,7 +180,6 @@ def main(parser_args):
 
 if __name__ == "__main__":
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print(device)
     PARSER_ARGS = parse_config(create_parser())
     main(PARSER_ARGS)
 

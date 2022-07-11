@@ -80,7 +80,7 @@ def main():
     #(1) input parameters : Soo(Todo): consider to  make it as parser_arg
     file_path = "./data/annual_avg_output.nc"
     input_file_length = 3
-    name_of_variable = 'tas' # choose among ['tas', 'psl', 'pr']
+    name_of_variable = 'tas_pre' # choose among ['tas_pre', 'psl_pre', 'pr_pre']
     output_path = "./lstm_"+str(name_of_variable)+"_ts_"+str(input_file_length)+"/"
     n_layers = 10
     hidden_dim = 1024
