@@ -71,7 +71,7 @@ def restore_model_from_wandb_cloud(run_path: str) -> str:
 def load_hydra_config_from_wandb(
         run_path: str,
         override_key_value: List[str] = None,
-try_local_recovery: bool = True,
+        try_local_recovery: bool = True,
 ) -> DictConfig:
     """
     Args:
@@ -79,7 +79,9 @@ try_local_recovery: bool = True,
         override_key_value: each element is expected to have a "=" in it, like datamodule.num_workers=8
     """
     run = wandb.Api(timeout=77).run(run_path)
-    overrides = override_key_value if isinstance(override_key_value, list) else []
+    if not isinstance(override_key_value, list):
+        raise ValueError(f"override_key_value must be a list of strings, but has type {type(override_key_value)}")
+    overrides = override_key_value
     # Download from wandb cloud
     wandb_restore_kwargs = dict(run_path=run_path, replace=True, root=os.getcwd())
     try:
@@ -120,9 +122,12 @@ def reload_checkpoint_from_wandb(run_id: str,
     from aibedo.interface import reload_model_from_config_and_ckpt
     run_path = f"{entity}/{project}/{run_id}"
     config = load_hydra_config_from_wandb(run_path, override_key_value, try_local_recovery=try_local_recovery)
-    for k in ['model', 'datamodule', 'model.mixer']:
-        if rhasattr(config, k):
-            OmegaConf.update(config, f'{k}._target_', str(rgetattr(config, f'{k}._target_')).replace('aibedo_salva', 'aibedo'))
+    OmegaConf.update(config, f'model.input_transform._target_',
+                     str(rgetattr(config, f'model.input_transform._target_')).replace('aibedo_salva', 'aibedo'))
+    for k in ['model', 'datamodule', 'model.mixer', 'model.input_transform']:
+        if config.get(k):
+            OmegaConf.update(config, f'{k}._target_',
+                             str(rgetattr(config, f'{k}._target_')).replace('aibedo_salva', 'aibedo'))
 
     if try_local_recovery and get_local_ckpt_path(config, epoch=epoch) is not None:
         best_model_fname = best_model_path = get_local_ckpt_path(config, epoch=epoch)
