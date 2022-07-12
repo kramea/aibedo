@@ -6,12 +6,12 @@ from os.path import join
 import hydra
 from hydra.core.global_hydra import GlobalHydra
 
-import aibedo_salva.constants
-from aibedo_salva.train import run_model
+import aibedo.constants
+from aibedo.train import run_model
 
 
 def single_esm_training_run(overrides, ESM: str):
-    hydra.initialize(config_path="aibedo_salva/configs", version_base=None)
+    hydra.initialize(config_path="aibedo/configs", version_base=None)
     try:
         config = hydra.compose(config_name="main_config.yaml", overrides=overrides)
     finally:
@@ -35,13 +35,22 @@ def get_any_ensemble_id(data_dir, ESM_NAME: str) -> str:
 
 
 def all_esm_runs():
-    args = sys.argv[1:]
+    ESMs = aibedo.constants.CLIMATE_MODELS_ALL
+    if 'first' in sys.argv[1]:
+        ESMs = ESMs[:int(sys.argv[1][5:])]
+        args = sys.argv[2:]
+    elif 'last' in sys.argv[1]:
+        ESMs = ESMs[-int(sys.argv[1][4:]):]
+        args = sys.argv[2:]
+    else:
+        args = sys.argv[1:]
+
     main_overrides = [
         'datamodule.partition=[0.85, 0.15, merra2]',
     ] + list(args)
     print(main_overrides)
 
-    for ESM_NAME in aibedo_salva.constants.CLIMATE_MODELS_ALL:
+    for ESM_NAME in ESMs:
         single_esm_training_run(overrides=main_overrides, ESM=ESM_NAME)
 
 

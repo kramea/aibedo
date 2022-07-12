@@ -18,6 +18,8 @@ from omegaconf import DictConfig, open_dict, OmegaConf
 from torch import Tensor
 from pytorch_lightning.utilities import rank_zero_only
 
+from aibedo.utilities.normalization import RMSLayerNorm
+
 
 def no_op(*args, **kwargs):
     pass
@@ -65,6 +67,8 @@ def get_normalization_layer(name, dims, num_groups=None, *args, **kwargs):
         return nn.BatchNorm1d(num_features=dims, *args, **kwargs)
     elif 'layer_norm' == name:
         return nn.LayerNorm(dims, *args, **kwargs)
+    elif 'rms_layer_norm' == name:
+        return RMSLayerNorm(dims, *args, **kwargs)
     elif 'instance' in name:
         return nn.InstanceNorm1d(num_features=dims, *args, **kwargs)
     elif 'group' in name:
@@ -150,6 +154,13 @@ def rgetattr(obj, attr, *args):
     return functools.reduce(_getattr, [obj] + attr.split('.'))
 
 
+def rhasattr(obj, attr, *args):
+    def _hasattr(obj, attr):
+        return hasattr(obj, attr, *args)
+
+    return functools.reduce(_hasattr, [obj] + attr.split('.'))
+
+
 # Errors
 def raise_error_if_invalid_value(value: Any, possible_values: Sequence[Any], name: str = None):
     """ Raises an error if the given value (optionally named by `name`) is not one of the possible values. """
@@ -191,8 +202,12 @@ def get_epoch_ckpt_or_last(ckpt_files: List[str], epoch: int = None):
         model_ckpt_filename = model_ckpt_filename[0]
     return model_ckpt_filename
 
+
 def get_local_ckpt_path(config: DictConfig, **kwargs):
     ckpt_direc = config.callbacks.model_checkpoint.dirpath
+    if not os.path.isdir(ckpt_direc):
+        logging.warning(f"Ckpt directory {ckpt_direc} does not exist. Are you sure the ckpt is on this file-system?.")
+        return None
     ckpt_filenames = [f for f in os.listdir(ckpt_direc) if os.path.isfile(os.path.join(ckpt_direc, f))]
     filename = get_epoch_ckpt_or_last(ckpt_filenames, **kwargs)
     return os.path.join(ckpt_direc, filename)

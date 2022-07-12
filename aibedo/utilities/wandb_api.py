@@ -10,7 +10,7 @@ import pandas as pd
 from omegaconf import OmegaConf, DictConfig
 
 from aibedo.utilities.config_utils import get_config_from_hydra_compose_overrides
-from aibedo.utilities.utils import rsetattr, get_logger, get_local_ckpt_path
+from aibedo.utilities.utils import rsetattr, get_logger, get_local_ckpt_path, rhasattr, rgetattr
 
 DF_MAPPING = Callable[[pd.DataFrame], pd.DataFrame]
 log = get_logger(__name__)
@@ -70,7 +70,8 @@ def restore_model_from_wandb_cloud(run_path: str) -> str:
 
 def load_hydra_config_from_wandb(
         run_path: str,
-        override_key_value: List[str] = None
+        override_key_value: List[str] = None,
+try_local_recovery: bool = True,
 ) -> DictConfig:
     """
     Args:
@@ -102,7 +103,8 @@ def reload_checkpoint_from_wandb(run_id: str,
                                  entity: str = 'salv47',
                                  project: str = 'AIBEDO',
                                  epoch: Optional[int] = None,
-                                 override_key_value: Union[Sequence[str], dict] = None
+                                 override_key_value: Union[Sequence[str], dict] = None,
+                                 try_local_recovery: bool = True,
                                  ) -> dict:
     """ Reload model checkpoint based on only the Wandb run ID
     Args:
@@ -117,12 +119,14 @@ def reload_checkpoint_from_wandb(run_id: str,
     """
     from aibedo.interface import reload_model_from_config_and_ckpt
     run_path = f"{entity}/{project}/{run_id}"
-    config = load_hydra_config_from_wandb(run_path, override_key_value)
+    config = load_hydra_config_from_wandb(run_path, override_key_value, try_local_recovery=try_local_recovery)
+    for k in ['model', 'datamodule', 'model.mixer']:
+        if rhasattr(config, k):
+            OmegaConf.update(config, f'{k}._target_', str(rgetattr(config, f'{k}._target_')).replace('aibedo_salva', 'aibedo'))
 
-    local_ckpt_path = get_local_ckpt_path(config, epoch=epoch)
-    if os.path.isfile(local_ckpt_path):
-        best_model_fname = best_model_path = local_ckpt_path
-        logging.info(f" Found a local ckpt for run {run_id} at {local_ckpt_path}, using it instead of wandb.")
+    if try_local_recovery and get_local_ckpt_path(config, epoch=epoch) is not None:
+        best_model_fname = best_model_path = get_local_ckpt_path(config, epoch=epoch)
+        logging.info(f" Found a local ckpt for run {run_id} at {best_model_fname}, using it instead of wandb.")
     else:
         best_model_path = get_wandb_ckpt_name(run_path, epoch=epoch)
         best_model_fname = best_model_path.split('/')[-1]  # in case the file contains local dir structure
