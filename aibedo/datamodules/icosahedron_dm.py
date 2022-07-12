@@ -1,7 +1,6 @@
 import os.path
 from typing import Optional, List, Sequence
 
-from sklearn.model_selection import train_test_split
 import xarray as xr
 import numpy as np
 from aibedo.datamodules.abstract_datamodule import AIBEDO_DataModule
@@ -58,7 +57,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         """Concatenate xarray variables into numpy channel dimension (last)."""
         data_all = []
         for var in variables:
-            var_data = data[var].data
+            var_data = data[var].values
             temp_data = np.reshape(np.concatenate(var_data, axis=0), [-1, self.n_pixels, 1])
             data_all.append(temp_data)
         dataset = np.concatenate(data_all, axis=2)
@@ -109,6 +108,8 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         glevel = self.hparams.order
         train_frac, val_frac, test_frac = self.hparams.partition
         train_data = val_data = test_data = None
+        if stage in ["fit", None] or test_frac not in self._possible_test_sets:
+            from sklearn.model_selection import train_test_split
 
         log.info(f"Grid level: {glevel}, # of pixels: {self.n_pixels}")
 
@@ -141,10 +142,12 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             val_data, test_data = train_test_split(val_data, test_size=test_frac / (val_frac + test_frac),
                                                    random_state=self.hparams.seed)
 
-        self._data_train = train_data
-        self._data_val = val_data
-        self._data_test = test_data
-        self._data_predict = test_data
+        if stage in ["predict"]:
+            self._data_predict = test_data.copy()
+        else:
+            self._data_train = train_data
+            self._data_val = val_data
+            self._data_test = test_data
 
         # Data has shape (#examples, #pixels, #channels)
         if stage in ["fit", None]:

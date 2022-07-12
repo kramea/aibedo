@@ -5,6 +5,8 @@ from omegaconf import DictConfig
 
 import pytorch_lightning as pl
 import torch
+from pytorch_lightning.utilities.types import EVAL_DATALOADERS
+from torch import nn
 from torch.utils.data import DataLoader
 import numpy as np
 import xarray as xr
@@ -118,9 +120,47 @@ class AIBEDO_DataModule(pl.LightningDataModule):
     def test_dataloader(self) -> DataLoader:
         return DataLoader(dataset=self._data_test, **self._shared_eval_dataloader_kwargs())
 
-    def predict_dataloader(self) -> DataLoader:
+    def predict_dataloader(self) -> EVAL_DATALOADERS:
         return DataLoader(dataset=self._data_predict, **self._shared_eval_dataloader_kwargs())
 
+    def save_prediction_to_numpy(self, filename: str, model: nn.Module, device: torch.device = None):
+        """
+        Save the predictions and the ground truth to a numpy file (.npz).
+        The saved file will have the following structure:
+            - predictions: numpy array of the predictions
+            - groundtruth: numpy array of the corresponding ground truth/targets
+
+        Args:
+            filename: The filepath to save the numpy file to.
+            model: The model to use for prediction.
+            device: The device ('cuda', 'cpu', etc.)
+
+        Returns:
+            A dictionary {'preds': predictions, 'targets': ground_truth}
+        """
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model = model.to(device)
+        predict_loader = self.predict_dataloader()
+        if predict_loader.dataset is None:
+            self.setup(stage='predict')
+            predict_loader = self.predict_dataloader()
+
+        for i, batch in enumerate(predict_loader):
+            data_in, data_out = batch
+            preds = model(data_in.to(device))
+            preds_numpy = preds.detach().cpu().numpy()
+            gt_numpy = data_out.detach().cpu().numpy()
+            if i == 0:
+                predictions = preds_numpy
+                groundtruth = gt_numpy
+            else:
+                predictions = np.concatenate((predictions, preds_numpy), axis=0)
+                groundtruth = np.concatenate((groundtruth, gt_numpy), axis=0)
+
+        if filename:
+            np.savez_compressed(filename, groundtruth=groundtruth, predictions=predictions)
+        return {'preds': predictions, 'targets': groundtruth}
 
 def sunet_collate(batch):
     batchShape = batch[0].shape
