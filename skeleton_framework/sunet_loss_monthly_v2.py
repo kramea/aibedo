@@ -298,7 +298,8 @@ def main(parser_args):
         
         outputs_unscaled_pr = (np.array(outputs_detach[:,:,2]) * data_std) + data_mean
 
-        loss_coeff[3] * outputs_unscaled_pr[outputs_unscaled_pr < 0] = 0
+        if loss_coeff[3] > 0:
+            outputs_unscaled_pr[outputs_unscaled_pr < 0] = 0
 
         loss_pr = np.zeros(int(len(batch_month[0])))
         print(loss_pr)
