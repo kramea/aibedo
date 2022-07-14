@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional, List, Callable, Sequence
+from typing import Optional, List, Callable, Sequence, Dict
 from omegaconf import DictConfig
 
 import pytorch_lightning as pl
@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 import xarray as xr
 from aibedo.data_transforms.normalization import Normalizer
+from aibedo.utilities.naming import var_names_to_clean_name
 from aibedo.utilities.utils import get_logger
 
 log = get_logger(__name__)
@@ -62,7 +63,12 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self.model_config = model_config
         self._data_train = self._data_val = self._data_test = self._data_predict = None
         self._possible_test_sets = ['merra2', 'era5']
+        self._var_names_to_clean_name = var_names_to_clean_name()
         self._set_geographical_metadata()
+
+    @property
+    def var_names_to_clean_name(self):
+        return self._var_names_to_clean_name
 
     def _set_geographical_metadata(self):
         self._esm_name = self.hparams.input_filename.split('.')[2]
@@ -74,16 +80,16 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self.lat_list: np.ndarray = inDS.lat.values
         lsmask_round = [(round(x) if x == x else 0.5) for x in inDS.lsMask.values[0]]
         self.ls_mask = np.array([0 if x < 0 else 1 if x > 1 else x for x in lsmask_round])
-        print(f'LS mask shape: {inDS.lsMask.data.shape}, \n{inDS.lsMask.data[0]} '
-              f'\n******************\n{inDS.lsMask.data[1]}')
+        #print(f'LS mask shape: {inDS.lsMask.data.shape}, \n{inDS.lsMask.data[0]} '
+        #      f'\n******************\n{inDS.lsMask.data[1]}')
 
     def tropics_mask(self) -> np.ndarray:
         # tropic = df3[(df3.Lat < 30) & (df3.Lat > -30)]
-        return -30 < self.lat_list & self.lat_list < 30
+        return (-30 < self.lat_list) & (self.lat_list < 30)
 
     def mid_latitudes_mask(self) -> np.ndarray:
         # temperate = df2[((df2.Lat>30) & (df2.Lat<60)) | ((df2.Lat <-30 ) & (df2.Lat > -60)) ]
-        return (30 < self.lat_list & self.lat_list < 60) | (-60 < self.lat_list & self.lat_list < -30)
+        return ((30 < self.lat_list) & (self.lat_list < 60)) | ((-60 < self.lat_list) & (self.lat_list < -30))
 
     def arctic_mask(self) -> np.ndarray:
         return self.lat_list > 60
@@ -96,6 +102,16 @@ class AIBEDO_DataModule(pl.LightningDataModule):
 
     def sea_mask(self) -> np.ndarray:
         return self.ls_mask == 0
+
+    def masks(self) -> Dict[str, np.ndarray]:
+        return {
+            'tropics': self.tropics_mask(),
+            'mid_latitudes': self.mid_latitudes_mask(),
+            'arctic': self.arctic_mask(),
+            'antarctic': self.antarctic_mask(),
+            'land': self.land_mask(),
+            'sea': self.sea_mask(),
+        }
 
     def _shared_dataloader_kwargs(self) -> dict:
         return dict(num_workers=int(self.hparams.num_workers), pin_memory=self.hparams.pin_memory,
@@ -123,16 +139,20 @@ class AIBEDO_DataModule(pl.LightningDataModule):
     def predict_dataloader(self) -> EVAL_DATALOADERS:
         return DataLoader(dataset=self._data_predict, **self._shared_eval_dataloader_kwargs())
 
-    def save_prediction_to_numpy(self, filename: str, model: nn.Module, device: torch.device = None):
+    def get_predictions(self, model: nn.Module, dataloader: DataLoader = None,
+                        filename: str = None, device: torch.device = None):
         """
-        Save the predictions and the ground truth to a numpy file (.npz).
-        The saved file will have the following structure:
-            - predictions: numpy array of the predictions
-            - groundtruth: numpy array of the corresponding ground truth/targets
+        Get the predictions and groundtruth for the prediction set (self._data_predict), by default the test data.
+        if filename is a string:
+            Save the predictions and the ground truth to a numpy file (.npz).
+            The saved file will have the following structure:
+                - predictions: numpy array of the predictions
+                - groundtruth: numpy array of the corresponding ground truth/targets
 
         Args:
-            filename: The filepath to save the numpy file to.
             model: The model to use for prediction.
+            dataloader: The (optional) dataloader to use for prediction. By default, the predict_dataloader is used.
+            filename: The filepath to save the numpy file to.
             device: The device ('cuda', 'cpu', etc.)
 
         Returns:
@@ -141,7 +161,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         if device is None:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = model.to(device)
-        predict_loader = self.predict_dataloader()
+        predict_loader = self.predict_dataloader() if dataloader is None else dataloader
         if predict_loader.dataset is None:
             self.setup(stage='predict')
             predict_loader = self.predict_dataloader()
@@ -158,9 +178,45 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 predictions = np.concatenate((predictions, preds_numpy), axis=0)
                 groundtruth = np.concatenate((groundtruth, gt_numpy), axis=0)
 
-        if filename:
+        if filename is not None:
             np.savez_compressed(filename, groundtruth=groundtruth, predictions=predictions)
         return {'preds': predictions, 'targets': groundtruth}
+
+    def get_predictions_xarray(self, model: nn.Module, **kwargs) -> xr.Dataset:
+        numpy_preds_targets = self.get_predictions(model, **kwargs)
+        preds, targets = numpy_preds_targets['preds'], numpy_preds_targets['targets']
+        var_shape = preds.shape[:-1]
+        dim_names = ['snapshot', 'latitude', 'longitude'] if len(var_shape) == 3 else ['snapshot', 'spatial_dim']
+
+        data_vars = dict()
+        for i, output_var in enumerate(self.hparams.output_vars):  # usually ['tas_pre', 'psl_pre', 'pr_pre']
+            output_var_pred = preds[..., i]
+            output_var_target = targets[..., i]
+            data_vars[f"{output_var}_preds"] = (dim_names, output_var_pred)
+            data_vars[f"{output_var}_targets"] = (dim_names, output_var_target)
+            diff = output_var_pred - output_var_target
+            mae = np.abs(diff)
+            data_vars[f'{output_var}_bias'] = (dim_names, diff)
+            data_vars[f'{output_var}_mae'] = (dim_names, mae)
+            data_vars[f'{output_var}_mae_score'] = (dim_names, mae / np.mean(output_var_target, axis=0))
+        #data_vars['lat_list'] = (['latitude'], self.lat_list)
+        #data_vars['lon_list'] = (['longitude'], self.lon_list)
+        xr_dset = xr.Dataset(
+            data_vars=data_vars,
+            coords=dict(
+                longitude=(['spatial_dim'], self.lon_list),
+                latitude=(['spatial_dim'], self.lat_list),
+             #   longitude=self.lon_list,
+             #   latitude=self.lat_list,
+             #   spatial_dim=(('longitude', 'latitude'), [(x, y) for x, y in zip(self.lon_list, self.lat_list)]),
+                snapshot=range(var_shape[0]),
+                #  **self.masks(),
+            ), attrs=dict(
+                description=f"ML emulated predictions.",
+                variable_names=self.hparams.output_vars,
+            ))
+        return xr_dset
+
 
 def sunet_collate(batch):
     batchShape = batch[0].shape

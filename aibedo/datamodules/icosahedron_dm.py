@@ -111,7 +111,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         if stage in ["fit", None] or test_frac not in self._possible_test_sets:
             from sklearn.model_selection import train_test_split
 
-        log.info(f"Grid level: {glevel}, # of pixels: {self.n_pixels}")
+        log.info(f" Grid level: {glevel}, # of pixels: {self.n_pixels}")
 
         if stage in ["fit", None] or test_frac not in self._possible_test_sets:
             # compress.isosph5.SAM0-UNICON.historical.r1i1p1f1.Input.Exp8_fixed
@@ -151,9 +151,9 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
 
         # Data has shape (#examples, #pixels, #channels)
         if stage in ["fit", None]:
-            log.info(f"Dataset sizes train: {train_data.shape[0]}, val: {val_data.shape[0]}")
+            log.info(f" Dataset sizes train: {train_data.shape[0]}, val: {val_data.shape[0]}")
         else:
-            log.info(f"Dataset test size: {test_data.shape[0]}")
+            log.info(f" Dataset test size: {test_data.shape[0]}")
 
     @property
     def test_set_name(self) -> str:

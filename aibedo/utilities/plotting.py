@@ -185,7 +185,7 @@ def data_mean_plotting(postprocessed_xarray: xr.Dataset,
         ax.coastlines()
     return fig, axs
 
-def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
+def data_snapshots_plotting2(postprocessed_xarray: xr.Dataset,
                             error_to_plot: str = "mae",
                             num_snapshots_to_plot: int = 5,
                             data_dim: str = 'snapshot',
@@ -259,7 +259,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
 
     return ps
 
-def data_snapshots_plotting2(postprocessed_xarray: xr.Dataset,
+def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                             error_to_plot: str = "mae",
                             num_snapshots_to_plot: int = 5,
                             data_dim: str = 'snapshot',
