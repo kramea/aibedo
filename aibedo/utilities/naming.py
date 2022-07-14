@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Dict
 from omegaconf import DictConfig
 
 
@@ -87,3 +87,12 @@ def get_group_name(config) -> str:
             s += '+spatialOutNormed'
 
     return s
+
+
+def var_names_to_clean_name() -> Dict[str, str]:
+    """ This is a clean name for the variables (e.g. for plotting)"""
+    return {
+        'tas_pre': 'Air Temperature',
+        'psl_pre': "Surface Pressure",
+        'pr_pre': "Precipitation",
+    }
