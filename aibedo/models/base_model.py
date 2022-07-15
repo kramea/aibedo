@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Optional, List, Any, Dict
+from typing import Optional, List, Any, Dict, Sequence, Union
 
 import hydra
 import numpy as np
@@ -50,6 +50,8 @@ class BaseModel(LightningModule):
                  scheduler: Optional[DictConfig] = None,
                  monitor: Optional[str] = None,
                  mode: str = "min",
+                 loss_weights: Union[Sequence[float], Dict[str, float]] = (0.33, 0.33, 0.33),
+                 physics_loss_weights: Sequence[float] = (0.0, 0.0, 0.0, 0.0, 0.0),
                  loss_function: str = "mean_squared_error",
                  output_normalizer: Optional[Dict[str, NormalizationMethod]] = None,
                  name: str = "",
@@ -71,24 +73,33 @@ class BaseModel(LightningModule):
         else:
             self.input_transform: AbstractTransform = hydra.utils.instantiate(input_transform)
 
+        self._data_dir = self._output_vars = None
         if datamodule_config is not None:
             # Infer the data dimensions
             self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
             self._num_input_features = in_channels = len(datamodule_config.input_vars)
             self._num_output_features = out_channels = len(datamodule_config.output_vars)
+            self._output_vars = datamodule_config.output_vars
 
         self.output_normalizer = output_normalizer
 
-        # loss function
-        self.criterion = get_loss(loss_function, reduction='mean')
+        # loss function (one per target variable)
+        self.criterion = {v: get_loss(loss_function, reduction='mean') for v in self.output_vars}
+
         # Timing variables to track the training/epoch/validation time
         self._start_validation_epoch_time = self._start_test_epoch_time = self._start_epoch_time = None
+
         # Metrics
-        # self.train_mse = torchmetrics.MeanSquaredError(squared=True)
         self.val_metrics = nn.ModuleDict({
-                'val/mse': torchmetrics.MeanSquaredError(squared=True),
+            'val/mse': torchmetrics.MeanSquaredError(squared=True),
+            **{
+                f'{output_var}/val/mse': torchmetrics.MeanSquaredError(squared=True)
+                for output_var in self.output_vars
+            }
         })
         self._test_metrics = None
+        # Check that the args/hparams are valid
+        self._check_args()
 
     @property
     def num_input_features(self) -> int:
@@ -107,6 +118,10 @@ class BaseModel(LightningModule):
         if self._test_metrics is None:
             self._test_metrics = nn.ModuleDict({
                 f'{self.test_set_name}/mse': torchmetrics.MeanSquaredError(squared=True),
+                **{
+                    f'{output_var}/{self.test_set_name}/mse': torchmetrics.MeanSquaredError(squared=True)
+                    for output_var in self.output_vars
+                }
             }).to(self.device)
         return self._test_metrics
 
@@ -116,14 +131,20 @@ class BaseModel(LightningModule):
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
     @property
-    def output_normalizer(self) -> Dict[str, NormalizationMethod]:
-        return self._output_normalizer
-
-    @property
     def data_dir(self) -> str:
-        if not hasattr(self, '_data_dir') or self._data_dir is None:
+        if self._data_dir is None:
             self._data_dir = self.trainer.datamodule.hparams.data_dir
         return self._data_dir
+
+    @property
+    def output_var_names(self) -> List[str]:
+        if self._output_vars is None:
+            self._output_vars = self.trainer.datamodule.hparams.output_vars
+        return self._output_vars
+
+    @property
+    def output_normalizer(self) -> Dict[str, NormalizationMethod]:
+        return self._output_normalizer
 
     @output_normalizer.setter
     def output_normalizer(self, output_normalizer: Dict[str, NormalizationMethod]):
@@ -136,27 +157,44 @@ class BaseModel(LightningModule):
             for v in self.output_normalizer.values():
                 v.change_input_type(torch.Tensor)
 
+    def _check_args(self):
+        """Check if the arguments are valid."""
+        plw = self.hparams.physics_loss_weights
+        if len(plw) != 5:
+            raise ValueError(f'The number of physics loss weights must be 5, but got {plw}')
+        if plw[3] > 0 and plw[3] != 1:
+            self.log_text.info(f'The fourth physics loss weight must be 0 or 1, but got {plw[3]}. Setting it to 1.')
+            self.hparams.physics_loss_weights[3] = 1
+        lw = self.hparams.loss_weights
+        if isinstance(lw, dict) and len(lw.keys()) != len(self.output_var_names) or \
+                isinstance(lw, Sequence) and len(lw) != len(self.output_var_names):
+            raise ValueError(f'The number of loss weights must be same as #output-vars={len(self.output_var_names)}'
+                             f', but got {lw}')
+        if isinstance(lw, Sequence):
+            self.hparams.loss_weights = {v: lw[i] for i, v in enumerate(self.output_var_names)}
+
     def forward(self, X):
         """
         Downstream model forward pass, input X will be the (batched) output from self.input_transform
         """
         raise NotImplementedError('Base model is an abstract class!')
 
-    def raw_predict(self, X) -> Dict[str, Tensor]:
-        Y = self(X)  # Y might be in normalized scale or not
-        Y = self._split_raw_preds_per_target_variable(Y)
+    def raw_predict(self, X) -> Tensor:
+        Y = self(X)  # forward pass
         return Y
 
     def _split_raw_preds_per_target_variable(self, predictions: Tensor) -> Dict[str, Tensor]:
-        # flux_profile_pred = self.output_postprocesser.split_vector_by_variable(predictions)
-        # return flux_profile_pred
-        return predictions
+        preds_per_target_variable = {
+            var_name: predictions[..., i]
+            for i, var_name in enumerate(self.output_var_names)
+        }
+        return preds_per_target_variable
 
     def predict(self, X) -> Dict[str, Tensor]:
-        Y_normed_fluxes = self.raw_predict(X)
-        return Y_normed_fluxes
-        # full_prediction = self._raw_to_full_preds(Y_normed_fluxes)
-        # return full_prediction
+        Y_normed = self.raw_predict(X)
+        Y = self._split_raw_preds_per_target_variable(Y_normed)
+        # TODO: implement the output de-normalization
+        return Y
 
     def _raw_to_full_preds(self,
                            flux_profile_pred: Dict[str, Tensor],
@@ -166,12 +204,6 @@ class BaseModel(LightningModule):
             if self.output_normalizer is not None:
                 flux_pred = self.output_normalizer[flux_type].inverse_normalize(flux_pred)
         return full_preds
-
-    def _apply(self, fn):
-        super(BaseModel, self)._apply(fn)
-        if self.output_normalizer is not None:
-            self.output_normalizer.apply_torch_func(fn)
-        return self
 
     # --------------------- training with PyTorch Lightning
     def on_train_start(self) -> None:
@@ -192,20 +224,23 @@ class BaseModel(LightningModule):
 
     def training_step(self, batch: Any, batch_idx: int):
         X, Y = batch
-
-        if self.output_normalizer is None:
-            # Directly predict full/raw/non-normalized outputs
-            preds = self.predict(X)
-        else:
-            # Predict normalized outputs
-            preds = self.raw_predict(X)
-
-        loss = self.criterion(preds, Y)
-
         train_log = self.train_step_initial_log_dict()
+
+        # Predict normalized outputs and split them into output_var: Tensor preds/targets of that var
+        preds = self._split_raw_preds_per_target_variable(self.raw_predict(X))
+        Y = self._split_raw_preds_per_target_variable(Y)
+
+        loss = 0.0
+        # Compute loss by output variable
+        for output_name, output_pred in preds.items():
+            loss_var = self.criterion[output_name](output_pred, Y[output_name])
+            loss += self.hparams.loss_weights[output_name] * loss_var
+            train_log[f'{output_name}/train/loss'] = loss_var.item()
+
+        # Logging of train loss and other diagnostics
         train_log["train/loss"] = loss.item()
 
-        train_log['n_zero_gradients'] = sum(    # Count number of zero gradients as diagnostic tool
+        train_log['n_zero_gradients'] = sum(  # Count number of zero gradients as diagnostic tool
             [int(torch.count_nonzero(p.grad == 0))
              for p in self.parameters() if p.grad is not None
              ]) / self.n_params
@@ -223,12 +258,27 @@ class BaseModel(LightningModule):
                          torch_metrics: Optional[nn.ModuleDict] = None,
                          **kwargs):
         X, Y = batch
-        preds = self.predict(X)
+        preds = self.raw_predict(X)
         log_dict = dict()
+        # First compute the bulk error metrics (averaging out over all target variables)
         for metric_name, metric in torch_metrics.items():
+            if any([out_var_name in metric_name for out_var_name in self.output_var_names]):
+                # Per output variable error are not computed yet
+                continue
             metric(preds, Y)  # compute metrics (need to be in separate line to the following line!)
             log_dict[metric_name] = metric
-        self.log_dict(log_dict, on_step=True, on_epoch=True, **kwargs)  # log metric objects
+        self.log_dict(log_dict, on_step=True, on_epoch=True, prog_bar=True, **kwargs)  # log metric objects
+        # Now compute per output variable errors
+        log_dict = dict()
+        preds = self._split_raw_preds_per_target_variable(preds)
+        Y = self._split_raw_preds_per_target_variable(Y)
+        for metric_name, metric in torch_metrics.items():
+            if not any([out_var_name in metric_name for out_var_name in self.output_var_names]):
+                continue
+            out_var_name = metric_name.split('/')[0]
+            metric(preds[out_var_name], Y[out_var_name])
+            log_dict[metric_name] = metric
+        self.log_dict(log_dict, on_step=True, on_epoch=True, prog_bar=False, **kwargs)  # log metric objects
         return {'targets': Y, 'preds': preds}
 
     def _evaluation_get_preds(self, outputs: List[Any]) -> Dict[str, np.ndarray]:
@@ -283,7 +333,7 @@ class BaseModel(LightningModule):
             self.log_text.info(" No optimizer was specified, defaulting to AdamW with 1e-4 lr.")
             self.hparams.optimizer.name = 'adamw'
 
-        if hasattr(self, 'no_weight_decay'):   # e.g. for positional embeddings that shouldn't be regularized
+        if hasattr(self, 'no_weight_decay'):  # e.g. for positional embeddings that shouldn't be regularized
             self.log_text.info(" Model has method no_weight_decay, which will be used.")
         optim_kwargs = {k: v for k, v in self.hparams.optimizer.items() if k not in ['name', '_target_']}
         optimizer = self._get_optim(self.hparams.optimizer.name, **optim_kwargs)
