@@ -18,8 +18,6 @@ from omegaconf import DictConfig, open_dict, OmegaConf
 from torch import Tensor
 from pytorch_lightning.utilities import rank_zero_only
 
-
-
 def no_op(*args, **kwargs):
     pass
 

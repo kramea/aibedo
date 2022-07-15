@@ -6,6 +6,7 @@ import pytorch_lightning as pl
 from pytorch_lightning import Callback, Trainer
 from pytorch_lightning.utilities import rank_zero_only
 from pytorch_lightning.loggers import LoggerCollection, WandbLogger
+from torch.nn.parallel import DistributedDataParallel
 
 from aibedo.utilities.utils import get_logger
 
@@ -62,7 +63,11 @@ class SummarizeBestValMetric(Callback):
     def on_train_start(self, trainer, pl_module):
         logger: WandbLogger = get_wandb_logger(trainer=trainer)
         experiment = logger.experiment
-        experiment.define_metric(trainer.model.hparams.monitor, summary=trainer.model.hparams.mode)
+        # When using DDP multi-gpu training, one usually needs to get the actual model by .module, and
+        # trainer.model.module.module will be the same as pl_module
+
+        model = pl_module # .module if isinstance(trainer.model, DistributedDataParallel) else pl_module
+        experiment.define_metric(model.hparams.monitor, summary=model.hparams.mode)
 
 
 class UploadBestCheckpointAsFile(Callback):

@@ -84,7 +84,7 @@ class BaseModel(LightningModule):
         self.output_normalizer = output_normalizer
 
         # loss function (one per target variable)
-        self.criterion = {v: get_loss(loss_function, reduction='mean') for v in self.output_vars}
+        self.criterion = {v: get_loss(loss_function, reduction='mean') for v in self.output_var_names}
 
         # Timing variables to track the training/epoch/validation time
         self._start_validation_epoch_time = self._start_test_epoch_time = self._start_epoch_time = None
@@ -94,7 +94,7 @@ class BaseModel(LightningModule):
             'val/mse': torchmetrics.MeanSquaredError(squared=True),
             **{
                 f'{output_var}/val/mse': torchmetrics.MeanSquaredError(squared=True)
-                for output_var in self.output_vars
+                for output_var in self.output_var_names
             }
         })
         self._test_metrics = None
@@ -120,7 +120,7 @@ class BaseModel(LightningModule):
                 f'{self.test_set_name}/mse': torchmetrics.MeanSquaredError(squared=True),
                 **{
                     f'{output_var}/{self.test_set_name}/mse': torchmetrics.MeanSquaredError(squared=True)
-                    for output_var in self.output_vars
+                    for output_var in self.output_var_names
                 }
             }).to(self.device)
         return self._test_metrics
