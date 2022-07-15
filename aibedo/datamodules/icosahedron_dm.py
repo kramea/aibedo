@@ -1,8 +1,10 @@
 import os.path
 from typing import Optional, List, Sequence
 
+import torch
 import xarray as xr
 import numpy as np
+from torch.utils.data import TensorDataset
 from aibedo.datamodules.abstract_datamodule import AIBEDO_DataModule
 from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value
 from aibedo.skeleton_framework.data_loader import shuffle_data
@@ -81,8 +83,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         if shuffle:
             dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
 
-        combined_data = np.concatenate((dataset_in, dataset_out), axis=2)
-        return combined_data
+        return dataset_in, dataset_out
 
     def _model_specific_transform(self, input_data: np.ndarray, output_data: np.ndarray):
         if "SphericalUNetLSTM" in self.model_config._target_:
@@ -94,12 +95,10 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
                 new_out_data.append(output_data[i + time_length - 1, :, :])
 
             input_data, output_data = np.asarray(new_in_data), np.asarray(new_out_data)
-        elif "SphericalUNet" in self.model_config._target_:
-            if self.hparams.time_lag > 0:
-                input_data = input_data[:-self.hparams.time_lag]
-                output_data = output_data[self.hparams.time_lag:]
-        else:
-            log.warning(f"No model specific transform applied for {self.model_config._target_}.")
+        if self.hparams.time_lag > 0:
+            input_data = input_data[:-self.hparams.time_lag]
+            output_data = output_data[self.hparams.time_lag:]
+        # log.warning(f"No model specific transform applied for {self.model_config._target_}.")
 
         return input_data, output_data
 
@@ -107,8 +106,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         """Load data. Set internal variables: self._data_train, self._data_val, self._data_test."""
         glevel = self.hparams.order
         train_frac, val_frac, test_frac = self.hparams.partition
-        train_data = val_data = test_data = None
-        if stage in  ["fit", 'val', 'validation', None] or test_frac not in self._possible_test_sets:
+        if stage in ["fit", 'val', 'validation', None] or test_frac not in self._possible_test_sets:
             from sklearn.model_selection import train_test_split
 
         log.info(f" Grid level: {glevel}, # of pixels: {self.n_pixels}")
@@ -119,9 +117,9 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
             fname_in = self.hparams.input_filename
             fname_out = fname_in.replace("Input.Exp8_fixed.nc", "Output.nc")
-            combined_train_data = self._process_nc_dataset(fname_in, fname_out, shuffle=True)
-            train_data, val_data = train_test_split(combined_train_data, train_size=train_frac,
-                                                    random_state=self.hparams.seed)
+            train_data_in, train_data_out = self._process_nc_dataset(fname_in, fname_out, shuffle=True)
+            X_train, X_val, Y_train, Y_val = train_test_split(train_data_in, train_data_out, train_size=train_frac,
+                                                              random_state=self.hparams.seed)
 
         if test_frac in self._possible_test_sets:
             sphere = "isosph5." if 'isosph5.' in self.hparams.input_filename else "isosph."
@@ -135,29 +133,27 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             else:
                 raise ValueError(f"Unknown test_frac: {test_frac}")
             if stage in ["test", "predict"]:
-                test_data = self._process_nc_dataset(test_input_fname, test_output_fname, shuffle=False)
-            else:
-                test_data = self._data_test  # no_op
+                X_test, Y_test = self._process_nc_dataset(test_input_fname, test_output_fname, shuffle=False)
         else:
-            val_data, test_data = train_test_split(val_data, test_size=test_frac / (val_frac + test_frac),
-                                                   random_state=self.hparams.seed)
+            X_val, X_test, Y_val, Y_test = train_test_split(X_val, Y_val, test_size=test_frac / (val_frac + test_frac),
+                                                            random_state=self.hparams.seed)
 
         if stage in ["predict", None]:
-            self._data_predict = test_data.copy()
+            self._data_predict = get_tensor_dataset_from_numpy(X_test, Y_test)
         if stage == 'fit' or stage is None:
-            self._data_train = train_data
+            self._data_train = get_tensor_dataset_from_numpy(X_train, Y_train)
         if stage in ["fit", 'val', 'validation', None]:
-            self._data_val = val_data
+            self._data_val = get_tensor_dataset_from_numpy(X_val, Y_val)
         if stage in ['test', None]:
-            self._data_test = test_data
+            self._data_test = get_tensor_dataset_from_numpy(X_test, Y_test)
 
         # Data has shape (#examples, #pixels, #channels)
         if stage in ["fit", None]:
-            log.info(f" Dataset sizes train: {train_data.shape[0]}, val: {val_data.shape[0]}")
+            log.info(f" Dataset sizes train: {len(self._data_train)}, val: {len(self._data_val)}")
         elif stage in ["test"]:
-            log.info(f" Dataset test size: {test_data.shape[0]}")
+            log.info(f" Dataset test size: {len(self._data_test)}")
         elif stage == 'predict':
-            log.info(f" Dataset predict size: {self._data_predict.shape[0]}")
+            log.info(f" Dataset predict size: {len(self._data_predict)}")
 
     @property
     def test_set_name(self) -> str:
@@ -170,3 +166,8 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             return f'test/{self._esm_name}'
         else:
             raise ValueError(f"Unknown test_frac: {test_frac}")
+
+
+def get_tensor_dataset_from_numpy(*ndarrays) -> TensorDataset:
+    tensors = [torch.from_numpy(ndarray) for ndarray in ndarrays]
+    return TensorDataset(*tensors)

@@ -2,9 +2,8 @@ import logging
 import os
 from typing import Optional, List, Callable, Sequence, Dict
 from omegaconf import DictConfig
-
-import pytorch_lightning as pl
 import torch
+import pytorch_lightning as pl
 from pytorch_lightning.utilities.types import EVAL_DATALOADERS
 from torch import nn
 from torch.utils.data import DataLoader
@@ -114,8 +113,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         }
 
     def _shared_dataloader_kwargs(self) -> dict:
-        return dict(num_workers=int(self.hparams.num_workers), pin_memory=self.hparams.pin_memory,
-                    collate_fn=sunet_collate)
+        return dict(num_workers=int(self.hparams.num_workers), pin_memory=self.hparams.pin_memory)
 
     def _shared_eval_dataloader_kwargs(self) -> dict:
         return dict(**self._shared_dataloader_kwargs(), batch_size=self.hparams.eval_batch_size, shuffle=False)
@@ -163,6 +161,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         model = model.to(device)
         predict_loader = self.predict_dataloader() if dataloader is None else dataloader
         if predict_loader.dataset is None:
+            if dataloader is not None:
+                log.warning(f" The dataloader provided has no dataset. Using the default predict_dataloader instead.")
             self.setup(stage='predict')
             predict_loader = self.predict_dataloader()
 
@@ -218,6 +218,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         return xr_dset
 
 
+"""
 def sunet_collate(batch):
     batchShape = batch[0].shape
     varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
@@ -228,3 +229,5 @@ def sunet_collate(batch):
     data_in = torch.Tensor(data_in_array)
     data_out = torch.Tensor(data_out_array)
     return [data_in, data_out]
+
+"""
