@@ -18,7 +18,6 @@ from omegaconf import DictConfig, open_dict, OmegaConf
 from torch import Tensor
 from pytorch_lightning.utilities import rank_zero_only
 
-from aibedo.utilities.normalization import RMSLayerNorm
 
 
 def no_op(*args, **kwargs):
@@ -68,6 +67,7 @@ def get_normalization_layer(name, dims, num_groups=None, *args, **kwargs):
     elif 'layer_norm' == name:
         return nn.LayerNorm(dims, *args, **kwargs)
     elif 'rms_layer_norm' == name:
+        from aibedo.utilities.normalization import RMSLayerNorm
         return RMSLayerNorm(dims, *args, **kwargs)
     elif 'instance' in name:
         return nn.InstanceNorm1d(num_features=dims, *args, **kwargs)
