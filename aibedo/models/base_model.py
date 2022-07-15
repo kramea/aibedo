@@ -267,7 +267,7 @@ class BaseModel(LightningModule):
                 continue
             metric(preds, Y)  # compute metrics (need to be in separate line to the following line!)
             log_dict[metric_name] = metric
-        self.log_dict(log_dict, on_step=True, on_epoch=True, prog_bar=True, **kwargs)  # log metric objects
+        self.log_dict(log_dict, on_step=True, on_epoch=True, **kwargs)  # log metric objects
         # Now compute per output variable errors
         log_dict = dict()
         preds = self._split_raw_preds_per_target_variable(preds)
@@ -278,7 +278,8 @@ class BaseModel(LightningModule):
             out_var_name = metric_name.split('/')[0]
             metric(preds[out_var_name], Y[out_var_name])
             log_dict[metric_name] = metric
-        self.log_dict(log_dict, on_step=True, on_epoch=True, prog_bar=False, **kwargs)  # log metric objects
+        kwargs['prog_bar'] = False   # do not show in progress bar the per-output variable metrics
+        self.log_dict(log_dict, on_step=True, on_epoch=True, **kwargs)  # log metric objects
         return {'targets': Y, 'preds': preds}
 
     def _evaluation_get_preds(self, outputs: List[Any]) -> Dict[str, np.ndarray]:
