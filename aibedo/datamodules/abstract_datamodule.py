@@ -213,7 +213,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 #  **self.masks(),
             ), attrs=dict(
                 description=f"ML emulated predictions.",
-                variable_names=self.hparams.output_vars,
+                variable_names=";".join(self.hparams.output_vars),
             ))
         return xr_dset
 

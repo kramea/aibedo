@@ -108,12 +108,12 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         glevel = self.hparams.order
         train_frac, val_frac, test_frac = self.hparams.partition
         train_data = val_data = test_data = None
-        if stage in ["fit", None] or test_frac not in self._possible_test_sets:
+        if stage in  ["fit", 'val', 'validation', None] or test_frac not in self._possible_test_sets:
             from sklearn.model_selection import train_test_split
 
         log.info(f" Grid level: {glevel}, # of pixels: {self.n_pixels}")
 
-        if stage in ["fit", None] or test_frac not in self._possible_test_sets:
+        if stage in ["fit", 'val', 'validation', None] or test_frac not in self._possible_test_sets:
             # compress.isosph5.SAM0-UNICON.historical.r1i1p1f1.Input.Exp8_fixed
             # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
             #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
@@ -142,18 +142,22 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             val_data, test_data = train_test_split(val_data, test_size=test_frac / (val_frac + test_frac),
                                                    random_state=self.hparams.seed)
 
-        if stage in ["predict"]:
+        if stage in ["predict", None]:
             self._data_predict = test_data.copy()
-        else:
+        if stage == 'fit' or stage is None:
             self._data_train = train_data
+        if stage in ["fit", 'val', 'validation', None]:
             self._data_val = val_data
+        if stage in ['test', None]:
             self._data_test = test_data
 
         # Data has shape (#examples, #pixels, #channels)
         if stage in ["fit", None]:
             log.info(f" Dataset sizes train: {train_data.shape[0]}, val: {val_data.shape[0]}")
-        else:
+        elif stage in ["test"]:
             log.info(f" Dataset test size: {test_data.shape[0]}")
+        elif stage == 'predict':
+            log.info(f" Dataset predict size: {self._data_predict.shape[0]}")
 
     @property
     def test_set_name(self) -> str:
