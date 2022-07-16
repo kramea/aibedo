@@ -11,8 +11,7 @@ from torch import Tensor, nn
 import torch.nn.functional as F
 from pytorch_lightning import LightningModule
 import torchmetrics
-from aibedo.data_transforms.normalization import NormalizationMethod, get_variable_stats, get_clim_err, destandardize, \
-    standardize
+from aibedo.data_transforms.normalization import get_variable_stats, get_clim_err, destandardize, standardize
 
 from aibedo.data_transforms.transforms import AbstractTransform
 from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint_soft_loss, \
