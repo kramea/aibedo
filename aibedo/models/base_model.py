@@ -8,12 +8,16 @@ import torch
 from omegaconf import DictConfig
 from timm.optim import create_optimizer_v2
 from torch import Tensor, nn
+import torch.nn.functional as F
 from pytorch_lightning import LightningModule
 import torchmetrics
-from aibedo.data_transforms.normalization import NormalizationMethod
+from aibedo.data_transforms.normalization import NormalizationMethod, get_variable_stats, get_clim_err, destandardize, \
+    standardize
 
 from aibedo.data_transforms.transforms import AbstractTransform
-from aibedo.utilities.utils import get_logger, to_DictConfig, get_loss
+from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint_soft_loss, \
+    mass_conservation_constraint_soft_loss
+from aibedo.utilities.utils import get_logger, to_DictConfig, get_loss, raise_error_if_invalid_value
 from aibedo.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
 
 
@@ -52,6 +56,7 @@ class BaseModel(LightningModule):
                  mode: str = "min",
                  loss_weights: Union[Sequence[float], Dict[str, float]] = (0.33, 0.33, 0.33),
                  physics_loss_weights: Sequence[float] = (0.0, 0.0, 0.0, 0.0, 0.0),
+                 month_as_feature: Union[bool, str] = False,
                  loss_function: str = "mean_squared_error",
                  output_normalizer: Optional[Dict[str, NormalizationMethod]] = None,
                  name: str = "",
@@ -73,13 +78,18 @@ class BaseModel(LightningModule):
         else:
             self.input_transform: AbstractTransform = hydra.utils.instantiate(input_transform)
 
-        self._data_dir = self._output_vars = None
-        if datamodule_config is not None:
-            # Infer the data dimensions
-            self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
-            self._num_input_features = in_channels = len(datamodule_config.input_vars)
-            self._num_output_features = out_channels = len(datamodule_config.output_vars)
-            self._output_vars = datamodule_config.output_vars
+        self._output_vars = self._input_var_to_idx = None
+        # Infer the data dimensions
+        self._data_dir = datamodule_config.data_dir
+        self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
+        self._num_input_features = in_channels = len(datamodule_config.input_vars)
+        self._num_output_features = out_channels = len(datamodule_config.output_vars)
+        self._output_vars = datamodule_config.output_vars
+        # edit actual #features when using month information
+        if self.hparams.month_as_feature == 'one_hot':
+            self._num_input_features += 12
+        elif self.hparams.month_as_feature:
+            self._num_input_features += 1
 
         self.output_normalizer = output_normalizer
 
@@ -88,7 +98,7 @@ class BaseModel(LightningModule):
 
         # Timing variables to track the training/epoch/validation time
         self._start_validation_epoch_time = self._start_test_epoch_time = self._start_epoch_time = None
-
+        self._month_index = in_channels
         # Metrics
         self.val_metrics = nn.ModuleDict({
             'val/mse': torchmetrics.MeanSquaredError(squared=True),
@@ -101,6 +111,28 @@ class BaseModel(LightningModule):
         # Check that the args/hparams are valid
         self._check_args()
 
+        # Set the target variable statistics needed
+        sphere = "isosph5" if 'isosph5.' in datamodule_config.input_filename else "isosph"
+        stats_kwargs = dict(data_dir=self.data_dir, files_id=sphere)
+        if physics_loss_weights[2] > 0 or physics_loss_weights[3] > 0:
+            pr_mean, pr_std = get_variable_stats(var_id='pr', **stats_kwargs)
+            self.register_buffer_dummy('pr_mean', pr_mean, persistent=False)
+            self.register_buffer_dummy('pr_std', pr_std, persistent=False)
+
+        if physics_loss_weights[2] > 0:
+            evap_mean, evap_std = get_variable_stats(var_id='evspsbl', **stats_kwargs)
+            PE_err = get_clim_err(err_id='PE', **stats_kwargs)
+            self.register_buffer_dummy('evap_mean', evap_mean, persistent=False)
+            self.register_buffer_dummy('evap_std', evap_std, persistent=False)
+            self.register_buffer_dummy('PE_err', PE_err, persistent=False)
+
+        if physics_loss_weights[4] > 0:
+            psl_mean, psl_std = get_variable_stats(var_id='ps', **stats_kwargs)
+            PS_err = get_clim_err(err_id='PS', **stats_kwargs)
+            self.register_buffer_dummy('psl_mean', psl_mean, persistent=False)
+            self.register_buffer_dummy('psl_std', psl_std, persistent=False)
+            self.register_buffer_dummy('PS_err', PS_err, persistent=False)
+
     @property
     def num_input_features(self) -> int:
         return self._num_input_features
@@ -108,6 +140,13 @@ class BaseModel(LightningModule):
     @property
     def num_output_features(self) -> int:
         return self._num_output_features
+
+    @property
+    def input_var_to_idx(self) -> Dict[str, int]:
+        """ Returns the index of the month (the month being a scalar in {0, 1, .., 11}) in the input data """
+        if self._input_var_to_idx is None:
+            self._input_var_to_idx = self.trainer.datamodule.input_var_to_idx
+        return self._input_var_to_idx
 
     @property
     def test_set_name(self) -> str:
@@ -173,14 +212,25 @@ class BaseModel(LightningModule):
         if isinstance(lw, Sequence):
             self.hparams.loss_weights = {v: lw[i] for i, v in enumerate(self.output_var_names)}
 
+        raise_error_if_invalid_value(self.hparams.month_as_feature, [False, True, 'one_hot'], 'month_as_feature')
+
     def forward(self, X):
         """
         Downstream model forward pass, input X will be the (batched) output from self.input_transform
         """
         raise NotImplementedError('Base model is an abstract class!')
 
-    def raw_predict(self, X) -> Tensor:
-        Y = self(X)  # forward pass
+    def raw_predict(self, X: Tensor) -> Tensor:
+        if self.hparams.month_as_feature == 'one_hot':
+            MONTH_IDX = self.input_var_to_idx['month']
+            X_feats = X[..., :MONTH_IDX]  # raw inputs have raw month encoding (single scalar)!
+            X_mon = X[..., MONTH_IDX]
+            X_mon_one_hot = F.one_hot(X_mon, num_classes=12)
+            X_feats = torch.cat([X_feats, X_mon_one_hot], dim=-1)
+        else:
+            X_feats = X[..., :self.num_input_features]  # remove the potentially added auxiliary vars
+
+        Y = self(X_feats)  # forward pass
         return Y
 
     def _split_raw_preds_per_target_variable(self, predictions: Tensor) -> Dict[str, Tensor]:
@@ -230,12 +280,55 @@ class BaseModel(LightningModule):
         preds = self._split_raw_preds_per_target_variable(self.raw_predict(X))
         Y = self._split_raw_preds_per_target_variable(Y)
 
+        # Get the month of each example (the month is the same for all grid cells in an example)
+        month_of_batch = X[:, 0, self.input_var_to_idx['month']]  # idx 0 is arbitrary; has shape (batch_size,)
+
+        # Prepare denormed precipitation if needed for later use
+        index_months_kwargs = dict(dim=0, index=month_of_batch)
+        if self.hparams.physics_loss_weights[2] > 0 or self.hparams.physics_loss_weights[3] > 0:
+            # index_select will ensure that the correct monthly mean/std is used for each example/snapshot
+            batch_monthly_mean_pr = torch.index_select(self.pr_mean, **index_months_kwargs)
+            batch_monthly_std_pr = torch.index_select(self.pr_std, **index_months_kwargs)
+            pr_denormed = destandardize(preds['pr_pre'], batch_monthly_mean_pr, batch_monthly_std_pr)
+
+        # Enforce non-negative precipitation (constraint 4); needs to be done before the main loss is computed
+        if self.hparams.physics_loss_weights[3] > 0:
+            pr_denormed = nonnegative_precipitation(pr_denormed)
+            # bring back pr to the normalized scale
+            preds['pr_pre'] = standardize(pr_denormed, batch_monthly_mean_pr, batch_monthly_std_pr)
+
+        # Compute main loss by output variable
         loss = 0.0
-        # Compute loss by output variable
         for output_name, output_pred in preds.items():
             loss_var = self.criterion[output_name](output_pred, Y[output_name])
-            loss += self.hparams.loss_weights[output_name] * loss_var
             train_log[f'{output_name}/train/loss'] = loss_var.item()
+            loss += self.hparams.loss_weights[output_name] * loss_var
+
+        train_log['train/loss_mse'] = loss.item()  # main loss
+
+        # Soft loss constraints:
+        # constraint 3 - global moisture constraint
+        if self.hparams.physics_loss_weights[2] > 0:
+            EVAP_IDX = self.input_var_to_idx['evspsbl_pre']
+            batch_monthly_mean_evap = torch.index_select(self.evap_mean, **index_months_kwargs)
+            batch_monthly_std_evap = torch.index_select(self.evap_std, **index_months_kwargs)
+            evap_denormed = destandardize(X[..., EVAP_IDX], batch_monthly_mean_evap, batch_monthly_std_evap)
+            # Compute the soft loss for the global moisture constraint
+            physics_loss3 = global_moisture_constraint_soft_loss(evap_denormed, pr_denormed, self.PE_error)
+            train_log['train/physics/loss3'] = physics_loss3.item()
+            # add the (weighted) loss to the main loss
+            loss += self.hparams.physics_loss_weights[2] * physics_loss3
+
+        # constraint 5 - mass conservation constraint
+        if self.hparams.physics_loss_weights[4] > 0:
+            batch_monthly_mean_psl = torch.index_select(self.psl_mean, **index_months_kwargs)
+            batch_monthly_std_psl = torch.index_select(self.psl_std, **index_months_kwargs)
+            psl_denormed = destandardize(preds['psl_pre'], batch_monthly_mean_psl, batch_monthly_std_psl)
+            # Compute the mass conservation soft loss
+            physics_loss5 = mass_conservation_constraint_soft_loss(psl_denormed, self.PS_error)
+            train_log['train/physics/loss5'] = physics_loss5.item()
+            # add the (weighted) loss to the main loss
+            loss += self.hparams.physics_loss_weights[4] * physics_loss5
 
         # Logging of train loss and other diagnostics
         train_log["train/loss"] = loss.item()
@@ -361,3 +454,9 @@ class BaseModel(LightningModule):
         items = super().get_progress_bar_dict()
         items.pop("v_num", None)
         return items
+
+    def register_buffer_dummy(self, name, tensor, **kwargs):
+        try:
+            self.register_buffer(name, tensor, **kwargs)
+        except TypeError:  # old pytorch versions do not have the arg 'persistent'
+            self.register_buffer(name, tensor)

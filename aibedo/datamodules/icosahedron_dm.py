@@ -39,8 +39,14 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         # compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc
         self._check_args()
 
+    @property
+    def files_id(self):
+        return "isosph5" if 'isosph5.' in self.hparams.input_filename else "isosph"
+
     def _check_args(self):
         """Check if the arguments are valid."""
+        assert self.hparams.order in [5, 6], "Order of the icosahedron graph must be either 5 or 6."
+        assert (self.hparams.order == 5 and 'isosph5' in self.hparams.input_filename) or self.hparams.order == 6
         partition = self.hparams.partition
         if len(partition) != 3:
             raise ValueError(f"partition must be a tuple of 3 values, but got {partition}, type: {type(partition)}")
@@ -65,19 +71,37 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         dataset = np.concatenate(data_all, axis=2)
         return dataset
 
+    def _get_auxiliary_data(self, dataset_in: xr.Dataset) -> np.ndarray:
+        # Pixel-wise month - assigned to each grid (every snapshot will have the same month value for each grid cell)
+        months = np.arange(12)
+        month_pixel_data = np.reshape(np.repeat(months, self.n_pixels), [-1, self.n_pixels, 1])  # (12, #pixels, 1)
+        month_idx = [month_pixel_data for snapshot in range(165)]
+        dataset_month = np.concatenate(month_idx, axis=0)  # shape (1980, #pixels, 1)
+
+        if len(self.hparams.auxiliary_vars) > 0:
+            dataset_aux = self._concat_variables_into_channel_dim(dataset_in, self.hparams.auxiliary_vars)
+            dataset_aux = np.concatenate([dataset_month, dataset_aux], axis=2)  # shape (1980, #pixels, 1 + #aux-vars)
+        else:
+            dataset_aux = dataset_month
+
+        return dataset_aux
+
     def _process_nc_dataset(self, input_filename: str, output_filename: str, shuffle: bool = False):
         input_file = os.path.join(self.hparams.data_dir, input_filename)
         output_file = os.path.join(self.hparams.data_dir, output_filename)
-        inDS = xr.open_dataset(input_file)
-        outDS = xr.open_dataset(output_file)
+        in_ds = xr.open_dataset(input_file)
+        out_ds = xr.open_dataset(output_file)
 
         in_vars, out_vars = self.hparams.input_vars, self.hparams.output_vars
         in_channels, out_channels = len(in_vars), len(out_vars)
 
         # Input data
-        dataset_in = self._concat_variables_into_channel_dim(inDS, in_vars, input_file)
+        dataset_in = self._concat_variables_into_channel_dim(in_ds, in_vars, input_file)
         # Output data
-        dataset_out = self._concat_variables_into_channel_dim(outDS, out_vars, output_file)
+        dataset_out = self._concat_variables_into_channel_dim(out_ds, out_vars, output_file)
+        # Auxiliary data
+        dataset_aux = self._get_auxiliary_data(in_ds)
+        dataset_in = np.concatenate([dataset_in, dataset_aux], axis=2)
 
         dataset_in, dataset_out = self._model_specific_transform(dataset_in, dataset_out)
         if shuffle:
@@ -122,14 +146,14 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
                                                               random_state=self.hparams.seed)
 
         if test_frac in self._possible_test_sets:
-            sphere = "isosph5." if 'isosph5.' in self.hparams.input_filename else "isosph."
+            sphere = self.files_id
             if test_frac == 'merra2':
                 #                  f"compress.{sphere}MERRA2_Input_Exp8_fixed.nc"
-                test_input_fname = f"compress.{sphere}MERRA2_Exp8_Input.2022Jul06.nc"
-                test_output_fname = f"compress.{sphere}MERRA2_Output.2022Jul06.nc"
+                test_input_fname = f"compress.{sphere}.MERRA2_Exp8_Input.2022Jul06.nc"
+                test_output_fname = f"compress.{sphere}.MERRA2_Output.2022Jul06.nc"
             elif test_frac == 'era5':
-                test_input_fname = f"compress.{sphere}ERA5_Input_Exp8.nc"
-                test_output_fname = f"compress.{sphere}ERA5_Output_PrecipCon.nc"
+                test_input_fname = f"compress.{sphere}.ERA5_Input_Exp8.nc"
+                test_output_fname = f"compress.{sphere}.ERA5_Output_PrecipCon.nc"
             else:
                 raise ValueError(f"Unknown test_frac: {test_frac}")
             if stage in ["test", "predict"]:

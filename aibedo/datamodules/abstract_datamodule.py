@@ -1,12 +1,14 @@
 import logging
 import os
+from os.path import join
 from typing import Optional, List, Callable, Sequence, Dict
 from omegaconf import DictConfig
 import torch
+from torch import nn
+from torch import Tensor
+from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.utilities.types import EVAL_DATALOADERS
-from torch import nn
-from torch.utils.data import DataLoader
 import numpy as np
 import xarray as xr
 from aibedo.data_transforms.normalization import Normalizer
@@ -62,12 +64,31 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self.model_config = model_config
         self._data_train = self._data_val = self._data_test = self._data_predict = None
         self._possible_test_sets = ['merra2', 'era5']
+        if self.model_config.physics_loss_weights[2] > 0:
+            self.hparams.auxiliary_vars = ['evspsbl_pre']
+        else:
+            self.hparams.auxiliary_vars = []
+        self.input_var_to_idx = {
+            var: i for i, var
+            in enumerate(
+                list(self.hparams.input_vars) + ['month'] + self.hparams.auxiliary_vars
+         )}
         self._var_names_to_clean_name = var_names_to_clean_name()
         self._set_geographical_metadata()
 
     @property
     def var_names_to_clean_name(self):
         return self._var_names_to_clean_name
+
+    @property
+    def files_id(self) -> str:
+        return self.hparams.input_filename.split('.')[1]
+
+    @property
+    def month_index(self) -> int:
+        # By default the month index is concatenated to the D input vars,
+        # so that indices 0...D-1 are the input vars and D is the month
+        return len(self.hparams.input_vars)
 
     def _set_geographical_metadata(self):
         self._esm_name = self.hparams.input_filename.split('.')[2]
@@ -79,7 +100,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self.lat_list: np.ndarray = inDS.lat.values
         lsmask_round = [(round(x) if x == x else 0.5) for x in inDS.lsMask.values[0]]
         self.ls_mask = np.array([0 if x < 0 else 1 if x > 1 else x for x in lsmask_round])
-        #print(f'LS mask shape: {inDS.lsMask.data.shape}, \n{inDS.lsMask.data[0]} '
+        # print(f'LS mask shape: {inDS.lsMask.data.shape}, \n{inDS.lsMask.data[0]} '
         #      f'\n******************\n{inDS.lsMask.data[1]}')
 
     def tropics_mask(self) -> np.ndarray:
@@ -199,16 +220,16 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             data_vars[f'{output_var}_bias'] = (dim_names, diff)
             data_vars[f'{output_var}_mae'] = (dim_names, mae)
             data_vars[f'{output_var}_mae_score'] = (dim_names, mae / np.mean(output_var_target, axis=0))
-        #data_vars['lat_list'] = (['latitude'], self.lat_list)
-        #data_vars['lon_list'] = (['longitude'], self.lon_list)
+        # data_vars['lat_list'] = (['latitude'], self.lat_list)
+        # data_vars['lon_list'] = (['longitude'], self.lon_list)
         xr_dset = xr.Dataset(
             data_vars=data_vars,
             coords=dict(
                 longitude=(['spatial_dim'], self.lon_list),
                 latitude=(['spatial_dim'], self.lat_list),
-             #   longitude=self.lon_list,
-             #   latitude=self.lat_list,
-             #   spatial_dim=(('longitude', 'latitude'), [(x, y) for x, y in zip(self.lon_list, self.lat_list)]),
+                #   longitude=self.lon_list,
+                #   latitude=self.lat_list,
+                #   spatial_dim=(('longitude', 'latitude'), [(x, y) for x, y in zip(self.lon_list, self.lat_list)]),
                 snapshot=range(var_shape[0]),
                 #  **self.masks(),
             ), attrs=dict(
