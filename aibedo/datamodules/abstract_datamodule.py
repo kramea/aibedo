@@ -11,7 +11,6 @@ import pytorch_lightning as pl
 from pytorch_lightning.utilities.types import EVAL_DATALOADERS
 import numpy as np
 import xarray as xr
-from aibedo.data_transforms.normalization import Normalizer
 from aibedo.utilities.naming import var_names_to_clean_name
 from aibedo.utilities.utils import get_logger
 
@@ -40,7 +39,6 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                  output_vars: Sequence[str],
                  data_dir: str,
                  input_filename: str = "compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc",
-                 normalizer: Optional[Normalizer] = None,
                  model_config: DictConfig = None,
                  batch_size: int = 64,
                  eval_batch_size: int = 512,
@@ -59,8 +57,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         """
         super().__init__()
         # The following makes all args available as, e.g., self.hparams.batch_size
-        self.save_hyperparameters(ignore=["normalizer", 'model_config'])
-        self.normalizer = normalizer
+        self.save_hyperparameters(ignore=['model_config'])
         self.model_config = model_config
         self._data_train = self._data_val = self._data_test = self._data_predict = None
         self._possible_test_sets = ['merra2', 'era5']
