@@ -55,7 +55,6 @@ def run_model(config: DictConfig):
     final_model = model.load_from_checkpoint(
         trainer.checkpoint_callback.best_model_path,
         datamodule_config=config.datamodule,
-        output_normalizer=datamodule.normalizer.output_normalizer if datamodule.normalizer else None,
     )
 
     return final_model

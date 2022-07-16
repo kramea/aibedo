@@ -58,7 +58,6 @@ class BaseModel(LightningModule):
                  physics_loss_weights: Sequence[float] = (0.0, 0.0, 0.0, 0.0, 0.0),
                  month_as_feature: Union[bool, str] = False,
                  loss_function: str = "mean_squared_error",
-                 output_normalizer: Optional[Dict[str, NormalizationMethod]] = None,
                  name: str = "",
                  verbose: bool = True,
                  ):
@@ -90,8 +89,6 @@ class BaseModel(LightningModule):
             self._num_input_features += 12
         elif self.hparams.month_as_feature:
             self._num_input_features += 1
-
-        self.output_normalizer = output_normalizer
 
         # loss function (one per target variable)
         self.criterion = {v: get_loss(loss_function, reduction='mean') for v in self.output_var_names}
@@ -181,21 +178,6 @@ class BaseModel(LightningModule):
             self._output_vars = self.trainer.datamodule.hparams.output_vars
         return self._output_vars
 
-    @property
-    def output_normalizer(self) -> Dict[str, NormalizationMethod]:
-        return self._output_normalizer
-
-    @output_normalizer.setter
-    def output_normalizer(self, output_normalizer: Dict[str, NormalizationMethod]):
-        self._output_normalizer = output_normalizer
-        if self.output_normalizer is None:
-            self.log_text.info(' No output normalization for outputs is used.')
-        else:
-            normalizer_name = list(self.output_normalizer.values())[0].__class__.__name__
-            self.log_text.info(f' Using output normalization "{normalizer_name}" for prediction.')
-            for v in self.output_normalizer.values():
-                v.change_input_type(torch.Tensor)
-
     def _check_args(self):
         """Check if the arguments are valid."""
         plw = self.hparams.physics_loss_weights
@@ -246,25 +228,12 @@ class BaseModel(LightningModule):
         # TODO: implement the output de-normalization
         return Y
 
-    def _raw_to_full_preds(self,
-                           flux_profile_pred: Dict[str, Tensor],
-                           ) -> Dict[str, Tensor]:
-        full_preds = dict()
-        for flux_type, flux_pred in flux_profile_pred.items():
-            if self.output_normalizer is not None:
-                flux_pred = self.output_normalizer[flux_type].inverse_normalize(flux_pred)
-        return full_preds
-
     # --------------------- training with PyTorch Lightning
     def on_train_start(self) -> None:
         """ Log some info about the model/data at the start of training """
         self.log('Parameter count', float(self.n_params))
         self.log('Training set size', float(len(self.trainer.datamodule._data_train)))
         self.log('Validation set size', float(len(self.trainer.datamodule._data_val)))
-
-        if self._output_normalizer is None and self.trainer.datamodule.normalizer is not None:
-            self.log_text.info(" Dynamically adding the output normalizer from trainer.datamodule")
-            self.output_normalizer = self.trainer.datamodule.normalizer.output_normalizer
 
     def on_train_epoch_start(self) -> None:
         self._start_epoch_time = time.time()

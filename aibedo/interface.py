@@ -5,7 +5,6 @@ import hydra
 import torch
 from omegaconf import DictConfig, OmegaConf
 
-from aibedo.data_transforms.normalization import Normalizer
 from aibedo.datamodules.abstract_datamodule import AIBEDO_DataModule
 from aibedo.models.base_model import BaseModel
 
@@ -30,16 +29,6 @@ def get_model(config: DictConfig, **kwargs) -> BaseModel:
         random_mlp_input = torch.randn(1, 100)
         random_prediction = mlp_model(random_mlp_input)
     """
-    if config.get('normalizer'):
-        # This can be a bit redundant with get_datamodule (normalizer is instantiated twice), but it is better to be
-        # sure that the output_normalizer is used by the model in cases where pytorch-lightning is not used.
-        # By default if you use pytorch-lightning, the correct output_normalizer is passed to the model before training,
-        # even without the below
-        normalizer: Normalizer = hydra.utils.instantiate(
-            config.normalizer, _recursive_=False,
-            datamodule_config=config.datamodule,
-        )
-        kwargs['output_normalizer'] = normalizer.output_normalizer
     model: BaseModel = hydra.utils.instantiate(
         config.model, _recursive_=False,
         datamodule_config=config.datamodule,
@@ -63,15 +52,8 @@ def get_datamodule(config: DictConfig) -> AIBEDO_DataModule:
         ico_dm = get_datamodule(cfg)
         print(f"Icosahedron datamodule with order {ico_dm.order}")
     """
-    # First we instantiate the normalization preprocesser, then the datamodule
-    normalizer: Normalizer = hydra.utils.instantiate(
-        config.normalizer,
-        datamodule_config=config.datamodule,
-        _recursive_=False
-    )
     data_module: AIBEDO_DataModule = hydra.utils.instantiate(
         config.datamodule, _recursive_=False,
-        normalizer=normalizer,
         model_config=config.model,
     )
     return data_module
@@ -97,8 +79,7 @@ def get_model_and_data(config: DictConfig) -> (BaseModel, AIBEDO_DataModule):
     data_module = get_datamodule(config)
     model: BaseModel = hydra.utils.instantiate(
         config.model, _recursive_=False,
-        datamodule_config=config.datamodule,
-        output_normalizer=data_module.normalizer.output_normalizer if data_module.normalizer else None,
+        datamodule_config=config.datamodule
     )
     return model, data_module
 
