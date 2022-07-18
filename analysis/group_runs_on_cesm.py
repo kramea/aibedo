@@ -33,7 +33,7 @@ runs_df: pd.DataFrame = get_runs_df(
 do_care_about_hparams = ['model', 'optim', 'scheduler']
 dont_care_vals = ['seed', 'name', 'tags', 'group',
                   'model/params_trainable', 'model/params_not_trainable', 'model/params_total',
-                  'model/input_transform/output_normalization',
+                  'model/input_transform/output_normalization', 'model/input_transform/_target_',
                   'model/monitor', 'model/_target_',
                   'datamodule/time_length',
                   'normalizer/data_dir', 'normalizer/verbose', "normalizer/_target_",
