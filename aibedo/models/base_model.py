@@ -14,8 +14,7 @@ import torchmetrics
 from aibedo.data_transforms.normalization import get_variable_stats, get_clim_err, destandardize, standardize
 
 from aibedo.data_transforms.transforms import AbstractTransform
-from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint_soft_loss, \
-    mass_conservation_constraint_soft_loss
+from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint, mass_conservation_constraint
 from aibedo.utilities.utils import get_logger, to_DictConfig, get_loss, raise_error_if_invalid_value
 from aibedo.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
 
@@ -223,9 +222,20 @@ class BaseModel(LightningModule):
         Y = self(X_feats)  # forward pass
         return Y
 
-    def _split_raw_preds_per_target_variable(self, predictions: Tensor) -> Dict[str, Tensor]:
+    def _split_raw_preds_per_target_variable(self, outputs_tensor: Tensor) -> Dict[str, Tensor]:
+        """
+        Split the output/predicted/target tensor of shape (batch_size, num_grid_cells, num_output_vars)
+        into a dictionary of tensors of shape (batch_size, num_grid_cells) for each output variable in the model
+
+        Args:
+            outputs_tensor: A tensor of shape (batch_size, num_grid_cells, num_output_vars)
+
+        Returns:
+            A dictionary of tensors of shape (batch_size, num_grid_cells) for each output variable in the model.
+            E.g. 'pr_pre', 'tas_pre' will all be the keys to the respective predicted/target tensor.
+        """
         preds_per_target_variable = {
-            var_name: predictions[..., i]
+            var_name: outputs_tensor[..., i]   # index the tensor along the last dimension
             for i, var_name in enumerate(self.output_var_names)
         }
         return preds_per_target_variable
@@ -260,10 +270,13 @@ class BaseModel(LightningModule):
         # Get the month of each example (the month is the same for all grid cells in an example)
         month_of_batch = X[:, 0, self.input_var_to_idx['month']]  # idx 0 is arbitrary; has shape (batch_size,)
 
-        # Prepare denormed precipitation if needed for later use
+        # torch.index_select(.) will ensure that the correct monthly mean/std is used for each example/snapshot:
+        #  E.g. pr_mean has shape (12, num_grid_cells), and the use of index_select assumes that index 0 is for january,
+        #  index 1 for february, etc. (i.e. index of first dimension is the month)
+        #  It will then return the associated spatial mean/std for each example/snapshot's month
         index_months_kwargs = dict(dim=0, index=month_of_batch.long())  # index_select requires long type indices
+        # Prepare denormed precipitation if needed for later use
         if self.hparams.physics_loss_weights[2] > 0 or self.hparams.physics_loss_weights[3] > 0 or True:
-            # index_select will ensure that the correct monthly mean/std is used for each example/snapshot
             batch_monthly_mean_pr = torch.index_select(self.pr_mean, **index_months_kwargs)
             batch_monthly_std_pr = torch.index_select(self.pr_std, **index_months_kwargs)
             pr_denormed = destandardize(preds['pr_pre'], batch_monthly_mean_pr, batch_monthly_std_pr)
@@ -274,28 +287,27 @@ class BaseModel(LightningModule):
             # bring back pr to the normalized scale
             preds['pr_pre'] = standardize(pr_denormed, batch_monthly_mean_pr, batch_monthly_std_pr)
 
-        # Compute main loss by output variable
+        # Compute main loss by output variable e.g. output_name = 'pr_pre', 'tas_pre', etc.
         loss = 0.0
         for output_name, output_pred in preds.items():
             loss_var = self.criterion[output_name](output_pred, Y[output_name])
             train_log[f'{output_name}/train/loss'] = loss_var.item()
             loss += self.loss_weights[output_name] * loss_var
-
-        train_log['train/loss_mse'] = loss.item()  # main loss
+        train_log['train/loss_mse'] = loss.item()  # log the main MSE loss (without physics losses)
 
         # Soft loss constraints:
         # constraint 3 - global moisture constraint
-        EVAP_IDX = self.input_var_to_idx['evspsbl_pre']
+        EVAP_IDX = self.input_var_to_idx['evspsbl_pre']  # index of evspsbl_pre in the X tensor
         batch_monthly_mean_evap = torch.index_select(self.evap_mean, **index_months_kwargs)
         batch_monthly_std_evap = torch.index_select(self.evap_std, **index_months_kwargs)
         batch_monthly_PE_err = torch.index_select(self.PE_err, **index_months_kwargs)
         evap_denormed = destandardize(X[..., EVAP_IDX], batch_monthly_mean_evap, batch_monthly_std_evap)
         # Compute the soft loss for the global moisture constraint
-        physics_loss3 = global_moisture_constraint_soft_loss(evap_denormed, pr_denormed, batch_monthly_PE_err)
+        physics_loss3 = global_moisture_constraint(evap_denormed, pr_denormed, batch_monthly_PE_err)
         train_log['train/physics/loss3'] = physics_loss3.item()
         if self.hparams.physics_loss_weights[2] > 0:
             # add the (weighted) loss to the main loss
-            loss += self.hparams.physics_loss_weights[2] * physics_loss3
+            loss += self.hparams.physics_loss_weights[2] * torch.abs(physics_loss3)
 
         # constraint 5 - mass conservation constraint
         batch_monthly_mean_psl = torch.index_select(self.psl_mean, **index_months_kwargs)
@@ -303,22 +315,23 @@ class BaseModel(LightningModule):
         batch_monthly_PS_err = torch.index_select(self.PS_err, **index_months_kwargs)
         psl_denormed = destandardize(preds['psl_pre'], batch_monthly_mean_psl, batch_monthly_std_psl)
         # Compute the mass conservation soft loss
-        physics_loss5 = mass_conservation_constraint_soft_loss(psl_denormed, batch_monthly_PS_err)
+        physics_loss5 = mass_conservation_constraint(psl_denormed, batch_monthly_PS_err)
         train_log['train/physics/loss5'] = physics_loss5.item()
         if self.hparams.physics_loss_weights[4] > 0:
             # add the (weighted) loss to the main loss
-            loss += self.hparams.physics_loss_weights[4] * physics_loss5
+            loss += self.hparams.physics_loss_weights[4] * torch.abs(physics_loss5)
 
         # Logging of train loss and other diagnostics
         train_log["train/loss"] = loss.item()
 
-        train_log['n_zero_gradients'] = sum(  # Count number of zero gradients as diagnostic tool
+        # Count number of zero gradients as diagnostic tool
+        train_log['n_zero_gradients'] = sum(
             [int(torch.count_nonzero(p.grad == 0))
              for p in self.parameters() if p.grad is not None
              ]) / self.n_params
 
         self.log_dict(train_log, prog_bar=False)
-        return {"loss": loss}  # , "targets": Y, "preds": preds)}   # detach preds!
+        return {"loss": loss}  # , "targets": Y, "preds": preds)}   # detach preds if they are returned!
 
     def training_epoch_end(self, outputs: List[Any]):
         train_time = time.time() - self._start_epoch_time
