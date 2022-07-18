@@ -61,7 +61,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self.model_config = model_config
         self._data_train = self._data_val = self._data_test = self._data_predict = None
         self._possible_test_sets = ['merra2', 'era5']
-        if self.model_config.physics_loss_weights[2] > 0:
+        if self.model_config.physics_loss_weights[2] > 0 or True:
             self.hparams.auxiliary_vars = ['evspsbl_pre']
         else:
             self.hparams.auxiliary_vars = []

@@ -28,7 +28,7 @@ def get_variable_stats(var_id: str, data_dir: str, files_id: str) -> (Tensor, Te
         The monthly mean (climatology) and std of the variable var_id
     """
     mean_ds, std_ds = get_mean_and_std_xarray(data_dir, files_id)
-    var_id = var_id.rstrip('_pre')  # pr_pre -> pr, etc.
+    var_id = var_id.replace('_pre', '')  # pr_pre -> pr, etc.
     monthly_means = torch.from_numpy(getattr(mean_ds, var_id).values)  # (12, #pixels)
     monthly_stds = torch.from_numpy(getattr(std_ds, var_id).values)  # e.g std_ds.pr.values
     # mean_dict = {m: torch.from_numpy(p) for m, p in zip(np.arange(12), monthly_means)}
@@ -38,6 +38,8 @@ def get_variable_stats(var_id: str, data_dir: str, files_id: str) -> (Tensor, Te
 
 def get_clim_err(err_id: str, data_dir: str, files_id: str) -> Tensor:
     """ err_id should be one of 'pe', 'ps' """
+    files_id = files_id.replace('isosph', 'isoph')
+    files_id = 'isoph6' if files_id == 'isoph' else files_id  # fix inconsistent naming issue
     err = np.load(join(data_dir, f'CMIP6_{err_id.upper()}_clim_err.{files_id}.npy'))  # (12,)
     return torch.from_numpy(err)
 

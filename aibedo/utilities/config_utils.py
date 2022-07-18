@@ -3,9 +3,10 @@ import time
 import warnings
 from typing import Union, Sequence, List
 
+import wandb
 import omegaconf
 import pytorch_lightning as pl
-import wandb
+from pytorch_lightning.utilities import rank_zero_only
 from omegaconf import DictConfig, OmegaConf, open_dict
 
 from aibedo.utilities.naming import get_group_name, get_detailed_name, clean_name
@@ -14,6 +15,7 @@ from aibedo.utilities.utils import get_logger, no_op
 log = get_logger(__name__)
 
 
+@rank_zero_only
 def print_config(
         config,
         fields: Union[str, Sequence[str]] = (
@@ -128,7 +130,8 @@ def extras(config: DictConfig) -> None:
                 '%Hh%Mm_on_%b_%d') + '_' + config.logger.wandb.id
 
     check_config_values(config)
-    if USE_WANDB:
+    # Init to wandb from rank 0 only in multi-gpu mode
+    if USE_WANDB and int(os.environ.get('LOCAL_RANK', 0)) == 0 and os.environ.get('NODE_RANK', 0):
         # wandb_kwargs: dict = OmegaConf.to_container(config.logger.wandb, resolve=True)  # DictConfig -> simple dict
         wandb_kwargs = {
             k: config.logger.wandb.get(k) for k in ['id', 'project', 'entity', 'name', 'group',
@@ -193,6 +196,7 @@ def get_all_instantiable_hydra_modules(config, module_name: str):
     return modules
 
 
+@rank_zero_only
 def log_hyperparameters(
         config,
         model: pl.LightningModule,
@@ -263,6 +267,7 @@ def log_hyperparameters(
         trainer.logger.log_hyperparams = no_op
 
 
+@rank_zero_only
 def save_hydra_config_to_wandb(config: DictConfig):
     if config.get('save_config_to_wandb'):
         log.info(f"Hydra config will be saved to WandB as hydra_config.yaml and in wandb run_dir: {wandb.run.dir}")

@@ -6,7 +6,6 @@ import pytorch_lightning as pl
 from pytorch_lightning import Callback, Trainer
 from pytorch_lightning.utilities import rank_zero_only
 from pytorch_lightning.loggers import LoggerCollection, WandbLogger
-from torch.nn.parallel import DistributedDataParallel
 
 from aibedo.utilities.utils import get_logger
 
@@ -92,7 +91,6 @@ class UploadBestCheckpointAsFile(Callback):
         if path:
             log.info(f"Best checkpoint path will be saved to wandb from path: {path}")
             logger.experiment.log({'best_model_filepath': path})
-            print(os.curdir)
             logger.experiment.save(path)
 
 

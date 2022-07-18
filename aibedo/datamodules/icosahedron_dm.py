@@ -71,15 +71,13 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         dataset = np.concatenate(data_all, axis=2)
         return dataset
 
-    def _get_auxiliary_data(self, dataset_in: xr.Dataset) -> np.ndarray:
-        # Pixel-wise month - assigned to each grid (every snapshot will have the same month value for each grid cell)
-        months = np.arange(12)
-        month_pixel_data = np.reshape(np.repeat(months, self.n_pixels), [-1, self.n_pixels, 1])  # (12, #pixels, 1)
-        month_idx = [month_pixel_data for snapshot in range(165)]
-        dataset_month = np.concatenate(month_idx, axis=0)  # shape (1980, #pixels, 1)
-
+    def _get_auxiliary_data(self, dataset_in: xr.Dataset, dataset_out: xr.Dataset) -> np.ndarray:
+        # Add month of the snapshot (0-11)
+        month_of_snapshot = np.array(dataset_in.indexes['time'].month) - 1  # -1 because month we want 0-indexed months
+        # now repeat the month for each grid cell/pixel
+        dataset_month = np.repeat(month_of_snapshot, self.n_pixels).reshape([-1, self.n_pixels, 1])
         if len(self.hparams.auxiliary_vars) > 0:
-            dataset_aux = self._concat_variables_into_channel_dim(dataset_in, self.hparams.auxiliary_vars)
+            dataset_aux = self._concat_variables_into_channel_dim(dataset_out, self.hparams.auxiliary_vars)
             dataset_aux = np.concatenate([dataset_month, dataset_aux], axis=2)  # shape (1980, #pixels, 1 + #aux-vars)
         else:
             dataset_aux = dataset_month
@@ -100,7 +98,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         # Output data
         dataset_out = self._concat_variables_into_channel_dim(out_ds, out_vars, output_file)
         # Auxiliary data
-        dataset_aux = self._get_auxiliary_data(in_ds)
+        dataset_aux = self._get_auxiliary_data(in_ds, out_ds)
         dataset_in = np.concatenate([dataset_in, dataset_aux], axis=2)
 
         dataset_in, dataset_out = self._model_specific_transform(dataset_in, dataset_out)
@@ -193,5 +191,5 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
 
 
 def get_tensor_dataset_from_numpy(*ndarrays) -> TensorDataset:
-    tensors = [torch.from_numpy(ndarray) for ndarray in ndarrays]
+    tensors = [torch.from_numpy(ndarray).float() for ndarray in ndarrays]
     return TensorDataset(*tensors)
