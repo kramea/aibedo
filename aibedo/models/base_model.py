@@ -90,6 +90,7 @@ class BaseModel(LightningModule):
             self._num_input_features += 1
 
         # loss function (one per target variable)
+        self.loss_weights = loss_weights
         self.criterion = {v: get_loss(loss_function, reduction='mean') for v in self.output_var_names}
 
         # Timing variables to track the training/epoch/validation time
@@ -110,24 +111,30 @@ class BaseModel(LightningModule):
         # Set the target variable statistics needed
         sphere = "isosph5" if 'isosph5.' in datamodule_config.input_filename else "isosph"
         stats_kwargs = dict(data_dir=self.data_dir, files_id=sphere)
-        if physics_loss_weights[2] > 0 or physics_loss_weights[3] > 0:
+        if physics_loss_weights[2] > 0 or physics_loss_weights[3] > 0 or True:
             pr_mean, pr_std = get_variable_stats(var_id='pr', **stats_kwargs)
             self.register_buffer_dummy('pr_mean', pr_mean, persistent=False)
             self.register_buffer_dummy('pr_std', pr_std, persistent=False)
+            if physics_loss_weights[3] > 0:
+                self.log_text.info(" Using non-negative precipitation constraint (#4)")
 
-        if physics_loss_weights[2] > 0:
+        if physics_loss_weights[2] > 0 or True:
             evap_mean, evap_std = get_variable_stats(var_id='evspsbl', **stats_kwargs)
             PE_err = get_clim_err(err_id='PE', **stats_kwargs)
             self.register_buffer_dummy('evap_mean', evap_mean, persistent=False)
             self.register_buffer_dummy('evap_std', evap_std, persistent=False)
             self.register_buffer_dummy('PE_err', PE_err, persistent=False)
+            if physics_loss_weights[2] > 0:
+                self.log_text.info(" Using global moisture constraint (#3)")
 
-        if physics_loss_weights[4] > 0:
+        if physics_loss_weights[4] > 0 or True:
             psl_mean, psl_std = get_variable_stats(var_id='ps', **stats_kwargs)
             PS_err = get_clim_err(err_id='PS', **stats_kwargs)
             self.register_buffer_dummy('psl_mean', psl_mean, persistent=False)
             self.register_buffer_dummy('psl_std', psl_std, persistent=False)
             self.register_buffer_dummy('PS_err', PS_err, persistent=False)
+            if physics_loss_weights[4] > 0:
+                self.log_text.info(" Using mass conservation constraint (#5)")
 
     @property
     def num_input_features(self) -> int:
@@ -157,7 +164,7 @@ class BaseModel(LightningModule):
                     f'{output_var}/{self.test_set_name}/mse': torchmetrics.MeanSquaredError(squared=True)
                     for output_var in self.output_var_names
                 }
-            }).to(self.device)
+            }).type_as(self)
         return self._test_metrics
 
     @property
@@ -185,13 +192,15 @@ class BaseModel(LightningModule):
         if plw[3] > 0 and plw[3] != 1:
             self.log_text.info(f'The fourth physics loss weight must be 0 or 1, but got {plw[3]}. Setting it to 1.')
             self.hparams.physics_loss_weights[3] = 1
-        lw = self.hparams.loss_weights
+        lw = self.loss_weights
         if isinstance(lw, dict) and len(lw.keys()) != len(self.output_var_names) or \
                 isinstance(lw, Sequence) and len(lw) != len(self.output_var_names):
             raise ValueError(f'The number of loss weights must be same as #output-vars={len(self.output_var_names)}'
                              f', but got {lw}')
-        if isinstance(lw, Sequence):
-            self.hparams.loss_weights = {v: lw[i] for i, v in enumerate(self.output_var_names)}
+        if isinstance(lw, Sequence) or isinstance(lw, list) or isinstance(lw, tuple):
+            self.loss_weights = {v: lw[i] for i, v in enumerate(self.output_var_names)}
+        if not any(w > 0 for w in self.loss_weights.values()):
+            raise ValueError(f'At least one loss weight must be > 0, but got {self.loss_weights}')
 
         raise_error_if_invalid_value(self.hparams.month_as_feature, [False, True, 'one_hot'], 'month_as_feature')
 
@@ -252,8 +261,8 @@ class BaseModel(LightningModule):
         month_of_batch = X[:, 0, self.input_var_to_idx['month']]  # idx 0 is arbitrary; has shape (batch_size,)
 
         # Prepare denormed precipitation if needed for later use
-        index_months_kwargs = dict(dim=0, index=month_of_batch)
-        if self.hparams.physics_loss_weights[2] > 0 or self.hparams.physics_loss_weights[3] > 0:
+        index_months_kwargs = dict(dim=0, index=month_of_batch.long())  # index_select requires long type indices
+        if self.hparams.physics_loss_weights[2] > 0 or self.hparams.physics_loss_weights[3] > 0 or True:
             # index_select will ensure that the correct monthly mean/std is used for each example/snapshot
             batch_monthly_mean_pr = torch.index_select(self.pr_mean, **index_months_kwargs)
             batch_monthly_std_pr = torch.index_select(self.pr_std, **index_months_kwargs)
@@ -270,31 +279,33 @@ class BaseModel(LightningModule):
         for output_name, output_pred in preds.items():
             loss_var = self.criterion[output_name](output_pred, Y[output_name])
             train_log[f'{output_name}/train/loss'] = loss_var.item()
-            loss += self.hparams.loss_weights[output_name] * loss_var
+            loss += self.loss_weights[output_name] * loss_var
 
         train_log['train/loss_mse'] = loss.item()  # main loss
 
         # Soft loss constraints:
         # constraint 3 - global moisture constraint
+        EVAP_IDX = self.input_var_to_idx['evspsbl_pre']
+        batch_monthly_mean_evap = torch.index_select(self.evap_mean, **index_months_kwargs)
+        batch_monthly_std_evap = torch.index_select(self.evap_std, **index_months_kwargs)
+        batch_monthly_PE_err = torch.index_select(self.PE_err, **index_months_kwargs)
+        evap_denormed = destandardize(X[..., EVAP_IDX], batch_monthly_mean_evap, batch_monthly_std_evap)
+        # Compute the soft loss for the global moisture constraint
+        physics_loss3 = global_moisture_constraint_soft_loss(evap_denormed, pr_denormed, batch_monthly_PE_err)
+        train_log['train/physics/loss3'] = physics_loss3.item()
         if self.hparams.physics_loss_weights[2] > 0:
-            EVAP_IDX = self.input_var_to_idx['evspsbl_pre']
-            batch_monthly_mean_evap = torch.index_select(self.evap_mean, **index_months_kwargs)
-            batch_monthly_std_evap = torch.index_select(self.evap_std, **index_months_kwargs)
-            evap_denormed = destandardize(X[..., EVAP_IDX], batch_monthly_mean_evap, batch_monthly_std_evap)
-            # Compute the soft loss for the global moisture constraint
-            physics_loss3 = global_moisture_constraint_soft_loss(evap_denormed, pr_denormed, self.PE_error)
-            train_log['train/physics/loss3'] = physics_loss3.item()
             # add the (weighted) loss to the main loss
             loss += self.hparams.physics_loss_weights[2] * physics_loss3
 
         # constraint 5 - mass conservation constraint
+        batch_monthly_mean_psl = torch.index_select(self.psl_mean, **index_months_kwargs)
+        batch_monthly_std_psl = torch.index_select(self.psl_std, **index_months_kwargs)
+        batch_monthly_PS_err = torch.index_select(self.PS_err, **index_months_kwargs)
+        psl_denormed = destandardize(preds['psl_pre'], batch_monthly_mean_psl, batch_monthly_std_psl)
+        # Compute the mass conservation soft loss
+        physics_loss5 = mass_conservation_constraint_soft_loss(psl_denormed, batch_monthly_PS_err)
+        train_log['train/physics/loss5'] = physics_loss5.item()
         if self.hparams.physics_loss_weights[4] > 0:
-            batch_monthly_mean_psl = torch.index_select(self.psl_mean, **index_months_kwargs)
-            batch_monthly_std_psl = torch.index_select(self.psl_std, **index_months_kwargs)
-            psl_denormed = destandardize(preds['psl_pre'], batch_monthly_mean_psl, batch_monthly_std_psl)
-            # Compute the mass conservation soft loss
-            physics_loss5 = mass_conservation_constraint_soft_loss(psl_denormed, self.PS_error)
-            train_log['train/physics/loss5'] = physics_loss5.item()
             # add the (weighted) loss to the main loss
             loss += self.hparams.physics_loss_weights[4] * physics_loss5
 
@@ -321,6 +332,7 @@ class BaseModel(LightningModule):
         X, Y = batch
         preds = self.raw_predict(X)
         log_dict = dict()
+        kwargs['sync_dist'] = True  # for DDP training
         # First compute the bulk error metrics (averaging out over all target variables)
         for metric_name, metric in torch_metrics.items():
             if any([out_var_name in metric_name for out_var_name in self.output_var_names]):
@@ -339,7 +351,7 @@ class BaseModel(LightningModule):
             out_var_name = metric_name.split('/')[0]
             metric(preds[out_var_name], Y[out_var_name])
             log_dict[metric_name] = metric
-        kwargs['prog_bar'] = False   # do not show in progress bar the per-output variable metrics
+        kwargs['prog_bar'] = False  # do not show in progress bar the per-output variable metrics
         self.log_dict(log_dict, on_step=True, on_epoch=True, **kwargs)  # log metric objects
         return {'targets': Y, 'preds': preds}
 

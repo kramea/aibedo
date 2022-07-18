@@ -31,7 +31,7 @@ def global_moisture_constraint(precipitation: Tensor, evaporation: Tensor, PE_er
     #  for i in range(batch_size):
     #       loss_pr += (precipitation[i, :] - evaporation[i, :]).mean() - PE_err[i].mean()
     #  loss_pr =/ batch_size
-    err = ((precipitation - evaporation).mean(dim=0) - PE_err.mean(dim=0)).mean()
+    err = ((precipitation - evaporation).mean(dim=-1) - PE_err).mean()  # first mean is over spatial dimension (1 or -1)
     return err
 
 
@@ -56,7 +56,7 @@ def mass_conservation_constraint(surface_pressure: Tensor, PS_err: Tensor) -> fl
     #  for i in range(batch_size):
     #       loss_ps += surface_pressure[i, :].mean() - PS_err[i].mean()
     #  loss_ps =/ batch_size
-    err = (surface_pressure.mean(dim=0) - PS_err.mean(dim=0)).mean()
+    err = (surface_pressure.mean(dim=-1) - PS_err).mean()   # take pressure mean over the spatial dimension
     return err
 
 
