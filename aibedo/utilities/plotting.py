@@ -1,4 +1,5 @@
 import random
+from typing import List
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -261,6 +262,7 @@ def data_snapshots_plotting2(postprocessed_xarray: xr.Dataset,
 
 def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                             error_to_plot: str = "mae",
+                            vars_to_plot: List[str] = 'all',
                             num_snapshots_to_plot: int = 5,
                             data_dim: str = 'snapshot',
                             longitude_dim: str = 'longitude',
@@ -275,6 +277,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
     Args:
         postprocessed_xarray: The xarray Dataset with the data to plot.
         error_to_plot (str): Which error to plot. Default is 'mae'. Other options: 'bias', 'mae_score'
+        vars_to_plot: Which output variables to plot. Default is 'all' (plot all output variables).
         num_snapshots_to_plot (int): The number of snapshots to plot (subsamples from the time dimension).
         data_dim (str): the data dimension (i.e. the example/time dimension)
         longitude_dim (str): name of the longitude dimension
@@ -314,7 +317,11 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                      'pad': 0.01,  # padding between right-ost subplot and cbar
                      'fraction': 0.05}
     )
-    output_vars = postprocessed_xarray.variable_names
+    if vars_to_plot == "all":
+        output_vars = postprocessed_xarray.variable_names.split(";")
+    else:
+        assert isinstance(vars_to_plot, list), f"vars_to_plot must be a list, but is {type(vars_to_plot)}"
+        output_vars = vars_to_plot
     vmin = vmax = None
     ps = dict()
     for var in output_vars:
