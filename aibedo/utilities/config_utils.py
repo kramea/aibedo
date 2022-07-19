@@ -308,6 +308,7 @@ def get_config_from_hydra_compose_overrides(overrides: List[str],
     overrides = list(set(overrides))
     if '-m' in overrides:
         overrides.remove('-m')  # if multiruns flags are mistakenly in overrides
+    # Not true?!: log.info(f" Initializing Hydra from {os.path.abspath(config_path)}/{config_name}")
     hydra.initialize(config_path=config_path, version_base=None)
     try:
         config = hydra.compose(config_name=config_name, overrides=overrides)

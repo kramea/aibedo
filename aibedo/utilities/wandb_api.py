@@ -97,7 +97,10 @@ def load_hydra_config_from_wandb(
                   f'logger.wandb.entity={run.entity}',
                   f'logger.wandb.project={run.project}', f'logger.wandb.group={run.group}']
     config = get_config_from_hydra_compose_overrides(overrides, **kwargs)
-    assert config.logger.wandb.id == run.id, f"{config.logger.wandb.id} != {run.id}"
+    os.remove('hydra_config.yaml') if os.path.exists('hydra_config.yaml') else None
+    if run.id != config.logger.wandb.id and run.id in config.logger.wandb.name:
+        config.logger.wandb.id = run.id
+    assert config.logger.wandb.id == run.id, f"{config.logger.wandb.id} != {run.id}. \nFull Hydra config: {config}"
     return config
 
 

@@ -271,6 +271,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                             same_colorbar_for_preds_and_targets: bool = True,
                             marker_size: int = 2,
                             title_fontsize: int = 18,
+                            seed=7,
                             ):
     """
 
@@ -290,7 +291,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                     This can ease the visual comparison of the predictions and targets.
         marker_size: The size of the markers in the plot.
         title_fontsize: The fontsize of the title.
-
+        seed (int): The seed for the random sampling of the snapshots.
 
     Returns:
         The matplotlib PathCollection, pcs, as a dictionary with one key for each output variable name.
@@ -299,6 +300,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
             - 'preds': the matplotlib PathCollection for the predictions of the output variable
             - error_to_plot: the matplotlib PathCollection for the error of the output variable
     """
+    random.seed(seed)
     # Sample a random subset of the snapshots
     snaps = sorted(random.sample(range(postprocessed_xarray.dims[data_dim]), num_snapshots_to_plot))
     proj = ccrs.PlateCarree()
