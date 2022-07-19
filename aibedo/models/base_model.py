@@ -75,7 +75,12 @@ class BaseModel(LightningModule):
         else:
             self.input_transform: AbstractTransform = hydra.utils.instantiate(input_transform)
 
-        self._output_vars = self._input_var_to_idx = None
+        self._output_vars = None
+        self._input_var_to_idx = {
+            var: i for i, var
+            in enumerate(
+                list(datamodule_config.input_vars) + ['month'] + ['evspsbl_pre']
+         )}
         # Infer the data dimensions
         self._data_dir = datamodule_config.data_dir
         self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
@@ -108,8 +113,8 @@ class BaseModel(LightningModule):
         self._check_args()
 
         # Set the target variable statistics needed
-        sphere = "isosph5" if 'isosph5.' in datamodule_config.input_filename else "isosph"
-        stats_kwargs = dict(data_dir=self.data_dir, files_id=sphere)
+        self.sphere = "isosph5" if 'isosph5.' in datamodule_config.input_filename else "isosph"
+        stats_kwargs = dict(data_dir=self.data_dir, files_id=self.sphere)
         if physics_loss_weights[2] > 0 or physics_loss_weights[3] > 0 or True:
             pr_mean, pr_std = get_variable_stats(var_id='pr', **stats_kwargs)
             self.register_buffer_dummy('pr_mean', pr_mean, persistent=False)
@@ -120,8 +125,8 @@ class BaseModel(LightningModule):
         if physics_loss_weights[2] > 0 or True:
             evap_mean, evap_std = get_variable_stats(var_id='evspsbl', **stats_kwargs)
             PE_err = get_clim_err(err_id='PE', **stats_kwargs)
-            self.register_buffer_dummy('evap_mean', evap_mean, persistent=False)
-            self.register_buffer_dummy('evap_std', evap_std, persistent=False)
+            self.register_buffer_dummy('evspsbl_mean', evap_mean, persistent=False)
+            self.register_buffer_dummy('evspsbl_std', evap_std, persistent=False)
             self.register_buffer_dummy('PE_err', PE_err, persistent=False)
             if physics_loss_weights[2] > 0:
                 self.log_text.info(" Using global moisture constraint (#3)")
@@ -146,7 +151,8 @@ class BaseModel(LightningModule):
     @property
     def input_var_to_idx(self) -> Dict[str, int]:
         """ Returns the index of the month (the month being a scalar in {0, 1, .., 11}) in the input data """
-        if self._input_var_to_idx is None:
+        # if self._input_var_to_idx is None:
+        if hasattr(self, 'trainer') and self.trainer is not None:
             self._input_var_to_idx = self.trainer.datamodule.input_var_to_idx
         return self._input_var_to_idx
 
@@ -240,10 +246,73 @@ class BaseModel(LightningModule):
         }
         return preds_per_target_variable
 
-    def predict(self, X) -> Dict[str, Tensor]:
-        Y_normed = self.raw_predict(X)
-        Y = self._split_raw_preds_per_target_variable(Y_normed)
-        # TODO: implement the output de-normalization
+    def _denormalize_variable(self,
+                              normalized_var: Tensor,
+                              month_of_var: Tensor,
+                              output_var_name: str
+                              ) -> Tensor:
+        var_id = output_var_name.replace('_pre', '')
+        if hasattr(self, f'{var_id}_mean'):
+            mean, std = getattr(self, f'{var_id}_mean'), getattr(self, f'{var_id}_std')
+        else:
+            # try to get the mean and std from the data directory
+            mean, std = get_variable_stats(var_id=var_id, data_dir=self.data_dir, files_id=self.sphere)
+        mean, std = mean.to(normalized_var.device), std.to(normalized_var.device)
+        month_of_var = month_of_var.to(normalized_var.device)
+        index_months_kwargs = dict(dim=0, index=month_of_var.long())  # index_select requires long type indices
+        # torch.index_select(.) will ensure that the correct monthly mean/std is used for each example/snapshot:
+        #  E.g. pr_mean has shape (12, num_grid_cells), and the use of index_select assumes that index 0 is for january,
+        #  index 1 for february, etc. (i.e. index of first dimension is the month)
+        #  It will then return the associated spatial mean/std for each example/snapshot's month
+        batch_monthly_mean = torch.index_select(mean, **index_months_kwargs)
+        batch_monthly_std = torch.index_select(std, **index_months_kwargs)
+        denormed_var = destandardize(normalized_var, batch_monthly_mean, batch_monthly_std)
+        return denormed_var
+
+    def raw_outputs_to_denormalized_per_variable_dict(self,
+                                                      outputs_tensor: Tensor,
+                                                      month_of_outputs: Tensor = None,
+                                                      input_tensor: Tensor = None,
+                                                      return_raw_outputs: bool = False
+                                                      ) -> Dict[str, Tensor]:
+        """
+        Convert the output/predicted/target tensor of shape (batch_size, num_grid_cells, num_output_vars)
+        into a dictionary of denormalized (!) tensors of shape (batch_size, num_grid_cells)
+        for each output variable in the model.
+
+        Args:
+            outputs_tensor: A tensor of shape (batch_size, num_grid_cells, num_output_vars) in normalized scale.
+            month_of_outputs: A tensor of shape (batch_size,) with the month of each output, optional.
+            input_tensor: A tensor of shape (batch_size, num_grid_cells, num_input_vars), optional.
+
+        ** Note: One of month_of_outputs or input_tensor must be provided!
+
+        Returns:
+            A dictionary of denormalized tensors of shape (batch_size, num_grid_cells).
+            E.g. 'pr', 'tas' will all be the keys to the respective predicted/target tensor.
+        """
+        assert month_of_outputs is not None or outputs_tensor is not None, "Either month_of_outputs or outputs_tensor must be provided!"
+        preds_per_target_variable = self._split_raw_preds_per_target_variable(outputs_tensor)
+        if month_of_outputs is None:
+            MONTH_IDX = self.input_var_to_idx['month']
+            month_of_outputs = input_tensor[:, 0, MONTH_IDX]  # idx 0 is arbitrary; has shape (batch_size,)
+
+        denormed_Y_per_target_variable = dict()
+        for var_name, var_tensor in preds_per_target_variable.items():
+            var_id = var_name.replace('_pre', '')
+            denormed_Y_per_target_variable[var_id] = self._denormalize_variable(var_tensor, month_of_outputs, var_name)
+        if return_raw_outputs:
+            return {**denormed_Y_per_target_variable, **preds_per_target_variable}
+
+        return denormed_Y_per_target_variable
+
+    def predict(self, X, **kwargs) -> Dict[str, Tensor]:
+        """ Predict the de-normalized (!) output/predicted/target variables for the given input X. """
+        Y_normed: Tensor = self.raw_predict(X)
+        Y: Dict[str, Tensor] = self.raw_outputs_to_denormalized_per_variable_dict(Y_normed, input_tensor=X, **kwargs)
+        # Enforce non-negative precipitation (constraint 4); needs to be done before the main loss is computed
+        if self.hparams.physics_loss_weights[3] > 0:
+            Y['pr'] = nonnegative_precipitation(Y['pr'])
         return Y
 
     # --------------------- training with PyTorch Lightning
@@ -280,6 +349,7 @@ class BaseModel(LightningModule):
             batch_monthly_mean_pr = torch.index_select(self.pr_mean, **index_months_kwargs)
             batch_monthly_std_pr = torch.index_select(self.pr_std, **index_months_kwargs)
             pr_denormed = destandardize(preds['pr_pre'], batch_monthly_mean_pr, batch_monthly_std_pr)
+            # Same: pr_denormed = self._denormalize_variable(preds['pr_pre'], month_of_batch, 'pr_pre')
 
         # Enforce non-negative precipitation (constraint 4); needs to be done before the main loss is computed
         if self.hparams.physics_loss_weights[3] > 0:
@@ -298,10 +368,8 @@ class BaseModel(LightningModule):
         # Soft loss constraints:
         # constraint 3 - global moisture constraint
         EVAP_IDX = self.input_var_to_idx['evspsbl_pre']  # index of evspsbl_pre in the X tensor
-        batch_monthly_mean_evap = torch.index_select(self.evap_mean, **index_months_kwargs)
-        batch_monthly_std_evap = torch.index_select(self.evap_std, **index_months_kwargs)
         batch_monthly_PE_err = torch.index_select(self.PE_err, **index_months_kwargs)
-        evap_denormed = destandardize(X[..., EVAP_IDX], batch_monthly_mean_evap, batch_monthly_std_evap)
+        evap_denormed = self._denormalize_variable(X[..., EVAP_IDX], month_of_batch, 'evspsbl_pre')
         # Compute the soft loss for the global moisture constraint
         physics_loss3 = global_moisture_constraint(evap_denormed, pr_denormed, batch_monthly_PE_err)
         train_log['train/physics/loss3'] = physics_loss3.item()
@@ -310,10 +378,8 @@ class BaseModel(LightningModule):
             loss += self.hparams.physics_loss_weights[2] * torch.abs(physics_loss3)
 
         # constraint 5 - mass conservation constraint
-        batch_monthly_mean_psl = torch.index_select(self.psl_mean, **index_months_kwargs)
-        batch_monthly_std_psl = torch.index_select(self.psl_std, **index_months_kwargs)
         batch_monthly_PS_err = torch.index_select(self.PS_err, **index_months_kwargs)
-        psl_denormed = destandardize(preds['psl_pre'], batch_monthly_mean_psl, batch_monthly_std_psl)
+        psl_denormed = self._denormalize_variable(preds['psl_pre'], month_of_batch, 'psl_pre')
         # Compute the mass conservation soft loss
         physics_loss5 = mass_conservation_constraint(psl_denormed, batch_monthly_PS_err)
         train_log['train/physics/loss5'] = physics_loss5.item()

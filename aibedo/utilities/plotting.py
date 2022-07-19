@@ -1,5 +1,5 @@
 import random
-from typing import List
+from typing import List, Union
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,6 +15,9 @@ var_names_to_cmap = {
     'tas_pre': 'coolwarm',  # rainbow
     'psl_pre': 'Spectral',
     'pr_pre': 'bwr',
+    'tas': 'coolwarm',  # rainbow
+    'psl': 'Spectral',
+    'pr': 'bwr',
 }
 
 
@@ -114,6 +117,7 @@ def save_figure(save_to: str, full_screen: bool = False, bbox_inches='tight'):
 
 def data_mean_plotting(postprocessed_xarray: xr.Dataset,
                        error_to_plot: str = "mae",
+                       vars_to_plot: Union[str, List[str]] = 'all',
                        data_dim: str = 'snapshot',
                        longitude_dim: str = 'longitude',
                        latitude_dim: str = 'latitude',
@@ -151,7 +155,16 @@ def data_mean_plotting(postprocessed_xarray: xr.Dataset,
                      'pad': 0.01,  # padding between right-ost subplot and cbar
                      'fraction': 0.05}
     )
-    output_vars = postprocessed_xarray.variable_names.split(";")
+    if vars_to_plot == "all":
+        output_vars = postprocessed_xarray.variable_names.split(";")
+    elif vars_to_plot == "normalized":
+        output_vars = [x for x in postprocessed_xarray.variable_names.split(";") if '_pre' in x]
+    elif vars_to_plot == "denormalized":
+        output_vars = [x for x in postprocessed_xarray.variable_names.split(";") if '_pre' not in x]
+    else:
+        assert isinstance(vars_to_plot, list), f"vars_to_plot must be a list, but is {type(vars_to_plot)}"
+        output_vars = vars_to_plot
+
     nrows = 1 if plot_only_errors else 3
     ncols = len(output_vars)
     fig, axs = plt.subplots(nrows, ncols,
@@ -180,23 +193,25 @@ def data_mean_plotting(postprocessed_xarray: xr.Dataset,
         pc.colorbar.ax.tick_params(labelsize=15)
 
         # Set column title
-        title_v = f"{var_names_to_clean_name()[var]} (${error_to_plot.upper()}={bulk_err:.3f}$)"
+        bulk_err_f = f"{bulk_err:.6f}" if var == 'pr' else f"{bulk_err:.3f}"
+        title_v = f"{var_names_to_clean_name()[var]} (${error_to_plot.upper()}={bulk_err_f}$)"
         top_most_var_ax.set_title(title_v, fontsize=title_fontsize)
     for ax in np.array(axs).flatten():
         ax.coastlines()
     return fig, axs
 
+
 def data_snapshots_plotting2(postprocessed_xarray: xr.Dataset,
-                            error_to_plot: str = "mae",
-                            num_snapshots_to_plot: int = 5,
-                            data_dim: str = 'snapshot',
-                            longitude_dim: str = 'longitude',
-                            latitude_dim: str = 'latitude',
-                            robust: bool = True,
-                            same_colorbar_for_preds_and_targets: bool = True,
-                            marker_size: int = 2,
-                            title_fontsize: int = 18,
-                            ):
+                             error_to_plot: str = "mae",
+                             num_snapshots_to_plot: int = 5,
+                             data_dim: str = 'snapshot',
+                             longitude_dim: str = 'longitude',
+                             latitude_dim: str = 'latitude',
+                             robust: bool = True,
+                             same_colorbar_for_preds_and_targets: bool = True,
+                             marker_size: int = 2,
+                             title_fontsize: int = 18,
+                             ):
     """
 
     Args:
@@ -245,10 +260,11 @@ def data_snapshots_plotting2(postprocessed_xarray: xr.Dataset,
     vmin = vmax = None
     ps = dict()
     for var in output_vars:
-        d1, d2, d3 = getattr(ds_snaps, f'{var}_targets'), getattr(ds_snaps, f'{var}_preds'), getattr(ds_snaps, f'{var}_{error_to_plot}')
-        plotting_ds = xr.concat([d1, d2, d3], pd.Index(["Targets", "Preds", error_to_plot.upper()], name="plotting_dim"))
-        kwargs['ds'] = plotting_ds
-        p_target = xr.plot.scatter(hue=f'plotting_dim', cmap=var_names_to_cmap[var], **kwargs)
+        d1, d2, d3 = getattr(ds_snaps, f'{var}_targets'), getattr(ds_snaps, f'{var}_preds'), getattr(ds_snaps,
+                                                                                                     f'{var}_{error_to_plot}')
+        plotting_ds = xr.concat([d1, d2, d3],
+                                pd.Index(["Targets", "Preds", error_to_plot.upper()], name="plotting_dim"))
+        p_target = xr.plot.scatter(plotting_ds, hue='plotting_dim', cmap=var_names_to_cmap[var], **kwargs)
 
         for ax in list(p_target.axes.flat):
             ax.coastlines()
@@ -257,20 +273,25 @@ def data_snapshots_plotting2(postprocessed_xarray: xr.Dataset,
         title_v = f"{var_names_to_clean_name()[var]}"  # (${error_to_plot.upper()}={snapshot_err:.3f}$)"
         p_target.fig.suptitle(title_v, fontsize=title_fontsize, y=0.9)
 
-
     return ps
+
 
 def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                             error_to_plot: str = "mae",
                             vars_to_plot: List[str] = 'all',
                             num_snapshots_to_plot: int = 5,
+                            snapshots_to_plot: List[int] = None,
                             data_dim: str = 'snapshot',
                             longitude_dim: str = 'longitude',
                             latitude_dim: str = 'latitude',
                             robust: bool = True,
                             same_colorbar_for_preds_and_targets: bool = True,
+                            only_plot_preds: bool = False,
+                            plot_error: bool = True,
                             marker_size: int = 2,
+                            title: str = "",
                             title_fontsize: int = 18,
+                            cmap='auto',
                             seed=7,
                             ):
     """
@@ -300,9 +321,12 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
             - 'preds': the matplotlib PathCollection for the predictions of the output variable
             - error_to_plot: the matplotlib PathCollection for the error of the output variable
     """
-    random.seed(seed)
-    # Sample a random subset of the snapshots
-    snaps = sorted(random.sample(range(postprocessed_xarray.dims[data_dim]), num_snapshots_to_plot))
+    if snapshots_to_plot is None:
+        random.seed(seed)
+        # Sample a random subset of the snapshots
+        snaps = sorted(random.sample(range(postprocessed_xarray.dims[data_dim]), num_snapshots_to_plot))
+    else:
+        snaps = snapshots_to_plot
     proj = ccrs.PlateCarree()
     label_fontsize = title_fontsize // 1.5
     ds_snaps = postprocessed_xarray.isel({'snapshot': snaps})
@@ -324,20 +348,30 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
     else:
         assert isinstance(vars_to_plot, list), f"vars_to_plot must be a list, but is {type(vars_to_plot)}"
         output_vars = vars_to_plot
-    vmin = vmax = None
+    p_target = p_err = vmin = vmax = None
     ps = dict()
     for var in output_vars:
-        p_target = xr.plot.scatter(hue=f'{var}_targets', cmap=var_names_to_cmap[var], **kwargs)
-        if same_colorbar_for_preds_and_targets:
-            # Set the same colorbar for the predictions and targets subplots
-            vmin, vmax = p_target.cbar.vmin, p_target.cbar.vmax
+        cmap = p_cmap = var_names_to_cmap[var] if cmap == 'auto' else cmap
+        if not only_plot_preds:
+            p_target = xr.plot.scatter(hue=f'{var}_targets', cmap=cmap, **kwargs)
+            if same_colorbar_for_preds_and_targets:
+                # Set the same colorbar for the predictions and targets subplots
+                vmin, vmax = p_target.cbar.vmin, p_target.cbar.vmax
+                p_cmap = p_target.cbar.cmap
+            # Set coastlines of all axes
+            for ax in list(p_target.axes.flat):
+                ax.coastlines()
 
-        p_pred = xr.plot.scatter(hue=f'{var}_preds', cmap=var_names_to_cmap[var], vmin=vmin, vmax=vmax, **kwargs)
-        p_err = xr.plot.scatter(hue=f'{var}_{error_to_plot}', **kwargs)
+        p_pred = xr.plot.scatter(hue=f'{var}_preds', cmap=p_cmap, vmin=vmin, vmax=vmax, **kwargs)
+        if plot_error and not only_plot_preds:
+            p_err = xr.plot.scatter(hue=f'{var}_{error_to_plot}', **kwargs)
+            for ax in list(p_err.axes.flat):
+                ax.coastlines()
         ps[var] = {'targets': p_target, 'preds': p_pred, error_to_plot: p_err}
 
         # Set row names (ylabel) for the leftmost subplot of each row
-        for dtype in ['targets', 'preds', error_to_plot]:
+        dtypes = ['preds'] if only_plot_preds else ['targets', 'preds', error_to_plot] if plot_error else ['targets', 'preds']
+        for dtype in dtypes:
             pc = ps[var][dtype]
             ylabel = dtype.upper() if dtype == error_to_plot else dtype.capitalize()
             # pc.axes.flat[0].set_ylabel(ylabel, size=label_fontsize)
@@ -346,25 +380,30 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
             pc.cbar.ax.tick_params(labelsize=label_fontsize // 1.7)
 
         # Set coastlines of all axes
-        for ax in list(p_target.axes.flat) + list(p_pred.axes.flat) + list(p_err.axes.flat):
+        for ax in list(p_pred.axes.flat):
             ax.coastlines()
 
-        # Add title to variable subplots at the middle top
-        title_v = f"{var_names_to_clean_name()[var]}"  # (${error_to_plot.upper()}={snapshot_err:.3f}$)"
-        p_target.fig.suptitle(title_v, fontsize=title_fontsize, y=0.9)
+        if only_plot_preds:
+            p_pred.fig.suptitle(title, fontsize=title_fontsize, y=0.9)
+        else:
+            # Add title to variable subplots at the middle top
+            title_v = f"{var_names_to_clean_name()[var]} {title}"  # (${error_to_plot.upper()}={snapshot_err:.3f}$)"
+            p_target.fig.suptitle(title_v, fontsize=title_fontsize, y=0.9)
 
         # remove snapshot = snapshot_id title from middle plots (already included in targets (top row))
         for ax in list(p_pred.axes.flat):
             ax.set_title('')
-
-        # Add bulk errors (per snapshot) as title to error subplots
-        for i, (ax, snap_num) in enumerate(zip(p_err.axes.flat, p_err.col_names)):
-            snapshot_mae = float(getattr(p_err.data, f'{var}_mae').sel({data_dim: snap_num}).mean().data)
-            snapshot_bias = float(getattr(p_err.data, f'{var}_bias').sel({data_dim: snap_num}).mean().data)
-            ax.set_title(
-                f"$MAE={snapshot_mae:.3f}$, Bias$={snapshot_bias:.3f}$",
-                fontsize=label_fontsize,
-            )
+        if plot_error and not only_plot_preds:
+            # Add bulk errors (per snapshot) as title to error subplots
+            for i, (ax, snap_num) in enumerate(zip(p_err.axes.flat, p_err.col_names)):
+                snapshot_mae = float(getattr(p_err.data, f'{var}_mae').sel({data_dim: snap_num}).mean().data)
+                snapshot_bias = float(getattr(p_err.data, f'{var}_bias').sel({data_dim: snap_num}).mean().data)
+                snapshot_bias_f = "" if var == 'pr' else f"Bias$={snapshot_bias:.3f}$"
+                snapshot_mae_f = f"{snapshot_mae:.6f}" if var == 'pr' else f"{snapshot_mae:.3f}"
+                ax.set_title(
+                    f"$MAE={snapshot_mae_f}$, {snapshot_bias_f}",
+                    fontsize=label_fontsize,
+                )
 
     return ps
 

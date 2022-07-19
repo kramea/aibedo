@@ -11,6 +11,8 @@ import pytorch_lightning as pl
 from pytorch_lightning.utilities.types import EVAL_DATALOADERS
 import numpy as np
 import xarray as xr
+
+from aibedo.models.base_model import BaseModel
 from aibedo.utilities.naming import var_names_to_clean_name
 from aibedo.utilities.utils import get_logger
 
@@ -155,10 +157,12 @@ class AIBEDO_DataModule(pl.LightningDataModule):
     def predict_dataloader(self) -> EVAL_DATALOADERS:
         return DataLoader(dataset=self._data_predict, **self._shared_eval_dataloader_kwargs())
 
-    def get_predictions(self, model: nn.Module,
+    def get_predictions(self, model: BaseModel,
                         dataloader: DataLoader = None,
                         filename: str = None,
-                        device: torch.device = None):
+                        device: torch.device = None,
+                        return_raw_outputs: bool = False,
+                        ):
         """
         Get the predictions and groundtruth for the prediction set (self._data_predict), by default the test data.
         if filename is a string:
@@ -178,7 +182,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         """
         if device is None:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model = model.to(device)
+        model: BaseModel = model.to(device)
         predict_loader = self.predict_dataloader() if dataloader is None else dataloader
         if predict_loader.dataset is None:
             if dataloader is not None:
@@ -189,9 +193,13 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         preds, targets = dict(), dict()
         for i, batch in enumerate(predict_loader):
             data_in, data_out = batch
-            # get targets/preds dict of output var name -> tensor
-            batch_preds = model.predict(data_in.to(device))
-            batch_targets = model._split_raw_preds_per_target_variable(data_out)
+            # get targets/preds dict of output var name -> tensor (in denormalized scale!)
+            MONTH_IDX = self.input_var_to_idx['month']
+            month_of_outputs = data_in[:, 0, MONTH_IDX]  # idx 0 is arbitrary; has shape (batch_size,)
+
+            predict_kwargs = dict(return_raw_outputs=return_raw_outputs, month_of_outputs=month_of_outputs)
+            batch_preds = model.predict(data_in.to(device), **predict_kwargs)
+            batch_targets = model.raw_outputs_to_denormalized_per_variable_dict(data_out, **predict_kwargs)
             # Now concatenate the predictions and the targets across all batches
             for out_var in batch_preds.keys():
                 batch_preds_numpy = batch_preds[out_var].detach().cpu().numpy()
@@ -208,14 +216,15 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             np.savez_compressed(filename, groundtruth=groundtruth, predictions=predictions)
         return {'preds': preds, 'targets': targets}
 
-    def get_predictions_xarray(self, model: nn.Module, **kwargs) -> xr.Dataset:
+    def get_predictions_xarray(self, model: nn.Module, variables='all', **kwargs) -> xr.Dataset:
         numpy_preds_targets = self.get_predictions(model, **kwargs)
         preds, targets = numpy_preds_targets['preds'], numpy_preds_targets['targets']
         var_shape = preds[list(preds.keys())[0]].shape[:-1]
         dim_names = ['snapshot', 'latitude', 'longitude'] if len(var_shape) == 3 else ['snapshot', 'spatial_dim']
 
         data_vars = dict()
-        for i, output_var in enumerate(self.hparams.output_vars):  # usually ['tas_pre', 'psl_pre', 'pr_pre']
+        out_vars = list(preds.keys()) if variables == 'all' else list(variables)
+        for i, output_var in enumerate(out_vars):  # usually ['tas', 'psl', 'pr'], maybe also 'tas_pre' etc.
             output_var_pred = preds[output_var]
             output_var_target = targets[output_var]
             data_vars[f"{output_var}_preds"] = (dim_names, output_var_pred)
@@ -239,7 +248,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 #  **self.masks(),
             ), attrs=dict(
                 description=f"ML emulated predictions.",
-                variable_names=";".join(self.hparams.output_vars),
+                variable_names=";".join(out_vars),
             ))
         return xr_dset
 

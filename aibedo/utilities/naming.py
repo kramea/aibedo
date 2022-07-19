@@ -91,8 +91,10 @@ def get_group_name(config) -> str:
 
 def var_names_to_clean_name() -> Dict[str, str]:
     """ This is a clean name for the variables (e.g. for plotting)"""
-    return {
-        'tas_pre': 'Air Temperature',
-        'psl_pre': "Surface Pressure",
-        'pr_pre': "Precipitation",
+    var_dict = {
+        'tas': 'Air Temperature',
+        'psl': "Surface Pressure",
+        'pr': "Precipitation",
     }
+    var_dict = {**var_dict, **{f'{k}_pre': f'{v} (normalized)' for k, v in var_dict.items()}}
+    return var_dict
