@@ -61,7 +61,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self.model_config = model_config
         self._data_train = self._data_val = self._data_test = self._data_predict = None
         self._possible_test_sets = ['merra2', 'era5']
-        if self.model_config.physics_loss_weights[2] > 0 or True:
+        if True or self.model_config.physics_loss_weights[2] > 0:
             self.hparams.auxiliary_vars = ['evspsbl_pre']
         else:
             self.hparams.auxiliary_vars = []
@@ -155,8 +155,10 @@ class AIBEDO_DataModule(pl.LightningDataModule):
     def predict_dataloader(self) -> EVAL_DATALOADERS:
         return DataLoader(dataset=self._data_predict, **self._shared_eval_dataloader_kwargs())
 
-    def get_predictions(self, model: nn.Module, dataloader: DataLoader = None,
-                        filename: str = None, device: torch.device = None):
+    def get_predictions(self, model: nn.Module,
+                        dataloader: DataLoader = None,
+                        filename: str = None,
+                        device: torch.device = None):
         """
         Get the predictions and groundtruth for the prediction set (self._data_predict), by default the test data.
         if filename is a string:
@@ -186,7 +188,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
 
         for i, batch in enumerate(predict_loader):
             data_in, data_out = batch
-            preds = model(data_in.to(device))
+            preds = model.predict(data_in.to(device))
             preds_numpy = preds.detach().cpu().numpy()
             gt_numpy = data_out.detach().cpu().numpy()
             if i == 0:
