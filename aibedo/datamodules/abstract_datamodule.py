@@ -186,32 +186,35 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             self.setup(stage='predict')
             predict_loader = self.predict_dataloader()
 
+        preds, targets = dict(), dict()
         for i, batch in enumerate(predict_loader):
             data_in, data_out = batch
-            preds = model.predict(data_in.to(device))
-            preds_numpy = preds.detach().cpu().numpy()
-            gt_numpy = data_out.detach().cpu().numpy()
-            if i == 0:
-                predictions = preds_numpy
-                groundtruth = gt_numpy
-            else:
-                predictions = np.concatenate((predictions, preds_numpy), axis=0)
-                groundtruth = np.concatenate((groundtruth, gt_numpy), axis=0)
+            batch_preds = model.predict(data_in.to(device))
+            for out_var in preds.keys():
+                batch_preds_numpy = batch_preds[out_var].detach().cpu().numpy()
+                batch_gt_numpy = data_out[out_var].detach().cpu().numpy()
+                if i == 0:
+                    preds[out_var] = batch_preds_numpy
+                    targets[out_var] = batch_gt_numpy
+                else:
+                    preds[out_var] = np.concatenate((preds[out_var], batch_preds_numpy), axis=0)
+                    targets[out_var] = np.concatenate((targets[out_var], batch_gt_numpy), axis=0)
 
         if filename is not None:
+            raise NotImplementedError("The filename argument is not implemented yet.")
             np.savez_compressed(filename, groundtruth=groundtruth, predictions=predictions)
-        return {'preds': predictions, 'targets': groundtruth}
+        return {'preds': preds, 'targets': targets}
 
     def get_predictions_xarray(self, model: nn.Module, **kwargs) -> xr.Dataset:
         numpy_preds_targets = self.get_predictions(model, **kwargs)
         preds, targets = numpy_preds_targets['preds'], numpy_preds_targets['targets']
-        var_shape = preds.shape[:-1]
+        var_shape = preds[list(preds.keys())[0]].shape[:-1]
         dim_names = ['snapshot', 'latitude', 'longitude'] if len(var_shape) == 3 else ['snapshot', 'spatial_dim']
 
         data_vars = dict()
         for i, output_var in enumerate(self.hparams.output_vars):  # usually ['tas_pre', 'psl_pre', 'pr_pre']
-            output_var_pred = preds[..., i]
-            output_var_target = targets[..., i]
+            output_var_pred = preds[output_var]
+            output_var_target = targets[output_var]
             data_vars[f"{output_var}_preds"] = (dim_names, output_var_pred)
             data_vars[f"{output_var}_targets"] = (dim_names, output_var_target)
             diff = output_var_pred - output_var_target
