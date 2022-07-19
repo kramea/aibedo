@@ -189,10 +189,13 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         preds, targets = dict(), dict()
         for i, batch in enumerate(predict_loader):
             data_in, data_out = batch
+            # get targets/preds dict of output var name -> tensor
             batch_preds = model.predict(data_in.to(device))
+            batch_targets = model._split_raw_preds_per_target_variable(data_out)
+            # Now concatenate the predictions and the targets across all batches
             for out_var in batch_preds.keys():
                 batch_preds_numpy = batch_preds[out_var].detach().cpu().numpy()
-                batch_gt_numpy = data_out[out_var].detach().cpu().numpy()
+                batch_gt_numpy = batch_targets[out_var].detach().cpu().numpy()
                 if i == 0:
                     preds[out_var] = batch_preds_numpy
                     targets[out_var] = batch_gt_numpy

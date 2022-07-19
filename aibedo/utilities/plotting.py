@@ -150,7 +150,7 @@ def data_mean_plotting(postprocessed_xarray: xr.Dataset,
                      'pad': 0.01,  # padding between right-ost subplot and cbar
                      'fraction': 0.05}
     )
-    output_vars = postprocessed_xarray.variable_names
+    output_vars = postprocessed_xarray.variable_names.split(";")
     nrows = 1 if plot_only_errors else 3
     ncols = len(output_vars)
     fig, axs = plt.subplots(nrows, ncols,
@@ -240,7 +240,7 @@ def data_snapshots_plotting2(postprocessed_xarray: xr.Dataset,
                      'pad': 0.01,  # padding between right-ost subplot and cbar
                      'fraction': 0.05}
     )
-    output_vars = postprocessed_xarray.variable_names
+    output_vars = postprocessed_xarray.variable_names.split(";")
     vmin = vmax = None
     ps = dict()
     for var in output_vars:
