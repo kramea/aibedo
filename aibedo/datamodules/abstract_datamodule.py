@@ -190,7 +190,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         for i, batch in enumerate(predict_loader):
             data_in, data_out = batch
             batch_preds = model.predict(data_in.to(device))
-            for out_var in preds.keys():
+            for out_var in batch_preds.keys():
                 batch_preds_numpy = batch_preds[out_var].detach().cpu().numpy()
                 batch_gt_numpy = data_out[out_var].detach().cpu().numpy()
                 if i == 0:
