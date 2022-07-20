@@ -279,16 +279,17 @@ def data_snapshots_plotting2(postprocessed_xarray: xr.Dataset,
 def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                             error_to_plot: str = "mae",
                             vars_to_plot: List[str] = 'all',
-                            num_snapshots_to_plot: int = 5,
                             snapshots_to_plot: List[int] = None,
+                            num_snapshots_to_plot: int = 5,
                             data_dim: str = 'snapshot',
                             longitude_dim: str = 'longitude',
                             latitude_dim: str = 'latitude',
                             robust: bool = True,
                             same_colorbar_for_preds_and_targets: bool = True,
-                            only_plot_preds: bool = False,
+                            plot_only_preds: bool = False,
                             plot_error: bool = True,
                             marker_size: int = 2,
+                            coastlines_linewidth: float = 1,
                             title: str = "",
                             title_fontsize: int = 18,
                             cmap='auto',
@@ -300,6 +301,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
         postprocessed_xarray: The xarray Dataset with the data to plot.
         error_to_plot (str): Which error to plot. Default is 'mae'. Other options: 'bias', 'mae_score'
         vars_to_plot: Which output variables to plot. Default is 'all' (plot all output variables).
+        snapshots_to_plot: A list of snapshots to plot. If None, then sample a random subset of the snapshots.
         num_snapshots_to_plot (int): The number of snapshots to plot (subsamples from the time dimension).
         data_dim (str): the data dimension (i.e. the example/time dimension)
         longitude_dim (str): name of the longitude dimension
@@ -310,8 +312,13 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
         same_colorbar_for_preds_and_targets:
             If True: use the same colorbar (magnitude) is used for the predictions and targets subplots.
                     This can ease the visual comparison of the predictions and targets.
+        plot_only_preds (bool): If True, only plot the predictions, else plot targets, preds, and optionally the error.
+        plot_error (bool): If True, plot the error. Default is True.
         marker_size: The size of the markers in the plot.
+        title (str): The title of the plot (appended to the variable name title if only_plot_preds is False).
+                        If None, then no title is shown.
         title_fontsize: The fontsize of the title.
+        cmap (str): The colormap to use. Default is 'auto' (== pre-defined cmaps), use None for matplotlib default.
         seed (int): The seed for the random sampling of the snapshots.
 
     Returns:
@@ -352,7 +359,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
     ps = dict()
     for var in output_vars:
         cmap = p_cmap = var_names_to_cmap[var] if cmap == 'auto' else cmap
-        if not only_plot_preds:
+        if not plot_only_preds:
             p_target = xr.plot.scatter(hue=f'{var}_targets', cmap=cmap, **kwargs)
             if same_colorbar_for_preds_and_targets:
                 # Set the same colorbar for the predictions and targets subplots
@@ -360,17 +367,17 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                 p_cmap = p_target.cbar.cmap
             # Set coastlines of all axes
             for ax in list(p_target.axes.flat):
-                ax.coastlines()
+                ax.coastlines(linewidth=coastlines_linewidth)
 
         p_pred = xr.plot.scatter(hue=f'{var}_preds', cmap=p_cmap, vmin=vmin, vmax=vmax, **kwargs)
-        if plot_error and not only_plot_preds:
+        if plot_error and not plot_only_preds:
             p_err = xr.plot.scatter(hue=f'{var}_{error_to_plot}', **kwargs)
             for ax in list(p_err.axes.flat):
-                ax.coastlines()
+                ax.coastlines(linewidth=coastlines_linewidth)
         ps[var] = {'targets': p_target, 'preds': p_pred, error_to_plot: p_err}
 
         # Set row names (ylabel) for the leftmost subplot of each row
-        dtypes = ['preds'] if only_plot_preds else ['targets', 'preds', error_to_plot] if plot_error else ['targets', 'preds']
+        dtypes = ['preds'] if plot_only_preds else ['targets', 'preds', error_to_plot] if plot_error else ['targets', 'preds']
         for dtype in dtypes:
             pc = ps[var][dtype]
             ylabel = dtype.upper() if dtype == error_to_plot else dtype.capitalize()
@@ -381,11 +388,11 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
 
         # Set coastlines of all axes
         for ax in list(p_pred.axes.flat):
-            ax.coastlines()
+            ax.coastlines(linewidth=coastlines_linewidth)
 
-        if only_plot_preds:
+        if plot_only_preds:
             p_pred.fig.suptitle(title, fontsize=title_fontsize, y=0.9)
-        else:
+        elif title is not None:
             # Add title to variable subplots at the middle top
             title_v = f"{var_names_to_clean_name()[var]} {title}"  # (${error_to_plot.upper()}={snapshot_err:.3f}$)"
             p_target.fig.suptitle(title_v, fontsize=title_fontsize, y=0.9)
@@ -393,7 +400,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
         # remove snapshot = snapshot_id title from middle plots (already included in targets (top row))
         for ax in list(p_pred.axes.flat):
             ax.set_title('')
-        if plot_error and not only_plot_preds:
+        if plot_error and not plot_only_preds:
             # Add bulk errors (per snapshot) as title to error subplots
             for i, (ax, snap_num) in enumerate(zip(p_err.axes.flat, p_err.col_names)):
                 snapshot_mae = float(getattr(p_err.data, f'{var}_mae').sel({data_dim: snap_num}).mean().data)

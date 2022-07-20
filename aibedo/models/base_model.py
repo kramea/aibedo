@@ -14,7 +14,8 @@ import torchmetrics
 from aibedo.data_transforms.normalization import get_variable_stats, get_clim_err, destandardize, standardize
 
 from aibedo.data_transforms.transforms import AbstractTransform
-from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint, mass_conservation_constraint
+from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint, \
+    mass_conservation_constraint
 from aibedo.utilities.utils import get_logger, to_DictConfig, get_loss, raise_error_if_invalid_value
 from aibedo.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
 
@@ -80,7 +81,7 @@ class BaseModel(LightningModule):
             var: i for i, var
             in enumerate(
                 list(datamodule_config.input_vars) + ['month'] + ['evspsbl_pre']
-         )}
+            )}
         # Infer the data dimensions
         self._data_dir = datamodule_config.data_dir
         self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
@@ -105,6 +106,10 @@ class BaseModel(LightningModule):
             'val/mse': torchmetrics.MeanSquaredError(squared=True),
             **{
                 f'{output_var}/val/mse': torchmetrics.MeanSquaredError(squared=True)
+                for output_var in self.output_var_names
+            },
+            **{
+                f"val/{output_var.replace('_pre', '')}/rmse": torchmetrics.MeanSquaredError(squared=False)
                 for output_var in self.output_var_names
             }
         })
@@ -168,6 +173,10 @@ class BaseModel(LightningModule):
                 **{
                     f'{output_var}/{self.test_set_name}/mse': torchmetrics.MeanSquaredError(squared=True)
                     for output_var in self.output_var_names
+                },
+                **{
+                    f"{self.test_set_name}/{output_var.replace('_pre', '')}/rmse": torchmetrics.MeanSquaredError(squared=False)
+                    for output_var in self.output_var_names
                 }
             }).type_as(self)
         return self._test_metrics
@@ -188,6 +197,10 @@ class BaseModel(LightningModule):
         if self._output_vars is None:
             self._output_vars = self.trainer.datamodule.hparams.output_vars
         return self._output_vars
+
+    @property
+    def logging_output_var_names(self) -> List[str]:
+        return self.output_var_names + [x.replace('_pre', '') for x in self.output_var_names]
 
     def _check_args(self):
         """Check if the arguments are valid."""
@@ -241,7 +254,7 @@ class BaseModel(LightningModule):
             E.g. 'pr_pre', 'tas_pre' will all be the keys to the respective predicted/target tensor.
         """
         preds_per_target_variable = {
-            var_name: outputs_tensor[..., i]   # index the tensor along the last dimension
+            var_name: outputs_tensor[..., i]  # index the tensor along the last dimension
             for i, var_name in enumerate(self.output_var_names)
         }
         return preds_per_target_variable
@@ -257,8 +270,8 @@ class BaseModel(LightningModule):
         else:
             # try to get the mean and std from the data directory
             mean, std = get_variable_stats(var_id=var_id, data_dir=self.data_dir, files_id=self.sphere)
-        mean, std = mean.to(normalized_var.device), std.to(normalized_var.device)
-        month_of_var = month_of_var.to(normalized_var.device)
+        mean, std = mean.type_as(normalized_var), std.type_as(normalized_var)
+        month_of_var = month_of_var.type_as(normalized_var)
         index_months_kwargs = dict(dim=0, index=month_of_var.long())  # index_select requires long type indices
         # torch.index_select(.) will ensure that the correct monthly mean/std is used for each example/snapshot:
         #  E.g. pr_mean has shape (12, num_grid_cells), and the use of index_select assumes that index 0 is for january,
@@ -284,6 +297,7 @@ class BaseModel(LightningModule):
             outputs_tensor: A tensor of shape (batch_size, num_grid_cells, num_output_vars) in normalized scale.
             month_of_outputs: A tensor of shape (batch_size,) with the month of each output, optional.
             input_tensor: A tensor of shape (batch_size, num_grid_cells, num_input_vars), optional.
+            return_raw_outputs (bool): If True, the raw outputs (vars with '_pre') will be returned as well.
 
         ** Note: One of month_of_outputs or input_tensor must be provided!
 
@@ -303,16 +317,19 @@ class BaseModel(LightningModule):
             denormed_Y_per_target_variable[var_id] = self._denormalize_variable(var_tensor, month_of_outputs, var_name)
         if return_raw_outputs:
             return {**denormed_Y_per_target_variable, **preds_per_target_variable}
-
         return denormed_Y_per_target_variable
+
+    def raw_preds_to_denormalized_per_variable_dict(self, preds_tensor: Tensor, **kwargs) -> Dict[str, Tensor]:
+        Y: Dict[str, Tensor] = self.raw_outputs_to_denormalized_per_variable_dict(preds_tensor, **kwargs)
+        # Enforce non-negative precipitation (constraint 4)
+        if self.hparams.physics_loss_weights[3] > 0:
+            Y['pr'] = nonnegative_precipitation(Y['pr'])
+        return Y
 
     def predict(self, X, **kwargs) -> Dict[str, Tensor]:
         """ Predict the de-normalized (!) output/predicted/target variables for the given input X. """
         Y_normed: Tensor = self.raw_predict(X)
-        Y: Dict[str, Tensor] = self.raw_outputs_to_denormalized_per_variable_dict(Y_normed, input_tensor=X, **kwargs)
-        # Enforce non-negative precipitation (constraint 4); needs to be done before the main loss is computed
-        if self.hparams.physics_loss_weights[3] > 0:
-            Y['pr'] = nonnegative_precipitation(Y['pr'])
+        Y: Dict[str, Tensor] = self.raw_preds_to_denormalized_per_variable_dict(Y_normed, input_tensor=X, **kwargs)
         return Y
 
     # --------------------- training with PyTorch Lightning
@@ -414,20 +431,21 @@ class BaseModel(LightningModule):
         kwargs['sync_dist'] = True  # for DDP training
         # First compute the bulk error metrics (averaging out over all target variables)
         for metric_name, metric in torch_metrics.items():
-            if any([out_var_name in metric_name for out_var_name in self.output_var_names]):
-                # Per output variable error are not computed yet
+            if any([out_var_name in metric_name for out_var_name in self.logging_output_var_names]):
+                # Per output variable error will not be computed yet
                 continue
             metric(preds, Y)  # compute metrics (need to be in separate line to the following line!)
             log_dict[metric_name] = metric
         self.log_dict(log_dict, on_step=True, on_epoch=True, **kwargs)  # log metric objects
         # Now compute per output variable errors
+        preds = self.raw_outputs_to_denormalized_per_variable_dict(preds, input_tensor=X, return_raw_outputs=True)
+        Y = self.raw_preds_to_denormalized_per_variable_dict(Y, input_tensor=X, return_raw_outputs=True)
+
         log_dict = dict()
-        preds = self._split_raw_preds_per_target_variable(preds)
-        Y = self._split_raw_preds_per_target_variable(Y)
         for metric_name, metric in torch_metrics.items():
-            if not any([out_var_name in metric_name for out_var_name in self.output_var_names]):
+            if not any([out_var_name in metric_name for out_var_name in self.logging_output_var_names]):
                 continue
-            out_var_name = metric_name.split('/')[0]
+            out_var_name = metric_name.split('/')[0] if '_pre' in metric_name else metric_name.split('/')[1]
             metric(preds[out_var_name], Y[out_var_name])
             log_dict[metric_name] = metric
         kwargs['prog_bar'] = False  # do not show in progress bar the per-output variable metrics

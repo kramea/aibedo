@@ -1,14 +1,27 @@
+from typing import Tuple
+
 import torch
+from torch import Tensor
+from torch.utils.data import Dataset
 
 
-class AIBEDOTensorDataset(torch.utils.data.Dataset):
-    def __init__(self, X, targets):
-        assert X.shape[0] == targets.shape[0]
-        self.X = torch.from_numpy(X).float() if isinstance(X, np.ndarray) else torch.tensor(X).float()
-        self.monsoon_index = torch.tensor(targets)
+class AIBEDOTensorDataset(Dataset[Tuple[Tensor, ...]]):
+    r"""Dataset wrapping tensors.
 
-    def __getitem__(self, i):
-        return self.X[i], self.monsoon_index[i]
+    Each sample will be retrieved by indexing tensors along the first dimension.
+
+    Args:
+        *tensors (Tensor): tensors that have the same size of the first dimension.
+    """
+    tensors: Tuple[Tensor, ...]
+
+    def __init__(self, *tensors: Tensor, dataset_id='') -> None:
+        assert all(tensors[0].size(0) == tensor.size(0) for tensor in tensors), "Size mismatch between tensors"
+        self.tensors = tensors
+        self.dataset_id = dataset_id
+
+    def __getitem__(self, index):
+        return tuple(tensor[index] for tensor in self.tensors)
 
     def __len__(self):
-        return self.X.shape[0]
+        return self.tensors[0].size(0)

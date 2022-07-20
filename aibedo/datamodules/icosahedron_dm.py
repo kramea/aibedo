@@ -1,11 +1,13 @@
 import os.path
-from typing import Optional, List, Sequence
+from typing import Optional, List, Sequence, Tuple
 
 import torch
 import xarray as xr
 import numpy as np
-from torch.utils.data import TensorDataset
+from torch import Tensor
+from torch.utils.data import TensorDataset, Dataset
 from aibedo.datamodules.abstract_datamodule import AIBEDO_DataModule
+from aibedo.datamodules.torch_dataset import AIBEDOTensorDataset
 from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value
 from aibedo.skeleton_framework.data_loader import shuffle_data
 from aibedo.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
@@ -84,7 +86,10 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
 
         return dataset_aux
 
-    def _process_nc_dataset(self, input_filename: str, output_filename: str, shuffle: bool = False):
+    def _process_nc_dataset(self,
+                            input_filename: str,
+                            output_filename: str,
+                            shuffle: bool = False, stage=None):
         input_file = os.path.join(self.hparams.data_dir, input_filename)
         output_file = os.path.join(self.hparams.data_dir, output_filename)
         in_ds = xr.open_dataset(input_file)
@@ -96,6 +101,9 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         # Input data
         dataset_in = self._concat_variables_into_channel_dim(in_ds, in_vars, input_file)
         # Output data
+        if stage == 'predict':
+            log.info(f" Using raw output data from {os.path.basename(output_file)} for prediction targets.")
+            out_vars = [x.replace('_pre', '') for x in out_vars]
         dataset_out = self._concat_variables_into_channel_dim(out_ds, out_vars, output_file)
         # Auxiliary data
         dataset_aux = self._get_auxiliary_data(in_ds, out_ds)
@@ -120,7 +128,6 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         if self.hparams.time_lag > 0:
             input_data = input_data[:-self.hparams.time_lag]
             output_data = output_data[self.hparams.time_lag:]
-        # log.warning(f"No model specific transform applied for {self.model_config._target_}.")
 
         return input_data, output_data
 
@@ -139,7 +146,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
             fname_in = self.hparams.input_filename
             fname_out = fname_in.replace("Input.Exp8_fixed.nc", "Output.nc")
-            train_data_in, train_data_out = self._process_nc_dataset(fname_in, fname_out, shuffle=True)
+            train_data_in, train_data_out = self._process_nc_dataset(fname_in, fname_out, shuffle=True, stage=stage)
             X_train, X_val, Y_train, Y_val = train_test_split(train_data_in, train_data_out, train_size=train_frac,
                                                               random_state=self.hparams.seed)
 
@@ -155,19 +162,20 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             else:
                 raise ValueError(f"Unknown test_frac: {test_frac}")
             if stage in ["test", "predict"]:
-                X_test, Y_test = self._process_nc_dataset(test_input_fname, test_output_fname, shuffle=False)
+                X_test, Y_test = self._process_nc_dataset(test_input_fname, test_output_fname, shuffle=False,
+                                                          stage=stage)
         else:
             X_val, X_test, Y_val, Y_test = train_test_split(X_val, Y_val, test_size=test_frac / (val_frac + test_frac),
                                                             random_state=self.hparams.seed)
 
         if stage in ["predict", None]:
-            self._data_predict = get_tensor_dataset_from_numpy(X_test, Y_test)
+            self._data_predict = get_tensor_dataset_from_numpy(X_test, Y_test, dataset_id='predict')
         if stage == 'fit' or stage is None:
-            self._data_train = get_tensor_dataset_from_numpy(X_train, Y_train)
+            self._data_train = get_tensor_dataset_from_numpy(X_train, Y_train, dataset_id='train')
         if stage in ["fit", 'val', 'validation', None]:
-            self._data_val = get_tensor_dataset_from_numpy(X_val, Y_val)
+            self._data_val = get_tensor_dataset_from_numpy(X_val, Y_val, dataset_id='val')
         if stage in ['test', None]:
-            self._data_test = get_tensor_dataset_from_numpy(X_test, Y_test)
+            self._data_test = get_tensor_dataset_from_numpy(X_test, Y_test, dataset_id='test')
 
         # Data has shape (#examples, #pixels, #channels)
         if stage in ["fit", None]:
@@ -190,6 +198,6 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             raise ValueError(f"Unknown test_frac: {test_frac}")
 
 
-def get_tensor_dataset_from_numpy(*ndarrays) -> TensorDataset:
+def get_tensor_dataset_from_numpy(*ndarrays, dataset_id="") -> AIBEDOTensorDataset:
     tensors = [torch.from_numpy(ndarray).float() for ndarray in ndarrays]
-    return TensorDataset(*tensors)
+    return AIBEDOTensorDataset(*tensors, dataset_id=dataset_id)

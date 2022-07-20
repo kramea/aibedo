@@ -12,9 +12,10 @@ from pytorch_lightning.utilities.types import EVAL_DATALOADERS
 import numpy as np
 import xarray as xr
 
+from aibedo.datamodules.torch_dataset import AIBEDOTensorDataset
 from aibedo.models.base_model import BaseModel
 from aibedo.utilities.naming import var_names_to_clean_name
-from aibedo.utilities.utils import get_logger
+from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value
 
 log = get_logger(__name__)
 
@@ -35,12 +36,17 @@ class AIBEDO_DataModule(pl.LightningDataModule):
     Read the docs:
         https://pytorch-lightning.readthedocs.io/en/latest/extensions/datamodules.html
     """
+    _data_train: AIBEDOTensorDataset
+    _data_val: AIBEDOTensorDataset
+    _data_test: AIBEDOTensorDataset
+    _data_predict: AIBEDOTensorDataset
 
     def __init__(self,
                  input_vars: Sequence[str],
                  output_vars: Sequence[str],
                  data_dir: str,
                  input_filename: str = "compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc",
+                 prediction_data: str = "same_as_test",
                  model_config: DictConfig = None,
                  batch_size: int = 64,
                  eval_batch_size: int = 512,
@@ -63,6 +69,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self.model_config = model_config
         self._data_train = self._data_val = self._data_test = self._data_predict = None
         self._possible_test_sets = ['merra2', 'era5']
+        raise_error_if_invalid_value(prediction_data, self._possible_test_sets + ['val', 'same_as_test'], 'predict_data')
         if True or self.model_config.physics_loss_weights[2] > 0:
             self.hparams.auxiliary_vars = ['evspsbl_pre']
         else:
@@ -190,6 +197,12 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             self.setup(stage='predict')
             predict_loader = self.predict_dataloader()
 
+        if predict_loader.dataset.dataset_id == 'predict':
+            log.info(' Assuming that the used dataloader has raw/non-normalized targets.')
+            RAW_TARGETS = True
+        else:
+            RAW_TARGETS = False
+
         preds, targets = dict(), dict()
         for i, batch in enumerate(predict_loader):
             data_in, data_out = batch
@@ -199,9 +212,12 @@ class AIBEDO_DataModule(pl.LightningDataModule):
 
             predict_kwargs = dict(return_raw_outputs=return_raw_outputs, month_of_outputs=month_of_outputs)
             batch_preds = model.predict(data_in.to(device), **predict_kwargs)
-            batch_targets = model.raw_outputs_to_denormalized_per_variable_dict(data_out, **predict_kwargs)
+            if RAW_TARGETS:
+                batch_targets = model.raw_outputs_to_denormalized_per_variable_dict(data_out, **predict_kwargs)
+            else:
+                batch_targets = model._split_raw_preds_per_target_variable(data_out)
             # Now concatenate the predictions and the targets across all batches
-            for out_var in batch_preds.keys():
+            for out_var in batch_targets.keys():
                 batch_preds_numpy = batch_preds[out_var].detach().cpu().numpy()
                 batch_gt_numpy = batch_targets[out_var].detach().cpu().numpy()
                 if i == 0:
