@@ -243,7 +243,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             out_vars = list(preds.keys())
         else:
             out_vars = list(variables)
-            if any('_pre' in v for v in out_vars) and not return_normalized_outputs:
+            if any(['_pre' in v for v in out_vars]) and not return_normalized_outputs:
                 raise ValueError(f"The variables {out_vars} contain vars with _pre (normalized)"
                                  f" but `return_normalized_outputs` is False.")
         for i, output_var in enumerate(out_vars):  # usually ['tas', 'psl', 'pr'], maybe also 'tas_pre' etc.
