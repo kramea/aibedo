@@ -225,6 +225,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                             same_colorbar_for_preds_and_targets: bool = True,
                             plot_only_preds: bool = False,
                             plot_error: bool = True,
+                            data_to_plot = ('targets', 'preds', 'error'),
                             marker_size: int = 2,
                             coastlines_linewidth: float = 1,
                             title: str = "",
@@ -271,6 +272,24 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
         snaps = sorted(random.sample(range(postprocessed_xarray.dims[data_dim]), num_snapshots_to_plot))
     else:
         snaps = snapshots_to_plot
+
+    if vars_to_plot == "all":
+        output_vars = postprocessed_xarray.variable_names.split(";")
+    else:
+        assert isinstance(vars_to_plot, list), f"vars_to_plot must be a list, but is {type(vars_to_plot)}"
+        output_vars = vars_to_plot
+
+    data_to_plot = list(set(data_to_plot))
+    assert all(x in ['targets', 'preds', 'error'] for x in data_to_plot)
+    assert len(data_to_plot) > 0
+    plot_only_preds = plot_only_preds or ['preds'] == data_to_plot
+    if plot_only_preds:
+        data_to_plot = ['preds']
+    if len(data_to_plot) == 3 and not plot_error:   # only with default data_to_plot arg
+        data_to_plot.remove('error') if 'error' in data_to_plot else None
+    if 'error' in data_to_plot and f'{vars_to_plot[0]}_{error_to_plot}' not in postprocessed_xarray.keys():
+        raise ValueError(f"The error to plot {vars_to_plot[0]}_{error_to_plot} is not in the dataset! ")
+
     proj = ccrs.PlateCarree()
     label_fontsize = title_fontsize // 1.5
     ds_snaps = postprocessed_xarray.isel({'snapshot': snaps})
@@ -287,16 +306,11 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                      'pad': 0.01,  # padding between right-ost subplot and cbar
                      'fraction': 0.05}
     )
-    if vars_to_plot == "all":
-        output_vars = postprocessed_xarray.variable_names.split(";")
-    else:
-        assert isinstance(vars_to_plot, list), f"vars_to_plot must be a list, but is {type(vars_to_plot)}"
-        output_vars = vars_to_plot
-    p_target = p_err = vmin = vmax = None
+    p_target = p_err = p_pred = vmin = vmax = None
     ps = dict()
     for var in output_vars:
         cmap = p_cmap = var_names_to_cmap[var] if cmap == 'auto' else cmap
-        if not plot_only_preds:
+        if 'targets' in data_to_plot:
             p_target = xr.plot.scatter(hue=f'{var}_targets', cmap=cmap, **kwargs)
             if same_colorbar_for_preds_and_targets:
                 # Set the same colorbar for the predictions and targets subplots
@@ -305,48 +319,54 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
             # Set coastlines of all axes
             for ax in list(p_target.axes.flat):
                 ax.coastlines(linewidth=coastlines_linewidth)
+        if 'preds' in data_to_plot:
+            p_pred = xr.plot.scatter(hue=f'{var}_preds', cmap=p_cmap, vmin=vmin, vmax=vmax, **kwargs)
+            # Set coastlines of all axes
+            for ax in list(p_pred.axes.flat):
+                ax.coastlines(linewidth=coastlines_linewidth)
 
-        p_pred = xr.plot.scatter(hue=f'{var}_preds', cmap=p_cmap, vmin=vmin, vmax=vmax, **kwargs)
-        if plot_error and not plot_only_preds:
+        if 'error' in data_to_plot:
             p_err = xr.plot.scatter(hue=f'{var}_{error_to_plot}', **kwargs)
             for ax in list(p_err.axes.flat):
                 ax.coastlines(linewidth=coastlines_linewidth)
         ps[var] = {'targets': p_target, 'preds': p_pred, error_to_plot: p_err}
 
-        # Set row names (ylabel) for the leftmost subplot of each row
-        dtypes = ['preds'] if plot_only_preds else ['targets', 'preds', error_to_plot] if plot_error else ['targets',
-                                                                                                           'preds']
-        for dtype in dtypes:
-            pc = ps[var][dtype]
-            ylabel = dtype.upper() if dtype == error_to_plot else dtype.capitalize()
+        # Set row names (ylabel) for the leftmost subplot of each row                                          'preds']
+        for dtype in data_to_plot:
+            k = error_to_plot if dtype == 'error' else dtype
+            pc = ps[var][k]
+            ylabel = error_to_plot.upper() if dtype == 'error' else dtype.capitalize()
             # pc.axes.flat[0].set_ylabel(ylabel, size=label_fontsize)
             # Edit the colorbar
             pc.cbar.set_label(ylabel, size=label_fontsize)
             pc.cbar.ax.tick_params(labelsize=label_fontsize // 1.7)
 
-        # Set coastlines of all axes
-        for ax in list(p_pred.axes.flat):
-            ax.coastlines(linewidth=coastlines_linewidth)
-
         if plot_only_preds:
             p_pred.fig.suptitle(title, fontsize=title_fontsize, y=0.9)
-        elif title is not None:
+        elif title is not None and 'targets' in data_to_plot:
             # Add title to variable subplots at the middle top
             title_v = f"{var_names_to_clean_name()[var]} {title}"  # (${error_to_plot.upper()}={snapshot_err:.3f}$)"
             p_target.fig.suptitle(title_v, fontsize=title_fontsize, y=0.9)
 
-        # remove snapshot = snapshot_id title from middle plots (already included in targets (top row))
-        for ax in list(p_pred.axes.flat):
-            ax.set_title('')
-        if plot_error and not plot_only_preds:
+        if 'targets' in data_to_plot and 'preds' in data_to_plot:
+            # remove snapshot = snapshot_id title from middle plots (already included in targets (top row))
+            for ax in list(p_pred.axes.flat):
+                ax.set_title('')
+
+        if 'error' in data_to_plot:
             # Add bulk errors (per snapshot) as title to error subplots
+            snapshot_mae_f = snapshot_bias_f = ""
             for i, (ax, snap_num) in enumerate(zip(p_err.axes.flat, p_err.col_names)):
-                snapshot_mae = float(getattr(p_err.data, f'{var}_mae').sel({data_dim: snap_num}).mean().data)
-                snapshot_bias = float(getattr(p_err.data, f'{var}_bias').sel({data_dim: snap_num}).mean().data)
-                snapshot_bias_f = "" if var == 'pr' else f"Bias$={snapshot_bias:.3f}$"
-                snapshot_mae_f = f"{snapshot_mae:.6f}" if var == 'pr' else f"{snapshot_mae:.3f}"
+                if hasattr(p_err.data, f'{var}_mae'):
+                    snapshot_mae = float(getattr(p_err.data, f'{var}_mae').sel({data_dim: snap_num}).mean().data)
+                    snapshot_mae_f = f"$MAE={snapshot_mae:.6f}$" if var == 'pr' else f"$MAE={snapshot_mae:.3f}$"
+
+                if hasattr(p_err.data, f'{var}_bias'):
+                    snapshot_bias = float(getattr(p_err.data, f'{var}_bias').sel({data_dim: snap_num}).mean().data)
+                    snapshot_bias_f = "" if var == 'pr' else f"Bias$={snapshot_bias:.3f}$"
+
                 ax.set_title(
-                    f"$MAE={snapshot_mae_f}$, {snapshot_bias_f}",
+                    f"{snapshot_mae_f} {snapshot_bias_f}",
                     fontsize=label_fontsize,
                 )
 
