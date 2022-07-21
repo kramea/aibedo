@@ -8,6 +8,7 @@ import einops
 import pandas as pd
 import xarray as xr
 import cartopy.crs as ccrs
+from matplotlib import animation
 
 from aibedo.utilities.naming import var_names_to_clean_name
 
@@ -102,6 +103,17 @@ def set_labels_and_ticks(ax,
 
     if show:
         plt.show()
+
+
+def adjust_subplots_spacing(
+        left=0.125,  # the left side of the subplots of the figure
+        right=0.9,  # the right side of the subplots of the figure
+        bottom=0.1,  # the bottom of the subplots of the figure
+        top=0.9,  # the top of the subplots of the figure
+        wspace=0.2,  # the amount of width reserved for blank space between subplots
+        hspace=0.2,  # the amount of height reserved for white space between subplots
+):
+    plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
 
 def save_figure(save_to: str, full_screen: bool = False, bbox_inches='tight'):
@@ -199,81 +211,6 @@ def data_mean_plotting(postprocessed_xarray: xr.Dataset,
     for ax in np.array(axs).flatten():
         ax.coastlines()
     return fig, axs
-
-
-def data_snapshots_plotting2(postprocessed_xarray: xr.Dataset,
-                             error_to_plot: str = "mae",
-                             num_snapshots_to_plot: int = 5,
-                             data_dim: str = 'snapshot',
-                             longitude_dim: str = 'longitude',
-                             latitude_dim: str = 'latitude',
-                             robust: bool = True,
-                             same_colorbar_for_preds_and_targets: bool = True,
-                             marker_size: int = 2,
-                             title_fontsize: int = 18,
-                             ):
-    """
-
-    Args:
-        postprocessed_xarray: The xarray Dataset with the data to plot.
-        error_to_plot (str): Which error to plot. Default is 'mae'. Other options: 'bias', 'mae_score'
-        num_snapshots_to_plot (int): The number of snapshots to plot (subsamples from the time dimension).
-        data_dim (str): the data dimension (i.e. the example/time dimension)
-        longitude_dim (str): name of the longitude dimension
-        latitude_dim (str): name of the latitude dimension
-        robust:
-            If True: visualize the data without outliers.
-                    This will use the 2nd and 98th percentiles of the data to compute the color limits.
-        same_colorbar_for_preds_and_targets:
-            If True: use the same colorbar (magnitude) is used for the predictions and targets subplots.
-                    This can ease the visual comparison of the predictions and targets.
-        marker_size: The size of the markers in the plot.
-        title_fontsize: The fontsize of the title.
-
-
-    Returns:
-        The matplotlib PathCollection, pcs, as a dictionary with one key for each output variable name.
-        Each value pcs[output_var_name] is a dict that has the following keys:
-            - 'targets': the matplotlib PathCollection for the targets of the output variable
-            - 'preds': the matplotlib PathCollection for the predictions of the output variable
-            - error_to_plot: the matplotlib PathCollection for the error of the output variable
-    """
-    # Sample a random subset of the snapshots
-    snaps = sorted(random.sample(range(postprocessed_xarray.dims[data_dim]), num_snapshots_to_plot))
-    proj = ccrs.PlateCarree()
-    label_fontsize = title_fontsize // 1.5
-    ds_snaps = postprocessed_xarray.isel({'snapshot': snaps})
-    kwargs = dict(
-        x=longitude_dim,
-        y=latitude_dim,
-        row='plotting_dim',
-        col=data_dim,
-        transform=proj,
-        subplot_kws={'projection': proj},
-        s=marker_size,  # marker size
-        robust=robust,
-        cbar_kwargs={'shrink': 0.5,  # make cbar smaller/larger
-                     'pad': 0.01,  # padding between right-ost subplot and cbar
-                     'fraction': 0.05}
-    )
-    output_vars = postprocessed_xarray.variable_names.split(";")
-    vmin = vmax = None
-    ps = dict()
-    for var in output_vars:
-        d1, d2, d3 = getattr(ds_snaps, f'{var}_targets'), getattr(ds_snaps, f'{var}_preds'), getattr(ds_snaps,
-                                                                                                     f'{var}_{error_to_plot}')
-        plotting_ds = xr.concat([d1, d2, d3],
-                                pd.Index(["Targets", "Preds", error_to_plot.upper()], name="plotting_dim"))
-        p_target = xr.plot.scatter(plotting_ds, hue='plotting_dim', cmap=var_names_to_cmap[var], **kwargs)
-
-        for ax in list(p_target.axes.flat):
-            ax.coastlines()
-
-        # Add title to variable subplots at the middle top
-        title_v = f"{var_names_to_clean_name()[var]}"  # (${error_to_plot.upper()}={snapshot_err:.3f}$)"
-        p_target.fig.suptitle(title_v, fontsize=title_fontsize, y=0.9)
-
-    return ps
 
 
 def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
@@ -377,7 +314,8 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
         ps[var] = {'targets': p_target, 'preds': p_pred, error_to_plot: p_err}
 
         # Set row names (ylabel) for the leftmost subplot of each row
-        dtypes = ['preds'] if plot_only_preds else ['targets', 'preds', error_to_plot] if plot_error else ['targets', 'preds']
+        dtypes = ['preds'] if plot_only_preds else ['targets', 'preds', error_to_plot] if plot_error else ['targets',
+                                                                                                           'preds']
         for dtype in dtypes:
             pc = ps[var][dtype]
             ylabel = dtype.upper() if dtype == error_to_plot else dtype.capitalize()
@@ -415,12 +353,31 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
     return ps
 
 
-def adjust_subplots_spacing(
-        left=0.125,  # the left side of the subplots of the figure
-        right=0.9,  # the right side of the subplots of the figure
-        bottom=0.1,  # the bottom of the subplots of the figure
-        top=0.9,  # the top of the subplots of the figure
-        wspace=0.2,  # the amount of width reserved for blank space between subplots
-        hspace=0.2,  # the amount of height reserved for white space between subplots
-):
-    plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+def animate_snapshots(postprocessed_xarray: xr.Dataset,
+                      var_to_plot: str = 'pr_preds',
+                      cmap=None,
+                      interval=400,
+                      ):
+    pa_kwargs = dict(x='longitude', y='latitude', cbar_kwargs={'shrink': 0.5, 'pad': 0.01, 'fraction': 0.03})
+    plt.rc('animation', html='jshtml')
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+
+    n_frames = len(postprocessed_xarray.indexes['snapshot'])
+    first_snap = n_frames - 24
+    first_snap_xr = postprocessed_xarray.isel(snapshot=first_snap)
+    scatter = xr.plot.scatter(first_snap_xr, hue=var_to_plot, cmap=cmap, ax=ax, **pa_kwargs)
+
+    frames = range(first_snap, n_frames)
+    xr_preds = getattr(postprocessed_xarray, var_to_plot)  # dont do (yet): .isel(snapshot=frames)
+
+    ax.gridlines(alpha=0.5)
+    ax.coastlines(resolution="50m", color="white")
+
+    vmin = vmax = None
+
+    def animate_preds(i):
+        scatter.set_array(xr_preds.isel(snapshot=i).values)  # update animation
+        ax.set_title(f'Snapshot = {i}')
+
+    return animation.FuncAnimation(fig, animate_preds, frames=frames, interval=interval, blit=False)
