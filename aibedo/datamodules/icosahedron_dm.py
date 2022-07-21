@@ -102,8 +102,9 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         dataset_in = self._concat_variables_into_channel_dim(in_ds, in_vars, input_file)
         # Output data
         if stage == 'predict':
-            log.info(f" Using raw output data from {os.path.basename(output_file)} for prediction targets.")
             out_vars = [x.replace('_pre', '') for x in out_vars]
+            log.info(f" Using raw output data from {os.path.basename(output_file)} -- Prediction targets: {out_vars}.")
+
         dataset_out = self._concat_variables_into_channel_dim(out_ds, out_vars, output_file)
         # Auxiliary data
         dataset_aux = self._get_auxiliary_data(in_ds, out_ds)

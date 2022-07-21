@@ -41,7 +41,7 @@ def get_wandb_ckpt_name(run_path: str, epoch: Optional[int] = None) -> str:
                 # Use checkpoint with latest epoch if epoch is not specified
                 max_epoch = max(ckpt_epochs)
                 best_model_path = [name for name in ckpt_files if str(max_epoch) in name][0]
-                logging.warning(f"Multiple ckpt files exist: {ckpt_files}. Using latest epoch: {best_model_path}")
+                log.warning(f"Multiple ckpt files exist: {ckpt_files}. Using latest epoch: {best_model_path}")
             else:
                 # Use checkpoint with specified epoch
                 best_model_path = [name for name in ckpt_files if str(epoch) in name]

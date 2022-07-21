@@ -286,7 +286,7 @@ class BaseModel(LightningModule):
                                                       outputs_tensor: Tensor,
                                                       month_of_outputs: Tensor = None,
                                                       input_tensor: Tensor = None,
-                                                      return_raw_outputs: bool = False
+                                                      return_normalized_outputs: bool = False
                                                       ) -> Dict[str, Tensor]:
         """
         Convert the output/predicted/target tensor of shape (batch_size, num_grid_cells, num_output_vars)
@@ -297,7 +297,7 @@ class BaseModel(LightningModule):
             outputs_tensor: A tensor of shape (batch_size, num_grid_cells, num_output_vars) in normalized scale.
             month_of_outputs: A tensor of shape (batch_size,) with the month of each output, optional.
             input_tensor: A tensor of shape (batch_size, num_grid_cells, num_input_vars), optional.
-            return_raw_outputs (bool): If True, the raw outputs (vars with '_pre') will be returned as well.
+            return_normalized_outputs (bool): If True, the raw outputs (vars with '_pre') will be returned as well.
 
         ** Note: One of month_of_outputs or input_tensor must be provided!
 
@@ -315,7 +315,7 @@ class BaseModel(LightningModule):
         for var_name, var_tensor in preds_per_target_variable.items():
             var_id = var_name.replace('_pre', '')
             denormed_Y_per_target_variable[var_id] = self._denormalize_variable(var_tensor, month_of_outputs, var_name)
-        if return_raw_outputs:
+        if return_normalized_outputs:
             return {**denormed_Y_per_target_variable, **preds_per_target_variable}
         return denormed_Y_per_target_variable
 
@@ -438,7 +438,7 @@ class BaseModel(LightningModule):
             log_dict[metric_name] = metric
         self.log_dict(log_dict, on_step=True, on_epoch=True, **kwargs)  # log metric objects
         # Now compute per output variable errors
-        preds = self.raw_outputs_to_denormalized_per_variable_dict(preds, input_tensor=X, return_raw_outputs=True)
+        preds = self.raw_outputs_to_denormalized_per_variable_dict(preds, input_tensor=X, return_normalized_outputs=True)
         Y = self.raw_preds_to_denormalized_per_variable_dict(Y, input_tensor=X, return_raw_outputs=True)
 
         log_dict = dict()
