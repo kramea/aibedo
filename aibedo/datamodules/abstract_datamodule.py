@@ -166,22 +166,15 @@ class AIBEDO_DataModule(pl.LightningDataModule):
 
     def get_predictions(self, model: BaseModel,
                         dataloader: DataLoader = None,
-                        filename: str = None,
                         device: torch.device = None,
-                        return_raw_outputs: bool = False,
-                        ):
+                        **prediction_kwargs
+                        ) -> Dict[str, Dict[str, np.ndarray]]:
         """
         Get the predictions and groundtruth for the prediction set (self._data_predict), by default the test data.
-        if filename is a string:
-            Save the predictions and the ground truth to a numpy file (.npz).
-            The saved file will have the following structure:
-                - predictions: numpy array of the predictions
-                - groundtruth: numpy array of the corresponding ground truth/targets
 
         Args:
             model: The model to use for prediction.
             dataloader: The (optional) dataloader to use for prediction. By default, the predict_dataloader is used.
-            filename: The filepath to save the numpy file to.
             device: The device ('cuda', 'cpu', etc.)
 
         Returns:
@@ -210,12 +203,17 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             MONTH_IDX = self.input_var_to_idx['month']
             month_of_outputs = data_in[:, 0, MONTH_IDX]  # idx 0 is arbitrary; has shape (batch_size,)
 
-            predict_kwargs = dict(return_raw_outputs=return_raw_outputs, month_of_outputs=month_of_outputs)
-            batch_preds = model.predict(data_in.to(device), **predict_kwargs)
+            prediction_kwargs['month_of_outputs'] = month_of_outputs
+            batch_preds = model.predict(data_in.to(device), **prediction_kwargs)
             if RAW_TARGETS:
-                batch_targets = model.raw_outputs_to_denormalized_per_variable_dict(data_out, **predict_kwargs)
-            else:
+                # only split the targets by output variable
                 batch_targets = model._split_raw_preds_per_target_variable(data_out)
+                # but, need to use the correct output var keys/names (without '_pre'):
+                batch_targets = {k.replace('_pre', ''): v for k, v in batch_targets.items()}
+            else:
+                # also denormalize the targets
+                batch_targets = model.raw_outputs_to_denormalized_per_variable_dict(data_out, **prediction_kwargs)
+                # batch_targets = {k: v.detach().cpu().numpy() for k, v in batch_targets.items()}
             # Now concatenate the predictions and the targets across all batches
             for out_var in batch_targets.keys():
                 batch_preds_numpy = batch_preds[out_var].detach().cpu().numpy()
@@ -227,29 +225,39 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                     preds[out_var] = np.concatenate((preds[out_var], batch_preds_numpy), axis=0)
                     targets[out_var] = np.concatenate((targets[out_var], batch_gt_numpy), axis=0)
 
-        if filename is not None:
-            raise NotImplementedError("The filename argument is not implemented yet.")
-            np.savez_compressed(filename, groundtruth=groundtruth, predictions=predictions)
         return {'preds': preds, 'targets': targets}
 
-    def get_predictions_xarray(self, model: nn.Module, variables='all', **kwargs) -> xr.Dataset:
-        numpy_preds_targets = self.get_predictions(model, **kwargs)
+    def get_predictions_xarray(self, model: nn.Module,
+                               variables='all',
+                               also_targets: bool = True,
+                               also_errors: bool = False,
+                               return_normalized_outputs: bool = False,
+                               **prediction_kwargs) -> xr.Dataset:
+        numpy_preds_targets = self.get_predictions(model, **prediction_kwargs, return_normalized_outputs=return_normalized_outputs)
         preds, targets = numpy_preds_targets['preds'], numpy_preds_targets['targets']
         var_shape = preds[list(preds.keys())[0]].shape[:-1]
         dim_names = ['snapshot', 'latitude', 'longitude'] if len(var_shape) == 3 else ['snapshot', 'spatial_dim']
 
         data_vars = dict()
-        out_vars = list(preds.keys()) if variables == 'all' else list(variables)
+        if variables == 'all':
+            out_vars = list(preds.keys())
+        else:
+            out_vars = list(variables)
+            if any('_pre' in v for v in out_vars) and not return_normalized_outputs:
+                raise ValueError(f"The variables {out_vars} contain vars with _pre (normalized)"
+                                 f" but `return_normalized_outputs` is False.")
         for i, output_var in enumerate(out_vars):  # usually ['tas', 'psl', 'pr'], maybe also 'tas_pre' etc.
             output_var_pred = preds[output_var]
             output_var_target = targets[output_var]
             data_vars[f"{output_var}_preds"] = (dim_names, output_var_pred)
-            data_vars[f"{output_var}_targets"] = (dim_names, output_var_target)
-            diff = output_var_pred - output_var_target
-            mae = np.abs(diff)
-            data_vars[f'{output_var}_bias'] = (dim_names, diff)
-            data_vars[f'{output_var}_mae'] = (dim_names, mae)
-            data_vars[f'{output_var}_mae_score'] = (dim_names, mae / np.mean(output_var_target, axis=0))
+            if also_targets:
+                data_vars[f"{output_var}_targets"] = (dim_names, output_var_target)
+            if also_errors:
+                diff = output_var_pred - output_var_target
+                mae = np.abs(diff)
+                data_vars[f'{output_var}_bias'] = (dim_names, diff)
+                data_vars[f'{output_var}_mae'] = (dim_names, mae)
+                data_vars[f'{output_var}_mae_score'] = (dim_names, mae / np.mean(output_var_target, axis=0))
         # data_vars['lat_list'] = (['latitude'], self.lat_list)
         # data_vars['lon_list'] = (['longitude'], self.lon_list)
         xr_dset = xr.Dataset(
@@ -268,17 +276,3 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             ))
         return xr_dset
 
-
-"""
-def sunet_collate(batch):
-    batchShape = batch[0].shape
-    varlimit = batchShape[1] - 3  # 3 output variables: tas, psl, pr
-
-    data_in_array = np.array([item[:, 0:varlimit] for item in batch])
-    data_out_array = np.array([item[:, varlimit:] for item in batch])
-
-    data_in = torch.Tensor(data_in_array)
-    data_out = torch.Tensor(data_out_array)
-    return [data_in, data_out]
-
-"""
