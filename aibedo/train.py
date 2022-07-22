@@ -57,11 +57,12 @@ def run_model(config: DictConfig):
         datamodule_config=config.datamodule,
     )
 
-    return final_model
+    # return best score (i.e. validation mse). This is useful when using Hydra+Optuna HP tuning.
+    return trainer.checkpoint_callback.best_model_score
 
 
 @hydra.main(config_path="configs/", config_name="main_config.yaml", version_base=None)
-def main(config: DictConfig):
+def main(config: DictConfig) -> float:
     """ Run/train model based on the config file configs/main_config.yaml (and any command-line overrides). """
     return run_model(config)
 
