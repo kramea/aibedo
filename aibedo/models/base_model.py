@@ -397,9 +397,9 @@ class BaseModel(LightningModule):
 
         # constraint 5 - mass conservation constraint
         batch_monthly_PS_err = torch.index_select(self.PS_err, **index_months_kwargs)
-        psl_denormed = self._denormalize_variable(preds['psl_pre'], month_of_batch, 'psl_pre')
+        ps_denormed = self._denormalize_variable(preds['ps_pre'], month_of_batch, 'ps_pre')
         # Compute the mass conservation soft loss
-        physics_loss5 = mass_conservation_constraint(psl_denormed, batch_monthly_PS_err)
+        physics_loss5 = mass_conservation_constraint(ps_denormed, batch_monthly_PS_err)
         train_log['train/physics/loss5'] = physics_loss5.item()
         if self.hparams.physics_loss_weights[4] > 0:
             # add the (weighted) loss to the main loss
