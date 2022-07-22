@@ -36,7 +36,9 @@ def get_any_ensemble_id(data_dir, ESM_NAME: str) -> str:
 
 def all_esm_runs():
     ESMs = aibedo.constants.CLIMATE_MODELS_ALL
-    if 'first' in sys.argv[1]:
+    if len(sys.argv) <= 1:
+        pass
+    elif 'first' in sys.argv[1]:
         ESMs = ESMs[:int(sys.argv[1][5:])]
         args = sys.argv[2:]
     elif 'last' in sys.argv[1]:

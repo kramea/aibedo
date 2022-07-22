@@ -111,7 +111,9 @@ def reload_checkpoint_from_wandb(run_id: str,
                                  override_key_value: Union[Sequence[str], dict] = None,
                                  try_local_recovery: bool = True,
                                  ) -> dict:
-    """ Reload model checkpoint based on only the Wandb run ID
+    """
+    Reload model checkpoint based on only the Wandb run ID
+
     Args:
         run_id (str): the wandb run ID (e.g. 2r0l33yc) corresponding to the model to-be-reloaded
         entity (str): the wandb entity corresponding to the model to-be-reloaded
@@ -121,6 +123,7 @@ def reload_checkpoint_from_wandb(run_id: str,
         override_key_value: If a dict, every k, v pair is used to override the reloaded (hydra) config,
                             e.g. pass {datamodule.num_workers: 8} to change the corresponding flag in config.
                             If a sequence, each element is expected to have a "=" in it, like datamodule.num_workers=8
+        try_local_recovery: If True, try to reload the model from local file-system if it exists.
     """
     from aibedo.interface import reload_model_from_config_and_ckpt
     run_path = f"{entity}/{project}/{run_id}"
