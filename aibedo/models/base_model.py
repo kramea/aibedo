@@ -53,6 +53,7 @@ class BaseModel(LightningModule):
                  scheduler: Optional[DictConfig] = None,
                  monitor: Optional[str] = None,
                  mode: str = "min",
+                 window: int = 1,
                  loss_weights: Union[Sequence[float], Dict[str, float]] = (0.33, 0.33, 0.33),
                  physics_loss_weights: Sequence[float] = (0.0, 0.0, 0.0, 0.0, 0.0),
                  month_as_feature: Union[bool, str] = False,
@@ -120,12 +121,11 @@ class BaseModel(LightningModule):
         # Set the target variable statistics needed
         self.sphere = "isosph5" if 'isosph5.' in datamodule_config.input_filename else "isosph"
         stats_kwargs = dict(data_dir=self.data_dir, files_id=self.sphere)
-        if physics_loss_weights[2] > 0 or physics_loss_weights[3] > 0 or True:
-            pr_mean, pr_std = get_variable_stats(var_id='pr', **stats_kwargs)
-            self.register_buffer_dummy('pr_mean', pr_mean, persistent=False)
-            self.register_buffer_dummy('pr_std', pr_std, persistent=False)
-            if physics_loss_weights[3] > 0:
-                self.log_text.info(" Using non-negative precipitation constraint (#4)")
+        for output_var in self.output_var_names:
+            var_id = output_var.replace('_pre', '')
+            var_mean, var_std = get_variable_stats(var_id=output_var, **stats_kwargs)
+            self.register_buffer_dummy(f'{var_id}_mean', var_mean, persistent=False)
+            self.register_buffer_dummy(f'{var_id}_std', var_std, persistent=False)
 
         if physics_loss_weights[2] > 0 or True:
             evap_mean, evap_std = get_variable_stats(var_id='evspsbl', **stats_kwargs)
@@ -136,18 +136,18 @@ class BaseModel(LightningModule):
             if physics_loss_weights[2] > 0:
                 self.log_text.info(" Using global moisture constraint (#3)")
 
+        if physics_loss_weights[3] > 0:
+            self.log_text.info(" Using non-negative precipitation constraint (#4)")
+
         if physics_loss_weights[4] > 0 or True:
-            psl_mean, psl_std = get_variable_stats(var_id='ps', **stats_kwargs)
             PS_err = get_clim_err(err_id='PS', **stats_kwargs)
-            self.register_buffer_dummy('psl_mean', psl_mean, persistent=False)
-            self.register_buffer_dummy('psl_std', psl_std, persistent=False)
             self.register_buffer_dummy('PS_err', PS_err, persistent=False)
             if physics_loss_weights[4] > 0:
                 self.log_text.info(" Using mass conservation constraint (#5)")
 
     @property
     def num_input_features(self) -> int:
-        return self._num_input_features
+        return self._num_input_features * self.hparams.window
 
     @property
     def num_output_features(self) -> int:
@@ -204,6 +204,7 @@ class BaseModel(LightningModule):
 
     def _check_args(self):
         """Check if the arguments are valid."""
+        assert self.hparams.window > 0, "Window size must be greater than 0"
         plw = self.hparams.physics_loss_weights
         if len(plw) != 5:
             raise ValueError(f'The number of physics loss weights must be 5, but got {plw}')
@@ -439,7 +440,7 @@ class BaseModel(LightningModule):
         self.log_dict(log_dict, on_step=True, on_epoch=True, **kwargs)  # log metric objects
         # Now compute per output variable errors
         preds = self.raw_outputs_to_denormalized_per_variable_dict(preds, input_tensor=X, return_normalized_outputs=True)
-        Y = self.raw_preds_to_denormalized_per_variable_dict(Y, input_tensor=X, return_raw_outputs=True)
+        Y = self.raw_preds_to_denormalized_per_variable_dict(Y, input_tensor=X, return_normalized_outputs=True)
 
         log_dict = dict()
         for metric_name, metric in torch_metrics.items():
