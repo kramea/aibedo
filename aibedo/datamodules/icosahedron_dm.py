@@ -4,6 +4,7 @@ from typing import Optional, List, Sequence, Tuple
 import torch
 import xarray as xr
 import numpy as np
+from einops import rearrange
 from torch import Tensor
 from torch.utils.data import TensorDataset, Dataset
 from aibedo.datamodules.abstract_datamodule import AIBEDO_DataModule
@@ -18,20 +19,11 @@ log = get_logger(__name__)
 class IcosahedronDatamodule(AIBEDO_DataModule):
     def __init__(self,
                  order: int = 5,
-                 time_lag: int = 0,
-                 time_length=None,  # TODO: deprecate this
-                 partition: Sequence[float] = (0.8, 0.1, 0.1),
                  **kwargs
                  ):
         """
         Args:
             order (int): order of an icosahedron graph. Either 5 or 6.
-            time_lag (int): time lag of the model.
-            time_length (int): time length of the model.
-            partition (tuple): partition of the data into train, validation and test fractions/sets.
-                Train and validation (indices 0 and 1) must be floats.
-                Test (index 2) can be a float or a string.
-                    If test is a string, it must be one of the following: 'merra2', 'era5'
             kwargs: Additional keyword arguments for the super class (input_vars, data_dir, num_workers, batch_size,..).
         """
         super().__init__(**kwargs)
@@ -49,19 +41,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         """Check if the arguments are valid."""
         assert self.hparams.order in [5, 6], "Order of the icosahedron graph must be either 5 or 6."
         assert (self.hparams.order == 5 and 'isosph5' in self.hparams.input_filename) or self.hparams.order == 6
-        partition = self.hparams.partition
-        if len(partition) != 3:
-            raise ValueError(f"partition must be a tuple of 3 values, but got {partition}, type: {type(partition)}")
-        test_frac = partition[2]
-        if isinstance(test_frac, str):
-            raise_error_if_invalid_value(test_frac, possible_values=self._possible_test_sets, name='partition[2]')
-            if partition[0] + partition[1] != 1:
-                self.hparams.partition = (partition[0], 1 - partition[0], partition[2])
-                log.warning(
-                    "partition[0] + partition[1] does not sum to 1 and test_frac is a string. partition[1] will be set to 1 - partition[0].")
-        elif partition[0] + partition[1] + partition[2] != 1:
-            raise ValueError(
-                f"partition must sum to 1, but it sums to {partition[0] + partition[1] + partition[2]}")
+        super()._check_args()
 
     def _concat_variables_into_channel_dim(self, data: xr.Dataset, variables: List[str], filename=None) -> np.ndarray:
         """Concatenate xarray variables into numpy channel dimension (last)."""
@@ -104,12 +84,36 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         if stage == 'predict':
             out_vars = [x.replace('_pre', '') for x in out_vars]
             log.info(f" Using raw output data from {os.path.basename(output_file)} -- Prediction targets: {out_vars}.")
-
         dataset_out = self._concat_variables_into_channel_dim(out_ds, out_vars, output_file)
-        # Auxiliary data
+        # Auxiliary data (e.g. evaporation)
         dataset_aux = self._get_auxiliary_data(in_ds, out_ds)
-        dataset_in = np.concatenate([dataset_in, dataset_aux], axis=2)
 
+        # Reshape if using multiple timesteps for prediction
+        if self.window > 1:
+            time_length = self.window
+            log.info(f" Using {time_length} timesteps for prediction.")
+            in_tmp, out_tmp, aux_tmp = [], [], []
+            for i in range(0, len(dataset_in) - time_length):
+                # concatenate time axis into feature axis
+                in_tmp += [rearrange(dataset_in[i:i + time_length, :, :], 't n d -> n (d t)')]
+                # reselect the corresponding output/aux data (at the same time as latest time step of inputs)
+                out_tmp += [dataset_out[i + time_length - 1, :, :]]
+                # similarly, the auxiliary data should be aligned to the last month too!
+                aux_tmp += [dataset_aux[i + time_length - 1, :, :]]
+
+            dataset_in, dataset_out, dataset_aux = np.asarray(in_tmp), np.asarray(out_tmp), np.asarray(aux_tmp)
+
+        if self.hparams.time_lag > 0:
+            time_lag = self.hparams.time_lag
+            raise NotImplementedError("Time lag not implemented yet, need month for both inputs and outputs!")
+            log.info(f" Model will be forecasting {self.hparams.time_lag} time steps ahead.")
+            dataset_in = dataset_in[:-time_lag, ...]
+            dataset_out = dataset_out[time_lag:, ...]
+            dataset_aux = dataset_aux[time_lag:, ...]
+
+        # Concatenate the auxiliary data into the input data feature dimensions (dim=2)
+        # Note, that this will not be fed into the model though -- the model inputs are cut off to only be dataset_in
+        dataset_in = np.concatenate([dataset_in, dataset_aux], axis=2)
         dataset_in, dataset_out = self._model_specific_transform(dataset_in, dataset_out)
         if shuffle:
             dataset_in, dataset_out = shuffle_data(dataset_in, dataset_out)
@@ -117,19 +121,6 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         return dataset_in, dataset_out
 
     def _model_specific_transform(self, input_data: np.ndarray, output_data: np.ndarray):
-        if "SphericalUNetLSTM" in self.model_config._target_:
-            new_in_data, new_out_data = [], []
-            time_length = self.model_config.time_len
-            for i in range(0, len(input_data) - time_length):
-                intemp = np.concatenate(input_data[i:i + time_length, :, :], axis=1)
-                new_in_data.append(intemp)
-                new_out_data.append(output_data[i + time_length - 1, :, :])
-
-            input_data, output_data = np.asarray(new_in_data), np.asarray(new_out_data)
-        if self.hparams.time_lag > 0:
-            input_data = input_data[:-self.hparams.time_lag]
-            output_data = output_data[self.hparams.time_lag:]
-
         return input_data, output_data
 
     def setup(self, stage: Optional[str] = None):
