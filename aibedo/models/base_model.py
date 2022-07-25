@@ -451,23 +451,15 @@ class BaseModel(LightningModule):
 
         if self.hparams.physics_loss_weights[3] > 0:
             # Enforce non-negative precipitation (constraint 4); needs to be done before the main loss is computed
-            tmp_Y = dict()
-            tmp_Y['pr_pre'], pr_denormed = self._enforce_nonnegative_denormalized_variable(
+            tmp_pr_normed, pr_denormed = self._enforce_nonnegative_denormalized_variable(
                 preds['pr_pre'], month_of_batch, 'pr_pre'
             )
-            tmp_Y['ps_pre'], ps_denormed = self._enforce_nonnegative_denormalized_variable(
-                preds['ps_pre'], month_of_batch, 'ps_pre'
-            )
-            tmp_Y['tas_pre'], _ = self._enforce_nonnegative_denormalized_variable(
-                preds['tas_pre'], month_of_batch, 'tas_pre'
-            )
             if self.hparams.nonnegativity_at_train_time:
-                for var_name, var_tensor in tmp_Y.items():
-                    preds[var_name] = var_tensor
+                preds['pr_pre'] = tmp_pr_normed
         else:
             # Only get the denormalized scale variables (but do not enforce non-negativity)
             pr_denormed = self._denormalize_variable(preds['pr_pre'], month_of_batch, 'pr_pre')
-            ps_denormed = self._denormalize_variable(preds['ps_pre'], month_of_batch, 'ps_pre')
+        ps_denormed = self._denormalize_variable(preds['ps_pre'], month_of_batch, 'ps_pre')
 
         # Compute main loss by output variable e.g. output_name = 'pr_pre', 'tas_pre', etc.
         loss = 0.0

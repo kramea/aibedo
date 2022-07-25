@@ -11,6 +11,7 @@ import cartopy.crs as ccrs
 from matplotlib import animation
 
 from aibedo.utilities.naming import var_names_to_clean_name
+from aibedo.utilities.utils import raise_error_if_invalid_value
 
 var_names_to_cmap = {
     'tas_pre': 'coolwarm',  # rainbow
@@ -128,6 +129,22 @@ def save_figure(save_to: str, full_screen: bool = False, bbox_inches='tight'):
         else:
             plt.savefig(save_to, bbox_inches=bbox_inches)
 
+def get_vars_to_plot(vars_to_plot: Union[str, List[str]], postprocessed_xarray: xr.Dataset) -> List[str]:
+    """
+    Syntactic sugar to get the output variables to plot, e.g. by passing 'all', 'denormalized', 'normalized', etc.
+    """
+    if isinstance(vars_to_plot, str):
+        raise_error_if_invalid_value(vars_to_plot, ['all', 'denormalized', 'normalized', 'raw'], 'vars_to_plot')
+    if vars_to_plot == "all":
+        output_vars = postprocessed_xarray.variable_names.split(";")
+    elif vars_to_plot == "normalized":
+        output_vars = [x for x in postprocessed_xarray.variable_names.split(";") if '_pre' in x]
+    elif vars_to_plot in ["denormalized", 'raw']:
+        output_vars = [x for x in postprocessed_xarray.variable_names.split(";") if '_pre' not in x]
+    else:
+        assert isinstance(vars_to_plot, list), f"vars_to_plot must be a list, but is {type(vars_to_plot)}"
+        output_vars = vars_to_plot
+    return output_vars
 
 def data_mean_plotting(postprocessed_xarray: xr.Dataset,
                        error_to_plot: str = "mae",
@@ -171,15 +188,8 @@ def data_mean_plotting(postprocessed_xarray: xr.Dataset,
                      'fraction': 0.05},
         **kwargs
     )
-    if vars_to_plot == "all":
-        output_vars = postprocessed_xarray.variable_names.split(";")
-    elif vars_to_plot == "normalized":
-        output_vars = [x for x in postprocessed_xarray.variable_names.split(";") if '_pre' in x]
-    elif vars_to_plot == "denormalized":
-        output_vars = [x for x in postprocessed_xarray.variable_names.split(";") if '_pre' not in x]
-    else:
-        assert isinstance(vars_to_plot, list), f"vars_to_plot must be a list, but is {type(vars_to_plot)}"
-        output_vars = vars_to_plot
+
+    output_vars = get_vars_to_plot(vars_to_plot, postprocessed_xarray)
 
     nrows = 1 if plot_only_errors else 3
     ncols = len(output_vars)
@@ -279,11 +289,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
     else:
         snaps = snapshots_to_plot
 
-    if vars_to_plot == "all":
-        output_vars = postprocessed_xarray.variable_names.split(";")
-    else:
-        assert isinstance(vars_to_plot, list), f"vars_to_plot must be a list, but is {type(vars_to_plot)}"
-        output_vars = vars_to_plot
+    output_vars = get_vars_to_plot(vars_to_plot, postprocessed_xarray)
 
     data_to_plot = list(set(data_to_plot))
     assert all(x in ['targets', 'preds', 'error'] for x in data_to_plot)
@@ -381,6 +387,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
 
 def animate_snapshots(postprocessed_xarray: xr.Dataset,
                       var_to_plot: str = 'pr_preds',
+                      num_snapshots: int = 12,
                       cmap=None,
                       interval=400,
                       ):
@@ -390,7 +397,7 @@ def animate_snapshots(postprocessed_xarray: xr.Dataset,
     ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
 
     n_frames = len(postprocessed_xarray.indexes['snapshot'])
-    first_snap = n_frames - 24
+    first_snap = n_frames - num_snapshots
     first_snap_xr = postprocessed_xarray.isel(snapshot=first_snap)
     scatter = xr.plot.scatter(first_snap_xr, hue=var_to_plot, cmap=cmap, ax=ax, **pa_kwargs)
 
@@ -400,10 +407,39 @@ def animate_snapshots(postprocessed_xarray: xr.Dataset,
     ax.gridlines(alpha=0.5)
     ax.coastlines(resolution="50m", color="white")
 
-    vmin = vmax = None
-
     def animate_preds(i):
         scatter.set_array(xr_preds.isel(snapshot=i).values)  # update animation
         ax.set_title(f'Snapshot = {i}')
 
     return animation.FuncAnimation(fig, animate_preds, frames=frames, interval=interval, blit=False)
+
+
+def zonal_error_plotting(postprocessed_xarrays: List[xr.Dataset],
+                        error_to_plot: str = "bias",
+                        vars_to_plot: List[str] = 'all',
+                        snapshots_to_plot: List[int] = None,
+                        num_snapshots_to_plot: int = 5,
+                        data_dim: str = 'snapshot',
+                        longitude_dim: str = 'longitude',
+                        latitude_dim: str = 'latitude'
+                         ):
+    if isinstance(postprocessed_xarrays, xr.Dataset):
+        postprocessed_xarrays = [postprocessed_xarrays]
+    assert len(postprocessed_xarrays) > 0, "No postprocessed xarrays provided to plot!"
+    output_vars = get_vars_to_plot(vars_to_plot, postprocessed_xarrays[0])
+    proj = ccrs.PlateCarree()
+    nrows =  1 # if plot_only_errors else 3
+    ncols = len(output_vars)
+    fig, axs = plt.subplots(nrows, ncols,
+                            subplot_kw={'projection': proj},
+                            gridspec_kw={'wspace': 0.07, 'hspace': 0,
+                                         'top': 1., 'bottom': 0., 'left': 0., 'right': 1.},
+                            figsize=(ncols * 12, nrows * 6)  # <- adjust figsize but keep ratio ncols/nrows
+                            )
+    for pds in postprocessed_xarrays:
+        for j, var in enumerate(output_vars):
+            err_id = f"{var}_{error_to_plot}"
+            zonal_err = getattr(pds, err_id).mean(dim=longitude_dim)
+            zonal_err.plot(x=latitude_dim, ax=axs[j], cmap='RdBu_r')
+
+    return fig, axs
