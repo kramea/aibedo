@@ -48,6 +48,7 @@ def create_parser():
     parser.add_argument("--pe_std", default=None, type=str)
     parser.add_argument("--ps_err", default=None, type=str)
     parser.add_argument("--ps_std", default=None, type=str)
+    parser.add_argument("--pr_err", default=None, type=str)
     #parser.add_argument("--model_file", default=None, type=str)
     parser.add_argument("--output_path", default="output_sunet", type=str)
     parser.add_argument("--input_vars", default=None, nargs="+")
