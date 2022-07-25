@@ -93,7 +93,8 @@ def var_names_to_clean_name() -> Dict[str, str]:
     """ This is a clean name for the variables (e.g. for plotting)"""
     var_dict = {
         'tas': 'Air Temperature',
-        'psl': "Surface Pressure",
+        'psl': "Sea-level Pressure",
+        'ps': "Surface Pressure",
         'pr': "Precipitation",
     }
     var_dict = {**var_dict, **{f'{k}_pre': f'{v} (normalized)' for k, v in var_dict.items()}}

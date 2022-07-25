@@ -15,9 +15,11 @@ from aibedo.utilities.naming import var_names_to_clean_name
 var_names_to_cmap = {
     'tas_pre': 'coolwarm',  # rainbow
     'psl_pre': 'Spectral',
+    'ps_pre': 'Spectral',
     'pr_pre': 'bwr',
     'tas': 'coolwarm',  # rainbow
     'psl': 'Spectral',
+    'ps': 'Spectral',
     'pr': 'bwr',
 }
 
@@ -137,6 +139,7 @@ def data_mean_plotting(postprocessed_xarray: xr.Dataset,
                        plot_only_errors: bool = False,
                        marker_size: int = 2,
                        title_fontsize: int = 24,
+                       **kwargs
                        ):
     """
     Plot the mean of the data along the data_dim (error, and optionally targets/ground-truth and predictions).
@@ -165,7 +168,8 @@ def data_mean_plotting(postprocessed_xarray: xr.Dataset,
         robust=robust,
         cbar_kwargs={'shrink': 0.8,  # make cbar smaller/larger
                      'pad': 0.01,  # padding between right-ost subplot and cbar
-                     'fraction': 0.05}
+                     'fraction': 0.05},
+        **kwargs
     )
     if vars_to_plot == "all":
         output_vars = postprocessed_xarray.variable_names.split(";")
@@ -214,7 +218,7 @@ def data_mean_plotting(postprocessed_xarray: xr.Dataset,
 
 
 def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
-                            error_to_plot: str = "mae",
+                            error_to_plot: str = "bias",
                             vars_to_plot: List[str] = 'all',
                             snapshots_to_plot: List[int] = None,
                             num_snapshots_to_plot: int = 5,
@@ -234,6 +238,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                             seed=7,
                             ):
     """
+    This function will plot the predictions and/or targets and/or global errors for multiple snapshots/time-steps.
 
     Args:
         postprocessed_xarray: The xarray Dataset with the data to plot.
@@ -253,6 +258,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
         plot_only_preds (bool): If True, only plot the predictions, else plot targets, preds, and optionally the error.
         plot_error (bool): If True, plot the error. Default is True.
         marker_size: The size of the markers in the plot.
+        coastlines_linewidth (float): The width of the coastlines/continent borders.
         title (str): The title of the plot (appended to the variable name title if only_plot_preds is False).
                         If None, then no title is shown.
         title_fontsize: The fontsize of the title.
@@ -331,7 +337,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                 ax.coastlines(linewidth=coastlines_linewidth)
         ps[var] = {'targets': p_target, 'preds': p_pred, error_to_plot: p_err}
 
-        # Set row names (ylabel) for the leftmost subplot of each row                                          'preds']
+        # Set row names (ylabel) for the leftmost subplot of each row
         for dtype in data_to_plot:
             k = error_to_plot if dtype == 'error' else dtype
             pc = ps[var][k]
@@ -363,7 +369,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
 
                 if hasattr(p_err.data, f'{var}_bias'):
                     snapshot_bias = float(getattr(p_err.data, f'{var}_bias').sel({data_dim: snap_num}).mean().data)
-                    snapshot_bias_f = "" if var == 'pr' else f"Bias$={snapshot_bias:.3f}$"
+                    snapshot_bias_f = f"Bias$={snapshot_bias:.7f}$" if var == 'pr' else f"Bias$={snapshot_bias:.3f}$"
 
                 ax.set_title(
                     f"{snapshot_mae_f} {snapshot_bias_f}",
