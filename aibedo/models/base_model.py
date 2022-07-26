@@ -15,7 +15,7 @@ from aibedo.data_transforms.normalization import get_variable_stats, get_clim_er
 
 from aibedo.data_transforms.transforms import AbstractTransform
 from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint, \
-    mass_conservation_constraint
+    mass_conservation_constraint, AUXILIARY_VARS, precipitation_energy_budget_constraint
 from aibedo.utilities.utils import get_logger, to_DictConfig, get_loss, raise_error_if_invalid_value
 from aibedo.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
 
@@ -92,7 +92,7 @@ class BaseModel(LightningModule):
         self._input_var_to_idx = {
             var: i for i, var
             in enumerate(
-                list(datamodule_config.input_vars) + ['month'] + ['evspsbl_pre']
+                list(datamodule_config.input_vars) + ['month'] + AUXILIARY_VARS
             )}
         # Infer the data dimensions
         self._data_dir = datamodule_config.data_dir
@@ -129,32 +129,30 @@ class BaseModel(LightningModule):
         # Check that the args/hparams are valid
         self._check_args()
 
-        # Set the target variable statistics needed
+        # Set the target/auxiliary variable statistics needed
         self.sphere = "isosph5" if 'isosph5.' in datamodule_config.input_filename else "isosph"
         stats_kwargs = dict(data_dir=self.data_dir, files_id=self.sphere)
-        for output_var in self.output_var_names:
+        # Go through all output and auxiliary vars:
+        for output_var in self.output_var_names + AUXILIARY_VARS:
             var_id = output_var.replace('_pre', '')
-            var_mean, var_std = get_variable_stats(var_id=output_var, **stats_kwargs)
+            var_mean, var_std = get_variable_stats(var_id=var_id, **stats_kwargs)
             self.register_buffer_dummy(f'{var_id}_mean', var_mean, persistent=False)
             self.register_buffer_dummy(f'{var_id}_std', var_std, persistent=False)
 
-        if physics_loss_weights[2] > 0 or True:
-            evap_mean, evap_std = get_variable_stats(var_id='evspsbl', **stats_kwargs)
-            PE_err = get_clim_err(err_id='PE', **stats_kwargs)
-            self.register_buffer_dummy('evspsbl_mean', evap_mean, persistent=False)
-            self.register_buffer_dummy('evspsbl_std', evap_std, persistent=False)
-            self.register_buffer_dummy('PE_err', PE_err, persistent=False)
-            if physics_loss_weights[2] > 0:
-                self.log_text.info(" Using global moisture constraint (#3)")
+        # Go through all climatology auxiliary arrays:
+        for aux_clim_err in ['Precip', 'PE', 'PS']:
+            err_id = f'{aux_clim_err}_clim_err'
+            err_arr = get_clim_err(err_id=err_id, **stats_kwargs)
+            self.register_buffer_dummy(err_id, err_arr, persistent=False)
 
+        if physics_loss_weights[1] > 0:
+            self.log_text.info(" Using constraint (#2)")
+        if physics_loss_weights[2] > 0:
+            self.log_text.info(" Using global moisture constraint (#3)")
         if physics_loss_weights[3] > 0:
             self.log_text.info(" Using non-negative precipitation constraint (#4)")
-
-        if physics_loss_weights[4] > 0 or True:
-            PS_err = get_clim_err(err_id='PS', **stats_kwargs)
-            self.register_buffer_dummy('PS_err', PS_err, persistent=False)
-            if physics_loss_weights[4] > 0:
-                self.log_text.info(" Using mass conservation constraint (#5)")
+        if physics_loss_weights[4] > 0:
+            self.log_text.info(" Using mass conservation constraint (#5)")
 
     @property
     def num_input_features(self) -> int:
@@ -186,7 +184,8 @@ class BaseModel(LightningModule):
                     for output_var in self.output_var_names
                 },
                 **{
-                    f"{self.test_set_name}/{output_var.replace('_pre', '')}/rmse": torchmetrics.MeanSquaredError(squared=False)
+                    f"{self.test_set_name}/{output_var.replace('_pre', '')}/rmse": torchmetrics.MeanSquaredError(
+                        squared=False)
                     for output_var in self.output_var_names
                 }
             }).type_as(self)
@@ -289,7 +288,8 @@ class BaseModel(LightningModule):
         Returns:
             A tensor of shape (batch_size, *)
         """
-        assert month_to_data.shape[dim] == 12, f'The dimension {dim} of month_to_data must be 12, but got {month_to_data.shape[dim]}'
+        assert month_to_data.shape[
+                   dim] == 12, f'The dimension {dim} of month_to_data must be 12, but got {month_to_data.shape[dim]}'
         # torch.index_select(.) will ensure that the correct monthly mean/std is used for each example/snapshot:
         #  E.g. pr_mean has shape (12, num_grid_cells), and the use of index_select assumes that index 0 is for january,
         #  index 1 for february, etc. (i.e. index of first dimension is the month)
@@ -470,26 +470,51 @@ class BaseModel(LightningModule):
         train_log['train/loss_mse'] = loss.item()  # log the main MSE loss (without physics losses)
 
         # Soft loss constraints:
-        # Constraint 3 - global moisture constraint
-        # For that, we need the evaporation as auxiliary variable... Let's get that one first:
-        EVAP_IDX = self.input_var_to_idx['evspsbl_pre']  # index of evspsbl_pre in the X tensor
-        evap_denormed = self._denormalize_variable(X[..., EVAP_IDX], month_of_batch, 'evspsbl_pre')
-        batch_monthly_PE_err = self._get_monthly_data_for_batch(self.PE_err, month_of_batch, dim=0)
-        # Compute the soft loss for the global moisture constraint
-        physics_loss3 = global_moisture_constraint(evap_denormed, pr_denormed, batch_monthly_PE_err)
+        # First, some auxiliary variable loading (e.g. climatologies, evaporation, ...)
+        batch_monthly_clim_errs = {
+            clim_err: self._get_monthly_data_for_batch(getattr(self, clim_err), month_of_batch, dim=0)
+            for clim_err in ['PE_clim_err', 'PS_clim_err', 'Precip_clim_err']
+        }
+        aux_vars_denormed: Dict[str, Tensor] = dict()
+        for aux_var in AUXILIARY_VARS:
+            aux_var_idx = self.input_var_to_idx[aux_var]  # e.g. index of evspsbl_pre in the X tensor
+            aux_vars_denormed[aux_var.replace('_pre', '')] = self._denormalize_variable(
+                X[..., aux_var_idx], month_of_batch, output_var_name=aux_var
+            )
+        # -------------> Constraint 2 - Precipitation energy budget
+        physics_loss2 = precipitation_energy_budget_constraint(
+            precipitation=pr_denormed,
+            sea_surface_heat_flux=aux_vars_denormed['hfss'],
+            toa_sw_net_radiation=aux_vars_denormed['netTOARad'],
+            surface_lw_net_radiation=aux_vars_denormed['netSurfRad'],
+            PR_Err=batch_monthly_clim_errs['Precip_clim_err']
+        )
+        train_log['train/physics/loss2'] = physics_loss2.item()
+        if self.hparams.physics_loss_weights[1] > 0:
+            loss += self.hparams.physics_loss_weights[1] * torch.abs(physics_loss2) * 0.1
+
+        # -------------> Constraint 3 - Global moisture constraint
+        # Compute the soft loss:
+        physics_loss3 = global_moisture_constraint(
+            precipitation=pr_denormed,
+            evaporation=aux_vars_denormed['evspsbl'],
+            PE_err=batch_monthly_clim_errs['PE_clim_err']
+        )
         train_log['train/physics/loss3'] = physics_loss3.item()
         if self.hparams.physics_loss_weights[2] > 0:
             # add the (weighted) loss to the main loss
             loss += self.hparams.physics_loss_weights[2] * torch.abs(physics_loss3)
 
-        # Constraint 5 - mass conservation constraint
-        batch_monthly_PS_err = self._get_monthly_data_for_batch(self.PS_err, month_of_batch, dim=0)
-        # Compute the mass conservation soft loss
-        physics_loss5 = mass_conservation_constraint(ps_denormed, batch_monthly_PS_err)
+        # -------------> Constraint 5 - Mass conservation constraint
+        # Compute the soft loss
+        physics_loss5 = mass_conservation_constraint(
+            surface_pressure=ps_denormed,
+            PS_err=batch_monthly_clim_errs['PS_clim_err']
+        )
         train_log['train/physics/loss5'] = physics_loss5.item()
         if self.hparams.physics_loss_weights[4] > 0:
-            # add the (weighted) loss to the main loss
-            loss += self.hparams.physics_loss_weights[4] * torch.abs(physics_loss5)
+            # add the (weighted) loss to the main loss (divide by 100_000 to allow loss weight to be around 1)
+            loss += self.hparams.physics_loss_weights[4] * torch.abs(physics_loss5) / 100_000
 
         # Logging of train loss and other diagnostics
         train_log["train/loss"] = loss.item()
@@ -525,7 +550,8 @@ class BaseModel(LightningModule):
             log_dict[metric_name] = metric
         self.log_dict(log_dict, on_step=True, on_epoch=True, **kwargs)  # log metric objects
         # Now compute per output variable errors
-        preds = self.raw_outputs_to_denormalized_per_variable_dict(preds, input_tensor=X, return_normalized_outputs=True)
+        preds = self.raw_outputs_to_denormalized_per_variable_dict(preds, input_tensor=X,
+                                                                   return_normalized_outputs=True)
         Y = self.postprocess_raw_predictions(Y, input_tensor=X, return_normalized_outputs=True)
 
         log_dict = dict()

@@ -15,6 +15,7 @@ import xarray as xr
 
 from aibedo.datamodules.torch_dataset import AIBEDOTensorDataset
 from aibedo.models.base_model import BaseModel
+from aibedo.utilities.constraints import AUXILIARY_VARS
 from aibedo.utilities.naming import var_names_to_clean_name
 from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value
 
@@ -79,10 +80,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self._data_train = self._data_val = self._data_test = self._data_predict = None
         self._possible_test_sets = ['merra2', 'era5']
         raise_error_if_invalid_value(prediction_data, self._possible_test_sets + ['val', 'same_as_test'], 'predict_data')
-        if True or self.model_config.physics_loss_weights[2] > 0:
-            self.hparams.auxiliary_vars = ['evspsbl_pre']
-        else:
-            self.hparams.auxiliary_vars = []
+        self.hparams.auxiliary_vars = AUXILIARY_VARS
         self.window = model_config.window if hasattr(model_config, 'window') else 1
         input_var_names = [[f'{v}_mon{i}' for i in range(self.window)] for v in input_vars]
         self.input_var_names = list(itertools.chain(*input_var_names))  # flatten list of lists

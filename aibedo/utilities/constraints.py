@@ -3,6 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
+AUXILIARY_VARS = [
+    'evspsbl_pre',  # evaporation
+    'hfss_pre',  # heat flux sea surface
+    'netTOARad_pre',  # top-of-atmosphere level radiation (shortwave)
+    'netSurfRad_pre'  # surface level radiation (longwave)
+]
+
 
 def nonnegative_precipitation(precipitation: Tensor) -> Tensor:
     """
@@ -12,6 +19,38 @@ def nonnegative_precipitation(precipitation: Tensor) -> Tensor:
         precipitation (Tensor): precipitation tensor (in raw/denormalized scale!)
     """
     return F.relu(precipitation)
+
+
+def precipitation_energy_budget_constraint(
+        precipitation: Tensor,
+        sea_surface_heat_flux: Tensor,
+        toa_sw_net_radiation: Tensor,
+        surface_lw_net_radiation: Tensor,
+        PR_Err: Tensor
+) -> float:
+    """
+
+    Args:
+        precipitation:
+        sea_surface_heat_flux:
+        toa_sw_net_radiation:
+        surface_lw_net_radiation:
+        PR_Err:
+
+    Returns:
+
+    """
+    # loss_peb, batch_size = 0.0, precipitation.shape[0]
+    # for i in range(batch_size):
+    #    pr = precipitation[i, :] * 2.4536106 * 1_000_000.0
+    #    actual = pr + sea_surface_heat_flux[i, :] + toa_sw_net_radiation[i, :] - surface_lw_net_radiation[i, :]
+    #    loss_peb += actual.mean() - PR_Err[i].mean()
+    # loss_peb /= batch_size
+
+    pr_scaled = precipitation * 2.4536106 * 1_000_000
+    actual = (pr_scaled + sea_surface_heat_flux + toa_sw_net_radiation - surface_lw_net_radiation).mean(dim=-1)
+    loss_peb2 = actual - PR_Err
+    return loss_peb2.mean()
 
 
 def global_moisture_constraint(precipitation: Tensor, evaporation: Tensor, PE_err: Tensor) -> float:

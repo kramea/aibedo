@@ -11,7 +11,8 @@ from aibedo.utilities.utils import get_logger
 
 def get_mean_and_std_xarray(data_dir: str, files_id: str) -> Tuple[xr.Dataset, xr.Dataset]:
     """ Get the climatology monthly mean and std of the CMIP6 ESMs used  """
-    mean_fname = f'ymonmean.1980_2010.{files_id}.CMIP6.historical.ensmean.Output.nc'
+    #          = f'ymonmean.1980_2010.{files_id}.CMIP6.historical.ensmean.Output.nc'
+    mean_fname = f'ymonmean.1980_2010.compress.{files_id}.CMIP6.historical.ensmean.Output.PrecipCon.nc'
     mean_ds = xr.open_dataset(join(data_dir, mean_fname))
     std_ds = xr.open_dataset(join(data_dir, mean_fname.replace('ymonmean', 'ymonstd')))
     return mean_ds, std_ds
@@ -37,10 +38,11 @@ def get_variable_stats(var_id: str, data_dir: str, files_id: str) -> (Tensor, Te
 
 
 def get_clim_err(err_id: str, data_dir: str, files_id: str) -> Tensor:
-    """ err_id should be one of 'pe', 'ps' """
+    """ err_id should be one of 'PE', 'PS', 'Precip """
+    err_id = err_id.replace('_clim_err', '')
     files_id = files_id.replace('isosph', 'isoph')
     files_id = 'isoph6' if files_id == 'isoph' else files_id  # fix inconsistent naming issue
-    err = np.load(join(data_dir, f'CMIP6_{err_id.upper()}_clim_err.{files_id}.npy'))  # (12,)
+    err = np.load(join(data_dir, f'CMIP6_{err_id}_clim_err.{files_id}.npy'))  # (12,)
     return torch.from_numpy(err)
 
 
