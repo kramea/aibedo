@@ -5,6 +5,7 @@ import torch
 import xarray as xr
 import numpy as np
 from einops import rearrange
+from pytorch_lightning import seed_everything
 from torch import Tensor
 from torch.utils.data import TensorDataset, Dataset
 from aibedo.datamodules.abstract_datamodule import AIBEDO_DataModule
@@ -123,24 +124,28 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
     def _model_specific_transform(self, input_data: np.ndarray, output_data: np.ndarray):
         return input_data, output_data
 
+    def _get_train_and_val_data(self, stage: str):
+        from sklearn.model_selection import train_test_split
+        # compress.isosph5.SAM0-UNICON.historical.r1i1p1f1.Input.Exp8_fixed
+        # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
+        #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
+        fname_in = self.hparams.input_filename
+        train_frac, val_frac, test_frac = self.hparams.partition
+        fname_out = fname_in.replace("Input.Exp8_fixed.nc", "Output.PrecipCon.nc")
+        train_data_in, train_data_out = self._process_nc_dataset(fname_in, fname_out, shuffle=True, stage=stage)
+        X_train, X_val, Y_train, Y_val = train_test_split(train_data_in, train_data_out, train_size=train_frac,
+                                                          random_state=self.hparams.seed)
+        return X_train, X_val, Y_train, Y_val
+
     def setup(self, stage: Optional[str] = None):
         """Load data. Set internal variables: self._data_train, self._data_val, self._data_test."""
         glevel = self.hparams.order
         train_frac, val_frac, test_frac = self.hparams.partition
-        if stage in ["fit", 'val', 'validation', None] or test_frac not in self._possible_test_sets:
-            from sklearn.model_selection import train_test_split
 
         log.info(f" Grid level: {glevel}, # of pixels: {self.n_pixels}")
 
         if stage in ["fit", 'val', 'validation', None] or test_frac not in self._possible_test_sets:
-            # compress.isosph5.SAM0-UNICON.historical.r1i1p1f1.Input.Exp8_fixed
-            # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
-            #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
-            fname_in = self.hparams.input_filename
-            fname_out = fname_in.replace("Input.Exp8_fixed.nc", "Output.nc")
-            train_data_in, train_data_out = self._process_nc_dataset(fname_in, fname_out, shuffle=True, stage=stage)
-            X_train, X_val, Y_train, Y_val = train_test_split(train_data_in, train_data_out, train_size=train_frac,
-                                                              random_state=self.hparams.seed)
+            X_train, X_val, Y_train, Y_val = self._get_train_and_val_data(stage)
 
         if test_frac in self._possible_test_sets:
             sphere = self.files_id
@@ -157,11 +162,18 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
                 X_test, Y_test = self._process_nc_dataset(test_input_fname, test_output_fname, shuffle=False,
                                                           stage=stage)
         else:
+            from sklearn.model_selection import train_test_split
             X_val, X_test, Y_val, Y_test = train_test_split(X_val, Y_val, test_size=test_frac / (val_frac + test_frac),
                                                             random_state=self.hparams.seed)
 
         if stage in ["predict", None]:
-            self._data_predict = get_tensor_dataset_from_numpy(X_test, Y_test, dataset_id='predict')
+            if self.hparams.prediction_data == 'same_as_test':
+                X_predict, Y_predict = X_test, Y_test
+            elif self.hparams.prediction_data == 'val':
+                seed_everything(self.hparams.seed)
+                _, X_val, _, Y_val = self._get_train_and_val_data(stage='predict')
+                X_predict, Y_predict = X_val, Y_val
+            self._data_predict = get_tensor_dataset_from_numpy(X_predict, Y_predict, dataset_id='predict')
         if stage == 'fit' or stage is None:
             self._data_train = get_tensor_dataset_from_numpy(X_train, Y_train, dataset_id='train')
         if stage in ["fit", 'val', 'validation', None]:
