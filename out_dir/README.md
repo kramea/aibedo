@@ -18,6 +18,7 @@ Unless otherwise noted:
  [0, 0, 1000, 1.0, 0.0001] (without updates on the scaling of constraint #5) for CESM2 validation set.
 - [37tl5tsy.nc](https://parc-my.sharepoint.com/:u:/p/pmitra/EZh1kq_uAGxNjegYJhUyA3QBtIkMn_gdL7mRQhms9qqvig?e=0aLnO8)
  is the analogous MLP to 34q3echu.nc, but without using any constraints (all coefficients are 0)
+- val_1ul6rx81.nc analogous to above, but using physics constraints as per [0, 0.005, 1000, 1, 1], i.e. including constraint #2
 
 ## Getting started with the saved predictions
 
