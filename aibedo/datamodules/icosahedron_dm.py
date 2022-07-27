@@ -124,7 +124,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
     def _model_specific_transform(self, input_data: np.ndarray, output_data: np.ndarray):
         return input_data, output_data
 
-    def _get_train_and_val_data(self, stage: str):
+    def _get_train_and_val_data(self, stage: str) -> (Tensor, Tensor, Tensor, Tensor):
         from sklearn.model_selection import train_test_split
         # compress.isosph5.SAM0-UNICON.historical.r1i1p1f1.Input.Exp8_fixed
         # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
@@ -135,13 +135,16 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         train_data_in, train_data_out = self._process_nc_dataset(fname_in, fname_out, shuffle=True, stage=stage)
         X_train, X_val, Y_train, Y_val = train_test_split(train_data_in, train_data_out, train_size=train_frac,
                                                           random_state=self.hparams.seed)
+        if stage == 'predict':
+            del X_train, Y_train, train_data_in, train_data_out  # save some storage space
+            X_train = Y_train = None
+
         return X_train, X_val, Y_train, Y_val
 
     def setup(self, stage: Optional[str] = None):
         """Load data. Set internal variables: self._data_train, self._data_val, self._data_test."""
         glevel = self.hparams.order
         train_frac, val_frac, test_frac = self.hparams.partition
-
         log.info(f" Grid level: {glevel}, # of pixels: {self.n_pixels}")
 
         if stage in ["fit", 'val', 'validation', None] or test_frac not in self._possible_test_sets:
@@ -158,7 +161,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
                 test_output_fname = f"compress.{sphere}.ERA5_Output_PrecipCon.nc"
             else:
                 raise ValueError(f"Unknown test_frac: {test_frac}")
-            if stage in ["test", "predict"]:
+            if stage == "test" or (stage == "predict" and self.hparams.prediction_data == 'same_as_test'):
                 X_test, Y_test = self._process_nc_dataset(test_input_fname, test_output_fname, shuffle=False,
                                                           stage=stage)
         else:
@@ -170,9 +173,16 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             if self.hparams.prediction_data == 'same_as_test':
                 X_predict, Y_predict = X_test, Y_test
             elif self.hparams.prediction_data == 'val':
-                seed_everything(self.hparams.seed)
-                _, X_val, _, Y_val = self._get_train_and_val_data(stage='predict')
-                X_predict, Y_predict = X_val, Y_val
+                val_save = os.path.join(self.hparams.data_dir,
+                                        f'{self.hparams.input_filename}_val_{self.hparams.seed}seed.npz')
+                if os.path.exists(val_save):
+                    log.info(f"Loading validation data from {val_save}")
+                    X_predict, Y_predict = np.load(val_save)['X_val'], np.load(val_save)['Y_val']
+                else:
+                    seed_everything(self.hparams.seed)
+                    _, X_val, _, Y_val = self._get_train_and_val_data(stage='predict')
+                    X_predict, Y_predict = X_val, Y_val
+                    np.savez_compressed(val_save, X_val=X_val, Y_val=Y_val)
             self._data_predict = get_tensor_dataset_from_numpy(X_predict, Y_predict, dataset_id='predict')
         if stage == 'fit' or stage is None:
             self._data_train = get_tensor_dataset_from_numpy(X_train, Y_train, dataset_id='train')

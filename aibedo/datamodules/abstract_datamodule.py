@@ -258,7 +258,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                                also_targets: bool = True,
                                also_errors: bool = False,
                                return_normalized_outputs: bool = False,
-                               **prediction_kwargs) -> xr.Dataset:
+                               **prediction_kwargs
+                               ) -> xr.Dataset:
         numpy_preds_targets = self.get_predictions(model, **prediction_kwargs, return_normalized_outputs=return_normalized_outputs)
         preds, targets = numpy_preds_targets['preds'], numpy_preds_targets['targets']
         var_shape = preds[list(preds.keys())[0]].shape[:-1]

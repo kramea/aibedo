@@ -188,7 +188,7 @@ class BaseModel(LightningModule):
                         squared=False)
                     for output_var in self.output_var_names
                 }
-            }).type_as(self)
+            }).to(self.device)
         return self._test_metrics
 
     @property
@@ -400,7 +400,8 @@ class BaseModel(LightningModule):
         # Enforce non-negative output variables (constraint 4)
         if self.hparams.physics_loss_weights[3] > 0:
             Y['pr'] = nonnegative_precipitation(Y['pr'])
-            Y['ps'] = nonnegative_precipitation(Y['ps'])
+            ps_or_psl = 'psl' if 'psl' in Y.keys() else 'ps'
+            Y[ps_or_psl] = nonnegative_precipitation(Y[ps_or_psl])
             Y['tas'] = nonnegative_precipitation(Y['tas'])
 
         return Y
@@ -556,9 +557,15 @@ class BaseModel(LightningModule):
 
         log_dict = dict()
         for metric_name, metric in torch_metrics.items():
-            if not any([out_var_name in metric_name for out_var_name in self.logging_output_var_names]):
+            out_var_in_metric_name = [ovn for ovn in self.logging_output_var_names if ovn in metric_name]
+            if len(out_var_in_metric_name) == 0:
                 continue
-            out_var_name = metric_name.split('/')[0] if '_pre' in metric_name else metric_name.split('/')[1]
+            elif len(out_var_in_metric_name) == 1:
+                out_var_name = out_var_in_metric_name[0]
+            elif len(out_var_in_metric_name) > 1:
+                # take the var with maximum character overlap with the metric name
+                out_var_name = max(out_var_in_metric_name, key=lambda ovn: len(ovn))
+            # out_var_name = metric_name.split('/')[0] if '_pre' in metric_name else metric_name.split('/')[1]
             metric(preds[out_var_name], Y[out_var_name])
             log_dict[metric_name] = metric
         kwargs['prog_bar'] = False  # do not show in progress bar the per-output variable metrics
