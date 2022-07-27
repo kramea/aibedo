@@ -169,5 +169,8 @@ aibedo/out_dir/**
 aibedo/out_dir/wandb/**
 aibedo/out_dir/logs/**
 aibedo/configs/local/default.yaml
+out_dir/checkpoints/**
+out_dir/wandb/**
+out_dir/logs/**
 # secrets (e.g. AWS)
 _secrets.py
