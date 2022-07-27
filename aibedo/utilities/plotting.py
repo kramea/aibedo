@@ -198,9 +198,11 @@ def data_mean_plotting(postprocessed_xarray: xr.Dataset,
         pc.colorbar.ax.tick_params(labelsize=15)
 
         # Set column title
+        if not plot_only_errors:
+            title_v = f"{var_names_to_clean_name()[var]}"
+            top_most_var_ax.set_title(title_v, fontsize=title_fontsize)
         bulk_err_f = f"{bulk_err:.6f}" if var == 'pr' else f"{bulk_err:.3f}"
-        title_v = f"{var_names_to_clean_name()[var]} (${error_to_plot.upper()}={bulk_err_f}$)"
-        top_most_var_ax.set_title(title_v, fontsize=title_fontsize)
+        error_ax.set_title(f"${error_to_plot.upper()}={bulk_err_f}$", fontsize=title_fontsize-2)
     for ax in np.array(axs).flatten():
         ax.coastlines()
     return fig, axs
