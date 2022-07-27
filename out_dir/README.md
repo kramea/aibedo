@@ -32,14 +32,17 @@ To use and analyze the saved predictions, you need to download the desired file 
 
 ### Plotting the predictions/targets
 
-Given a xarray dataset as above, you can plot the predictions and targets as follows:
+Given a xarray dataset as above, you can plot the predictions/targets/errors in various ways:
+
+##### Plotting the predictions for multiple snapshots
+
+Please see the code snippet below or many of the notebooks in the [notebooks/](../notebooks/) directory, 
+such as [this one](../notebooks/2022-07-26-ps-pr-tas-val-set-CESM2.ipynb).
 
 .. code-block:: python
 
-    from matplotlib import animation
     from aibedo.utilities.plotting import data_snapshots_plotting, data_mean_plotting, animate_snapshots
     
-    # Plot the predictions and targets for multiple snapshots
     vars_to_plot = ['pr']  # can be any listadd of the variables in the dataset
     _ = data_snapshots_plotting(
         ds, 
@@ -48,9 +51,18 @@ Given a xarray dataset as above, you can plot the predictions and targets as fol
         cmap=None,                   # can be any matplotlib colormap
         vars_to_plot=vars_to_plot
     )
-    
-    # Animate the predicted and targeted values for multiple snapshots in a video or GIF (for pr here only)
-    gif_kwargs = dict(num_snapshots=12, interval=1000)  #  num_snapshots: number of snapshots to animate
+
+##### Animate the predicted and targeted values for multiple snapshots in a video or GIF 
+
+Please see the code-block below, and 
+[this script](../analysis/animate_predictions_era5_2022-07-21.py) for a full-fledged example.
+
+.. code-block:: python
+
+    from matplotlib import animation
+    from aibedo.utilities.plotting import animate_snapshots
+
+    gif_kwargs = dict(num_snapshots=12, interval=1000)  #  num_snapshots: number of snapshots to animate 
     ani_targets, _ = animate_snapshots(ds, var_to_plot='pr_targets', **gif_kwargs)
     ani_preds, _ = animate_snapshots(ds, var_to_plot='pr_preds', **gif_kwargs)
     
