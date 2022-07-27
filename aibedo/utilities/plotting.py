@@ -1,5 +1,6 @@
+import os.path
 import random
-from typing import List, Union
+from typing import List, Union, Sequence
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -9,9 +10,11 @@ import pandas as pd
 import xarray as xr
 import cartopy.crs as ccrs
 from matplotlib import animation
+import matplotlib.cm as cm
 
 from aibedo.utilities.naming import var_names_to_clean_name
 from aibedo.utilities.utils import raise_error_if_invalid_value
+from aibedo.utilities.wandb_api import groupby
 
 var_names_to_cmap = {
     'tas_pre': 'coolwarm',  # rainbow
@@ -23,32 +26,6 @@ var_names_to_cmap = {
     'ps': 'Spectral',
     'pr': 'bwr',
 }
-
-
-def get_subplots(nrows: int = 1,
-                 ncols: int = 1,
-                 xlabel: str = None,
-                 ylabel: str = None,
-                 sharex: bool = False,
-                 sharey: bool = False,
-                 flatten_axes: bool = True,
-                 **kwargs):
-    fig, axs = plt.subplots(ncols=ncols, nrows=nrows, sharex=sharex, sharey=sharey, **kwargs)
-    plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
-    if xlabel:
-        if sharex:
-            plt.setp(axs[-1, :], xlabel=xlabel)
-        else:
-            plt.xlabel(xlabel)
-    if ylabel:
-        if sharey:
-            plt.setp(axs[:, 0], ylabel=ylabel)
-        else:
-            plt.ylabel(ylabel)
-
-    if flatten_axes:
-        axs = np.array(axs).flatten()  # flatten potentially 2d axes array into 1d
-    return fig, axs
 
 
 def set_labels_and_ticks(ax,
@@ -129,6 +106,7 @@ def save_figure(save_to: str, full_screen: bool = False, bbox_inches='tight'):
         else:
             plt.savefig(save_to, bbox_inches=bbox_inches)
 
+
 def get_vars_to_plot(vars_to_plot: Union[str, List[str]], postprocessed_xarray: xr.Dataset) -> List[str]:
     """
     Syntactic sugar to get the output variables to plot, e.g. by passing 'all', 'denormalized', 'normalized', etc.
@@ -145,6 +123,7 @@ def get_vars_to_plot(vars_to_plot: Union[str, List[str]], postprocessed_xarray: 
         assert isinstance(vars_to_plot, list), f"vars_to_plot must be a list, but is {type(vars_to_plot)}"
         output_vars = vars_to_plot
     return output_vars
+
 
 def data_mean_plotting(postprocessed_xarray: xr.Dataset,
                        error_to_plot: str = "mae",
@@ -239,13 +218,14 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                             same_colorbar_for_preds_and_targets: bool = True,
                             plot_only_preds: bool = False,
                             plot_error: bool = True,
-                            data_to_plot = ('targets', 'preds', 'error'),
+                            data_to_plot=('targets', 'preds', 'error'),
                             marker_size: int = 2,
                             coastlines_linewidth: float = 1,
                             title: str = "",
                             title_fontsize: int = 18,
                             cmap='auto',
                             seed=7,
+                            **kwargs
                             ):
     """
     This function will plot the predictions and/or targets and/or global errors for multiple snapshots/time-steps.
@@ -297,7 +277,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
     plot_only_preds = plot_only_preds or ['preds'] == data_to_plot
     if plot_only_preds:
         data_to_plot = ['preds']
-    if len(data_to_plot) == 3 and not plot_error:   # only with default data_to_plot arg
+    if len(data_to_plot) == 3 and not plot_error:  # only with default data_to_plot arg
         data_to_plot.remove('error') if 'error' in data_to_plot else None
     if 'error' in data_to_plot and f'{vars_to_plot[0]}_{error_to_plot}' not in postprocessed_xarray.keys():
         raise ValueError(f"The error to plot {vars_to_plot[0]}_{error_to_plot} is not in the dataset! ")
@@ -305,7 +285,7 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
     proj = ccrs.PlateCarree()
     label_fontsize = title_fontsize // 1.5
     ds_snaps = postprocessed_xarray.isel({'snapshot': snaps})
-    kwargs = dict(
+    kwargs2 = dict(
         ds=ds_snaps,
         x=longitude_dim,
         y=latitude_dim,
@@ -318,27 +298,28 @@ def data_snapshots_plotting(postprocessed_xarray: xr.Dataset,
                      'pad': 0.01,  # padding between right-ost subplot and cbar
                      'fraction': 0.05}
     )
-    p_target = p_err = p_pred = vmin = vmax = None
+    p_target = p_err = p_pred = None
     ps = dict()
     for var in output_vars:
         cmap = p_cmap = var_names_to_cmap[var] if cmap == 'auto' else cmap
         if 'targets' in data_to_plot:
-            p_target = xr.plot.scatter(hue=f'{var}_targets', cmap=cmap, **kwargs)
+            p_target = xr.plot.scatter(hue=f'{var}_targets', cmap=cmap, **kwargs, **kwargs2)
             if same_colorbar_for_preds_and_targets:
                 # Set the same colorbar for the predictions and targets subplots
-                vmin, vmax = p_target.cbar.vmin, p_target.cbar.vmax
+                kwargs['vmin'], kwargs['vmax'] = p_target.cbar.vmin, p_target.cbar.vmax
                 p_cmap = p_target.cbar.cmap
             # Set coastlines of all axes
             for ax in list(p_target.axes.flat):
                 ax.coastlines(linewidth=coastlines_linewidth)
         if 'preds' in data_to_plot:
-            p_pred = xr.plot.scatter(hue=f'{var}_preds', cmap=p_cmap, vmin=vmin, vmax=vmax, **kwargs)
+            p_pred = xr.plot.scatter(hue=f'{var}_preds', cmap=p_cmap, **kwargs, **kwargs2)
             # Set coastlines of all axes
             for ax in list(p_pred.axes.flat):
                 ax.coastlines(linewidth=coastlines_linewidth)
 
         if 'error' in data_to_plot:
-            p_err = xr.plot.scatter(hue=f'{var}_{error_to_plot}', **kwargs)
+            kwargs_error = kwargs if 'targets' not in data_to_plot and 'preds' not in data_to_plot else dict()
+            p_err = xr.plot.scatter(hue=f'{var}_{error_to_plot}', **kwargs_error, **kwargs2)
             for ax in list(p_err.axes.flat):
                 ax.coastlines(linewidth=coastlines_linewidth)
         ps[var] = {'targets': p_target, 'preds': p_pred, error_to_plot: p_err}
@@ -390,6 +371,7 @@ def animate_snapshots(postprocessed_xarray: xr.Dataset,
                       num_snapshots: int = 12,
                       cmap=None,
                       interval=400,
+                      **kwargs
                       ):
     pa_kwargs = dict(x='longitude', y='latitude', cbar_kwargs={'shrink': 0.5, 'pad': 0.01, 'fraction': 0.03})
     plt.rc('animation', html='jshtml')
@@ -399,7 +381,7 @@ def animate_snapshots(postprocessed_xarray: xr.Dataset,
     n_frames = len(postprocessed_xarray.indexes['snapshot'])
     first_snap = n_frames - num_snapshots
     first_snap_xr = postprocessed_xarray.isel(snapshot=first_snap)
-    scatter = xr.plot.scatter(first_snap_xr, hue=var_to_plot, cmap=cmap, ax=ax, **pa_kwargs)
+    scatter = xr.plot.scatter(first_snap_xr, hue=var_to_plot, cmap=cmap, ax=ax, **pa_kwargs, **kwargs)
 
     frames = range(first_snap, n_frames)
     xr_preds = getattr(postprocessed_xarray, var_to_plot)  # dont do (yet): .isel(snapshot=frames)
@@ -411,24 +393,24 @@ def animate_snapshots(postprocessed_xarray: xr.Dataset,
         scatter.set_array(xr_preds.isel(snapshot=i).values)  # update animation
         ax.set_title(f'Snapshot = {i}')
 
-    return animation.FuncAnimation(fig, animate_preds, frames=frames, interval=interval, blit=False)
+    return animation.FuncAnimation(fig, animate_preds, frames=frames, interval=interval, blit=False), scatter
 
 
 def zonal_error_plotting(postprocessed_xarrays: List[xr.Dataset],
-                        error_to_plot: str = "bias",
-                        vars_to_plot: List[str] = 'all',
-                        snapshots_to_plot: List[int] = None,
-                        num_snapshots_to_plot: int = 5,
-                        data_dim: str = 'snapshot',
-                        longitude_dim: str = 'longitude',
-                        latitude_dim: str = 'latitude'
+                         error_to_plot: str = "bias",
+                         vars_to_plot: List[str] = 'all',
+                         snapshots_to_plot: List[int] = None,
+                         num_snapshots_to_plot: int = 5,
+                         data_dim: str = 'snapshot',
+                         longitude_dim: str = 'longitude',
+                         latitude_dim: str = 'latitude'
                          ):
     if isinstance(postprocessed_xarrays, xr.Dataset):
         postprocessed_xarrays = [postprocessed_xarrays]
     assert len(postprocessed_xarrays) > 0, "No postprocessed xarrays provided to plot!"
     output_vars = get_vars_to_plot(vars_to_plot, postprocessed_xarrays[0])
     proj = ccrs.PlateCarree()
-    nrows =  1 # if plot_only_errors else 3
+    nrows = 1  # if plot_only_errors else 3
     ncols = len(output_vars)
     fig, axs = plt.subplots(nrows, ncols,
                             subplot_kw={'projection': proj},
@@ -439,7 +421,68 @@ def zonal_error_plotting(postprocessed_xarrays: List[xr.Dataset],
     for pds in postprocessed_xarrays:
         for j, var in enumerate(output_vars):
             err_id = f"{var}_{error_to_plot}"
-            zonal_err = getattr(pds, err_id).mean(dim=longitude_dim)
+            varTmean = pds.groupby(var.time.dt.month).mean(dim='time')
+            zonal_err = varTmean.groupby(varTmean.latitude).mean()
             zonal_err.plot(x=latitude_dim, ax=axs[j], cmap='RdBu_r')
 
     return fig, axs
+
+
+def plot_training_set_vs_test_performance(
+        runs_to_use_df: pd.DataFrame,
+        metrics_to_plot: Sequence[str] = ('val/mse_epoch', 'test/MERRA2/mse_epoch', 'test/ERA5/mse_epoch'),
+        keep_columns: Sequence[str] = ('id',),
+        max_error_to_plot: float = None,
+        order_by_performance: bool = True,
+        save_to_dir: str = None,
+        **kwargs
+):
+    """
+    Plot the influence of the used training set (ESM input) on the test performance (a reanalysis dataset).
+    """
+    grouped_runs_stats = groupby(runs_to_use_df,
+                                 group_by=['datamodule/input_filename'],
+                                 keep_columns=list(keep_columns),
+                                 metrics=list(metrics_to_plot))
+
+    fig, axs = plt.subplots(len(metrics_to_plot), 1)
+    for i, metric in enumerate(metrics_to_plot):
+        ax = axs[i]
+        xlabels, errors, stds = [], [], []
+        for j, run_group in grouped_runs_stats.iterrows():
+            run_ESM = run_group['datamodule/input_filename'].split('.')[2]
+            y = run_group[f"{metric}/mean"]
+            y_std = run_group[f"{metric}/std"]
+            first_run_id = run_group['id']
+            if y != y or y_std != y_std:  # NaN
+                continue
+
+            if max_error_to_plot and y > max_error_to_plot:
+                print(f"run {run_group} has bad {metric} score={y}, skipping it")
+                continue
+            errors.append(y)
+            stds.append(y_std)
+            xlabels += [run_ESM]
+
+        colors = cm.rainbow(np.linspace(0, 1, len(xlabels)))
+        if order_by_performance:
+            # order positions by performance (lowest to highest)
+            errors, stds, xlabels, colors = map(list, (zip(*sorted(zip(errors, stds, xlabels, colors), key=lambda x: x[0]))))
+
+        x_pos = np.arange((len(xlabels)))
+        ax.bar(x_pos, errors, yerr=stds, color=colors, align='center', alpha=0.5, ecolor='black', capsize=10)
+
+        metric_name = metric.upper().replace('_EPOCH', '').replace('TEST/', '').replace('/', ' ').replace('VAL', 'Val')
+        title = f"{kwargs['title']}_" if 'title' in kwargs else ""
+        save_to = os.path.join(save_to_dir, f'{title}{metric_name}.png')if save_to_dir else None
+        set_labels_and_ticks(
+            ax,
+            xlabel='', ylabel=metric_name,
+            xticks=x_pos, xtick_labels=xlabels,
+            xlabel_fontsize=14, ylabel_fontsize=14,
+            xticks_fontsize=8, yticks_fontsize=14, x_ticks_rotation=10,  # 45
+            show=False, legend=False, legend_loc='best',
+            grid=True,
+            save_to=save_to if save_to else None,
+            **kwargs
+        )
