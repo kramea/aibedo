@@ -175,14 +175,8 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             elif self.hparams.prediction_data == 'val':
                 val_save = os.path.join(self.hparams.data_dir,
                                         f'{self.hparams.input_filename}_val_{self.hparams.seed}seed.npz')
-                if os.path.exists(val_save):
-                    log.info(f"Loading validation data from {val_save}")
-                    X_predict, Y_predict = np.load(val_save)['X_val'], np.load(val_save)['Y_val']
-                else:
-                    seed_everything(self.hparams.seed)
-                    _, X_val, _, Y_val = self._get_train_and_val_data(stage='predict')
-                    X_predict, Y_predict = X_val, Y_val
-                    np.savez_compressed(val_save, X_val=X_val, Y_val=Y_val)
+                _, X_val, _, Y_val = self._get_train_and_val_data(stage='predict')
+                X_predict, Y_predict = X_val, Y_val
             self._data_predict = get_tensor_dataset_from_numpy(X_predict, Y_predict, dataset_id='predict')
         if stage == 'fit' or stage is None:
             self._data_train = get_tensor_dataset_from_numpy(X_train, Y_train, dataset_id='train')

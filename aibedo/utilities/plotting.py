@@ -12,6 +12,7 @@ import cartopy.crs as ccrs
 from matplotlib import animation
 import matplotlib.cm as cm
 
+from aibedo.constants import CLIMATE_MODELS_ALL
 from aibedo.utilities.naming import var_names_to_clean_name
 from aibedo.utilities.utils import raise_error_if_invalid_value
 from aibedo.utilities.wandb_api import groupby
@@ -26,6 +27,9 @@ var_names_to_cmap = {
     'ps': 'Spectral',
     'pr': 'bwr',
 }
+
+ESM_to_color = {esm: cm.Spectral(np.linspace(0, 1, len(CLIMATE_MODELS_ALL)))[i]   # rainbow  # Spectral
+                for i, esm in enumerate(CLIMATE_MODELS_ALL)}
 
 
 def set_labels_and_ticks(ax,
@@ -202,7 +206,7 @@ def data_mean_plotting(postprocessed_xarray: xr.Dataset,
             title_v = f"{var_names_to_clean_name()[var]}"
             top_most_var_ax.set_title(title_v, fontsize=title_fontsize)
         bulk_err_f = f"{bulk_err:.6f}" if var == 'pr' else f"{bulk_err:.3f}"
-        error_ax.set_title(f"${error_to_plot.upper()}={bulk_err_f}$", fontsize=title_fontsize-2)
+        error_ax.set_title(f"${error_to_plot.upper()}={bulk_err_f}$", fontsize=title_fontsize - 2)
     for ax in np.array(axs).flatten():
         ax.coastlines()
     return fig, axs
@@ -399,33 +403,37 @@ def animate_snapshots(postprocessed_xarray: xr.Dataset,
 
 
 def zonal_error_plotting(postprocessed_xarrays: List[xr.Dataset],
+                         labels: List[str] = None,
                          error_to_plot: str = "bias",
                          vars_to_plot: List[str] = 'all',
                          snapshots_to_plot: List[int] = None,
                          num_snapshots_to_plot: int = 5,
                          data_dim: str = 'snapshot',
                          longitude_dim: str = 'longitude',
-                         latitude_dim: str = 'latitude'
+                         latitude_dim: str = 'latitude',
+                         **kwargs
                          ):
     if isinstance(postprocessed_xarrays, xr.Dataset):
         postprocessed_xarrays = [postprocessed_xarrays]
     assert len(postprocessed_xarrays) > 0, "No postprocessed xarrays provided to plot!"
+    if labels is None:
+        labels = [""] * len(postprocessed_xarrays)
+    assert len(labels) == len(postprocessed_xarrays), "Number of labels must match number of postprocessed xarrays!"
     output_vars = get_vars_to_plot(vars_to_plot, postprocessed_xarrays[0])
     proj = ccrs.PlateCarree()
     nrows = 1  # if plot_only_errors else 3
     ncols = len(output_vars)
-    fig, axs = plt.subplots(nrows, ncols,
-                            subplot_kw={'projection': proj},
-                            gridspec_kw={'wspace': 0.07, 'hspace': 0,
-                                         'top': 1., 'bottom': 0., 'left': 0., 'right': 1.},
-                            figsize=(ncols * 12, nrows * 6)  # <- adjust figsize but keep ratio ncols/nrows
-                            )
-    for pds in postprocessed_xarrays:
+    fig, axs = plt.subplots(nrows, ncols, subplot_kw={'projection': proj})
+    axs = axs.flatten() if nrows > 1 else [axs]
+    for pds, label in zip(postprocessed_xarrays, labels):
+        zonal_err = pds.mean(dim=data_dim).groupby(pds.latitude).mean()
         for j, var in enumerate(output_vars):
             err_id = f"{var}_{error_to_plot}"
-            varTmean = pds.groupby(var.time.dt.month).mean(dim='time')
-            zonal_err = varTmean.groupby(varTmean.latitude).mean()
-            zonal_err.plot(x=latitude_dim, ax=axs[j], cmap='RdBu_r')
+            # varTmean = pds.groupby(var.time.dt.month).mean(dim='time')
+            zonal_err_var = getattr(zonal_err, err_id)
+            zonal_err_var.plot(x=latitude_dim, ax=axs[j], label=label, **kwargs)
+    for ax in axs:
+        ax.legend(); ax.grid()
 
     return fig, axs
 
@@ -447,7 +455,9 @@ def plot_training_set_vs_test_performance(
                                  keep_columns=list(keep_columns),
                                  metrics=list(metrics_to_plot))
 
-    fig, axs = plt.subplots(len(metrics_to_plot), 1)
+    title = kwargs.pop('title', None)
+    n_metrics = len(metrics_to_plot)
+    fig, axs = plt.subplots(n_metrics, 1)
     for i, metric in enumerate(metrics_to_plot):
         ax = axs[i]
         xlabels, errors, stds = [], [], []
@@ -462,29 +472,36 @@ def plot_training_set_vs_test_performance(
             if max_error_to_plot and y > max_error_to_plot:
                 print(f"run {run_group} has bad {metric} score={y}, skipping it")
                 continue
+            print(f"run {run_group} has {metric} score={y}")
             errors.append(y)
             stds.append(y_std)
             xlabels += [run_ESM]
 
-        colors = cm.rainbow(np.linspace(0, 1, len(xlabels)))
+        colors = [ESM_to_color[esm] for esm in xlabels]  # cm.rainbow(np.linspace(0, 1, len(xlabels)))
         if order_by_performance:
             # order positions by performance (lowest to highest)
-            errors, stds, xlabels, colors = map(list, (zip(*sorted(zip(errors, stds, xlabels, colors), key=lambda x: x[0]))))
+            errors, stds, xlabels, colors = map(list,
+                                                (zip(*sorted(zip(errors, stds, xlabels, colors), key=lambda x: x[0]))))
 
         x_pos = np.arange((len(xlabels)))
-        ax.bar(x_pos, errors, yerr=stds, color=colors, align='center', alpha=0.5, ecolor='black', capsize=10)
-
+        p = ax.bar(x_pos, errors, yerr=stds, color=colors, align='center', alpha=0.5, ecolor='black', capsize=10)
+        max_diff = max(errors) - min(errors)
+        ax.set_ylim([max(min(errors) - max_diff - max(stds), ax.get_ylim()[0]), ax.get_ylim()[1]])
         metric_name = metric.upper().replace('_EPOCH', '').replace('TEST/', '').replace('/', ' ').replace('VAL', 'Val')
-        title = f"{kwargs['title']}_" if 'title' in kwargs else ""
-        save_to = os.path.join(save_to_dir, f'{title}{metric_name}.png')if save_to_dir else None
+        title_save = f"{title}_" if title else ""
+        save_to = os.path.join(save_to_dir, f'{title_save}{metric_name}.png') if save_to_dir else None
         set_labels_and_ticks(
             ax,
             xlabel='', ylabel=metric_name,
             xticks=x_pos, xtick_labels=xlabels,
-            xlabel_fontsize=14, ylabel_fontsize=14,
-            xticks_fontsize=8, yticks_fontsize=14, x_ticks_rotation=10,  # 45
+            xlabel_fontsize=14, ylabel_fontsize=14 if n_metrics <= 2 else 10,
+            xticks_fontsize=8, yticks_fontsize=14 if n_metrics <= 2 else 10,
+            x_ticks_rotation=10,  # 45
             show=False, legend=False, legend_loc='best',
             grid=True,
             save_to=save_to if save_to else None,
+            title=title if i == 0 else None,
             **kwargs
         )
+    plt.subplots_adjust(wspace=0.01, hspace=0.23)
+    return fig, axs

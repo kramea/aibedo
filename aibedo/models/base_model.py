@@ -399,8 +399,8 @@ class BaseModel(LightningModule):
         Y: Dict[str, Tensor] = self.raw_outputs_to_denormalized_per_variable_dict(preds_tensor, **kwargs)
         # Enforce non-negative output variables (constraint 4)
         if self.hparams.physics_loss_weights[3] > 0:
-            Y['pr'] = nonnegative_precipitation(Y['pr'])
             ps_or_psl = 'psl' if 'psl' in Y.keys() else 'ps'
+            Y['pr'] = nonnegative_precipitation(Y['pr'])
             Y[ps_or_psl] = nonnegative_precipitation(Y[ps_or_psl])
             Y['tas'] = nonnegative_precipitation(Y['tas'])
 

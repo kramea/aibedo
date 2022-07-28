@@ -5,6 +5,7 @@ import pathlib
 from os.path import isdir, isfile
 from typing import Union, Callable, List, Optional, Sequence
 
+import numpy as np
 import wandb
 import pandas as pd
 from omegaconf import OmegaConf, DictConfig
@@ -304,11 +305,10 @@ def groupby(df: pd.DataFrame,
     if isinstance(group_by, str):
         group_by = [group_by]
 
-    grouped_df = df.groupby(group_by, as_index=False)
+    grouped_df = df.groupby(group_by, as_index=False, dropna=False)
     agg_metrics = {m: ['mean', 'std'] for m in metrics}
     agg_remain_intact = {c: 'first' for c in keep_columns}
     # cols = [group_by] + keep_columns + metrics + ['id']
-    # print(df[cols].isna().any())
     stats = grouped_df.agg({**agg_metrics, **agg_remain_intact})
     stats.columns = [(f'{c[0]}/{c[1]}' if c[1] in ['mean', 'std'] else c[0]) for c in stats.columns]
     for m in metrics:
@@ -357,7 +357,6 @@ def get_best_model_config(
     api = wandb_api or wandb.Api(timeout=77)
     # Project is specified by <entity/project-name>
     pm = '+' if mode == 'min' else '-'
-    print(filters_wandb)
     filters_wandb = {"$and": [filters_wandb]}
     runs = api.runs(f"{entity}/{project}", filters=filters_wandb, order=f'{pm}summary_metrics.{metric}')
     return {'id': runs[0].id, **runs[0].config}
@@ -482,6 +481,8 @@ def get_runs_df(
 
 
 def clean_hparams(df: pd.DataFrame):
+    # Replace string representation of nan with real nan
+    df.replace('NaN', np.nan, inplace=True)
     # Combine/unify columns of optim/scheduler which might be present in stored params more than once
     combine_cols = [col for col in df.columns if col.startswith('model/optim') or col.startswith('model/scheduler')]
     for col in combine_cols:
