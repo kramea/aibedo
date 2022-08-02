@@ -8,9 +8,11 @@ from einops import rearrange
 from pytorch_lightning import seed_everything
 from torch import Tensor
 from torch.utils.data import TensorDataset, Dataset
+
+from aibedo.constants import CLIMATE_MODELS_ALL
 from aibedo.datamodules.abstract_datamodule import AIBEDO_DataModule
 from aibedo.datamodules.torch_dataset import AIBEDOTensorDataset
-from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value
+from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value, get_any_ensemble_id
 from aibedo.skeleton_framework.data_loader import shuffle_data
 from aibedo.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
 
@@ -124,15 +126,14 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
     def _model_specific_transform(self, input_data: np.ndarray, output_data: np.ndarray):
         return input_data, output_data
 
-    def _get_train_and_val_data(self, stage: str) -> (Tensor, Tensor, Tensor, Tensor):
+    def _get_train_and_val_data(self, stage: str, input_filename: str) -> (Tensor, Tensor, Tensor, Tensor):
         from sklearn.model_selection import train_test_split
         # compress.isosph5.SAM0-UNICON.historical.r1i1p1f1.Input.Exp8_fixed
         # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
         #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
-        fname_in = self.hparams.input_filename
-        train_frac, val_frac, test_frac = self.hparams.partition
-        fname_out = fname_in.replace("Input.Exp8_fixed.nc", "Output.PrecipCon.nc")
-        train_data_in, train_data_out = self._process_nc_dataset(fname_in, fname_out, shuffle=True, stage=stage)
+        train_frac, val_frac, _ = self.hparams.partition
+        fname_out = input_filename.replace("Input.Exp8_fixed.nc", "Output.PrecipCon.nc")
+        train_data_in, train_data_out = self._process_nc_dataset(input_filename, fname_out, shuffle=True, stage=stage)
         X_train, X_val, Y_train, Y_val = train_test_split(train_data_in, train_data_out, train_size=train_frac,
                                                           random_state=self.hparams.seed)
         if stage == 'predict':
@@ -143,25 +144,31 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
 
     def setup(self, stage: Optional[str] = None):
         """Load data. Set internal variables: self._data_train, self._data_val, self._data_test."""
+        raise_error_if_invalid_value(stage, ['fit', 'validate', 'test', 'predict', None], 'stage')
         glevel = self.hparams.order
+        input_filename = self.hparams.input_filename
         train_frac, val_frac, test_frac = self.hparams.partition
         log.info(f" Grid level: {glevel}, # of pixels: {self.n_pixels}")
 
-        if stage in ["fit", 'val', 'validation', None] or test_frac not in self._possible_test_sets:
-            X_train, X_val, Y_train, Y_val = self._get_train_and_val_data(stage)
+        if stage in ["fit", 'validate', None] or test_frac not in self._possible_test_sets:
+            X_train, X_val, Y_train, Y_val = self._get_train_and_val_data(stage, input_filename)
 
-        if test_frac in self._possible_test_sets:
+        if stage == 'predict' and self.prediction_data in ['val'] + CLIMATE_MODELS_ALL:
+            pass
+        elif test_frac in self._possible_test_sets or (
+                stage == 'predict' and self.prediction_data in self._possible_test_sets
+        ):
             sphere = self.files_id
-            if test_frac == 'merra2':
+            if test_frac == 'merra2' or (stage == 'predict' and self.prediction_data == 'merra2'):
                 #                  f"compress.{sphere}MERRA2_Input_Exp8_fixed.nc"
                 test_input_fname = f"compress.{sphere}.MERRA2_Exp8_Input.2022Jul06.nc"
                 test_output_fname = f"compress.{sphere}.MERRA2_Output.2022Jul06.nc"
-            elif test_frac == 'era5':
+            elif test_frac == 'era5' or (stage == 'predict' and self.prediction_data == 'era5'):
                 test_input_fname = f"compress.{sphere}.ERA5_Input_Exp8.nc"
                 test_output_fname = f"compress.{sphere}.ERA5_Output_PrecipCon.nc"
             else:
                 raise ValueError(f"Unknown test_frac: {test_frac}")
-            if stage == "test" or (stage == "predict" and self.hparams.prediction_data == 'same_as_test'):
+            if stage == "test" or stage == "predict":
                 X_test, Y_test = self._process_nc_dataset(test_input_fname, test_output_fname, shuffle=False,
                                                           stage=stage)
         else:
@@ -169,18 +176,20 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             X_val, X_test, Y_val, Y_test = train_test_split(X_val, Y_val, test_size=test_frac / (val_frac + test_frac),
                                                             random_state=self.hparams.seed)
 
-        if stage in ["predict", None]:
-            if self.hparams.prediction_data == 'same_as_test':
+        if stage in ["predict"]:
+            if self.prediction_data == 'same_as_test':
                 X_predict, Y_predict = X_test, Y_test
-            elif self.hparams.prediction_data == 'val':
-                val_save = os.path.join(self.hparams.data_dir,
-                                        f'{self.hparams.input_filename}_val_{self.hparams.seed}seed.npz')
-                _, X_val, _, Y_val = self._get_train_and_val_data(stage='predict')
-                X_predict, Y_predict = X_val, Y_val
+            elif self.prediction_data == 'val':
+                _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict', input_filename=input_filename)
+            elif self.prediction_data in CLIMATE_MODELS_ALL:
+                in_file_esm = get_any_ensemble_id(self.hparams.data_dir, self.prediction_data)
+                _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict', input_filename=in_file_esm)
+            else:
+                raise ValueError(f"Unknown prediction_data: {self.prediction_data}")
             self._data_predict = get_tensor_dataset_from_numpy(X_predict, Y_predict, dataset_id='predict')
         if stage == 'fit' or stage is None:
             self._data_train = get_tensor_dataset_from_numpy(X_train, Y_train, dataset_id='train')
-        if stage in ["fit", 'val', 'validation', None]:
+        if stage in ["fit", 'validate', None]:
             self._data_val = get_tensor_dataset_from_numpy(X_val, Y_val, dataset_id='val')
         if stage in ['test', None]:
             self._data_test = get_tensor_dataset_from_numpy(X_test, Y_test, dataset_id='test')
@@ -193,17 +202,6 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         elif stage == 'predict':
             log.info(f" Dataset predict size: {len(self._data_predict)}")
 
-    @property
-    def test_set_name(self) -> str:
-        train_frac, val_frac, test_frac = self.hparams.partition
-        if test_frac == 'merra2':
-            return 'test/MERRA2'
-        elif test_frac == 'era5':
-            return 'test/ERA5'
-        elif isinstance(test_frac, float):
-            return f'test/{self._esm_name}'
-        else:
-            raise ValueError(f"Unknown test_frac: {test_frac}")
 
 
 def get_tensor_dataset_from_numpy(*ndarrays, dataset_id="") -> AIBEDOTensorDataset:
