@@ -21,6 +21,7 @@ def reload_and_test_model(run_id: str,
                           project: str = 'AIBEDO',
                           train_model: bool = False,
                           test_model: bool = True,
+                          predict_model: bool = False,
                           override_kwargs: Sequence[str] = None
                           ):
     """
@@ -84,12 +85,17 @@ def reload_and_test_model(run_id: str,
         resume_from_checkpoint=best_model_path
         # , deterministic=True
     )
+    x = None
     if train_model:
         trainer.fit(model=model, datamodule=datamodule)
 
     if test_model:  # Testing:
         trainer.test(datamodule=datamodule, model=model)
 
+    if predict_model:
+        x = trainer.predict(datamodule=datamodule, model=model)
+
     if config.get('logger') and config.logger.get("wandb"):
         import wandb
         wandb.finish()
+    return x

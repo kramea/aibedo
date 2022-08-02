@@ -11,8 +11,11 @@ from torch import Tensor, nn
 import torch.nn.functional as F
 from pytorch_lightning import LightningModule
 import torchmetrics
-from aibedo.data_transforms.normalization import get_variable_stats, get_clim_err, destandardize, standardize
+import importlib
+if importlib.util.find_spec("wandb"):
+    import wandb
 
+from aibedo.data_transforms.normalization import get_variable_stats, get_clim_err, destandardize, standardize
 from aibedo.data_transforms.transforms import AbstractTransform
 from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint, \
     mass_conservation_constraint, AUXILIARY_VARS, precipitation_energy_budget_constraint
@@ -125,7 +128,7 @@ class BaseModel(LightningModule):
                 for output_var in self.output_var_names
             }
         })
-        self._test_metrics = None
+        self._test_metrics = self._predict_metrics = None
         # Check that the args/hparams are valid
         self._check_args()
 
@@ -175,6 +178,10 @@ class BaseModel(LightningModule):
         return self.trainer.datamodule.test_set_name if hasattr(self.trainer.datamodule, 'test_set_name') else 'test'
 
     @property
+    def prediction_set_name(self) -> str:
+        return self.trainer.datamodule.prediction_set_name if hasattr(self.trainer.datamodule, 'prediction_set_name') else 'predict'
+
+    @property
     def test_metrics(self):
         if self._test_metrics is None:
             self._test_metrics = nn.ModuleDict({
@@ -190,6 +197,21 @@ class BaseModel(LightningModule):
                 }
             }).to(self.device)
         return self._test_metrics
+
+    @property
+    def predict_metrics(self):
+        if self._predict_metrics is None:
+            self._predict_metrics = nn.ModuleDict({
+                **{
+                      f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/mae": torchmetrics.MeanAbsoluteError()
+                      for output_var in self.output_var_names
+                  },
+                **{
+                f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/rmse":
+                    torchmetrics.MeanSquaredError(squared=False)
+                    for output_var in self.output_var_names
+            }}).to(self.device)
+        return self._predict_metrics
 
     @property
     def n_params(self):
@@ -270,6 +292,8 @@ class BaseModel(LightningModule):
             A dictionary of tensors of shape (batch_size, num_grid_cells) for each output variable in the model.
             E.g. 'pr_pre', 'tas_pre' will all be the keys to the respective predicted/target tensor.
         """
+        if outputs_tensor.shape[-1] != len(self.output_var_names):
+            raise ValueError(f"outputs_tensor.shape[-1]={outputs_tensor.shape[-1]}, but #output-vars={len(self.output_var_names)}")
         preds_per_target_variable = {
             var_name: outputs_tensor[..., i]  # index the tensor along the last dimension
             for i, var_name in enumerate(self.output_var_names)
@@ -534,6 +558,34 @@ class BaseModel(LightningModule):
         self.log_dict({'epoch': float(self.current_epoch), "time/train": train_time})
 
     # --------------------- evaluation with PyTorch Lightning
+    def _evaluation_per_variable(self,
+                                 preds: Dict[str, Tensor],
+                                 targets: Dict[str, Tensor],
+                                 torch_metrics: nn.ModuleDict,
+                                 manually_call_update: bool = False,
+                                 ) -> Dict[str, float]:
+        log_dict = dict()
+        for metric_name, metric in torch_metrics.items():
+            out_var_in_metric_name = [ovn for ovn in self.logging_output_var_names if ovn in metric_name]
+            if len(out_var_in_metric_name) == 0:
+                # if the metric is not related to any specific output variable (e.g. val/mse)
+                continue
+            elif len(out_var_in_metric_name) == 1:
+                # metric can be easily identified by the output variable name
+                out_var_name = out_var_in_metric_name[0]
+            elif len(out_var_in_metric_name) > 1:
+                # Multiple options: take the var with maximum character overlap with the metric name (pr_pre vs pr)
+                out_var_name = max(out_var_in_metric_name, key=lambda ovn: len(ovn))
+            # out_var_name = metric_name.split('/')[0] if '_pre' in metric_name else metric_name.split('/')[1]
+            # compute the metric
+            if manually_call_update:
+                metric.update(preds[out_var_name], targets[out_var_name])
+            else:
+                metric(preds[out_var_name], targets[out_var_name])
+                # save the metric value
+                log_dict[metric_name] = metric
+        return log_dict
+
     def _evaluation_step(self,
                          batch: Any, batch_idx: int,
                          torch_metrics: Optional[nn.ModuleDict] = None,
@@ -550,24 +602,12 @@ class BaseModel(LightningModule):
             metric(preds, Y)  # compute metrics (need to be in separate line to the following line!)
             log_dict[metric_name] = metric
         self.log_dict(log_dict, on_step=True, on_epoch=True, **kwargs)  # log metric objects
+
         # Now compute per output variable errors
         preds = self.raw_outputs_to_denormalized_per_variable_dict(preds, input_tensor=X,
                                                                    return_normalized_outputs=True)
         Y = self.postprocess_raw_predictions(Y, input_tensor=X, return_normalized_outputs=True)
-
-        log_dict = dict()
-        for metric_name, metric in torch_metrics.items():
-            out_var_in_metric_name = [ovn for ovn in self.logging_output_var_names if ovn in metric_name]
-            if len(out_var_in_metric_name) == 0:
-                continue
-            elif len(out_var_in_metric_name) == 1:
-                out_var_name = out_var_in_metric_name[0]
-            elif len(out_var_in_metric_name) > 1:
-                # take the var with maximum character overlap with the metric name
-                out_var_name = max(out_var_in_metric_name, key=lambda ovn: len(ovn))
-            # out_var_name = metric_name.split('/')[0] if '_pre' in metric_name else metric_name.split('/')[1]
-            metric(preds[out_var_name], Y[out_var_name])
-            log_dict[metric_name] = metric
+        log_dict = self._evaluation_per_variable(preds, Y, torch_metrics)
         kwargs['prog_bar'] = False  # do not show in progress bar the per-output variable metrics
         self.log_dict(log_dict, on_step=True, on_epoch=True, **kwargs)  # log metric objects
         return {'targets': Y, 'preds': preds}
@@ -607,8 +647,36 @@ class BaseModel(LightningModule):
         test_time = time.time() - self._start_test_epoch_time
         self.log("time/test", test_time)
 
-    def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = None):
-        return self._evaluation_step(batch, batch_idx)
+    def on_predict_start(self) -> None:
+        assert self.trainer.datamodule._data_predict is not None, "_data_predict is None"
+        assert self.trainer.datamodule._data_predict.dataset_id == 'predict', "dataset_id is not 'predict'"
+        for pdl in self.trainer.predict_dataloaders:
+            assert pdl.dataset.dataset_id == 'predict', f"dataset_id is not 'predict', but {pdl.dataset.dataset_id}"
+
+    def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = None, **kwargs
+                     ) -> Dict[str, Dict[str, Tensor]]:
+        X, Y = batch
+        # directly predict full original-scale outputs (separated per output variable into a dictionary)
+        preds: Dict[str, Tensor] = self.predict(X)
+        # Only split the targets into per-output variable tensors + use the correct output var names (without '_pre')
+        Y = {k.replace('_pre', ''): v for k,v in self._split_raw_preds_per_target_variable(Y).items()}
+        # evaluate the predictions vs the original-scale targets
+        _ = self._evaluation_per_variable(preds, Y, self.predict_metrics, manually_call_update=True)
+        # Not possible in predict:
+        # self.log_dict(log_dict, on_step=False, on_epoch=True, **kwargs)  # log metric objects
+        return {'targets': Y, 'preds': preds}
+
+    def on_predict_end(self, results: List[Any] = None) -> None:
+        if wandb.run is not None:
+            log_dict = {'epoch': float(self.current_epoch)}
+            for k, v in self.predict_metrics.items():
+                log_dict[k] = float(v.compute().item())
+                v.reset()
+            self.log_text.info(log_dict)
+            print(log_dict, wandb.run.id)
+            wandb.log(log_dict)
+        else:
+            self.log_text.warning("Wandb is not initialized, so no predictions are logged")
 
     # ---------------------------------------------------------------------- Optimizers and scheduler(s)
     def _get_optim(self, optim_name: str, **kwargs):

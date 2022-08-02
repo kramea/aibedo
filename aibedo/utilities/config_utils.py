@@ -3,6 +3,7 @@ import time
 import warnings
 from typing import Union, Sequence, List
 
+import hydra
 import wandb
 import omegaconf
 import pytorch_lightning as pl
@@ -193,6 +194,10 @@ def get_all_instantiable_hydra_modules(config, module_name: str):
                 except omegaconf.errors.InterpolationResolutionError as e:
                     log.warning(f" Hydra could not instantiate {module_config} for module_name={module_name}")
                     raise e
+                except hydra.errors.InstantiationException:
+                    log.warning(f" Hydra had trouble instantiating {module_config} for module_name={module_name}")
+                    modules.append(hydra_instantiate(module_config, settings=wandb.Settings(start_method='fork')))
+
     return modules
 
 
