@@ -13,6 +13,7 @@ from pytorch_lightning.utilities.types import EVAL_DATALOADERS
 import numpy as np
 import xarray as xr
 
+from aibedo.constants import CLIMATE_MODELS_ALL
 from aibedo.datamodules.torch_dataset import AIBEDOTensorDataset
 from aibedo.models.base_model import BaseModel
 from aibedo.utilities.constraints import AUXILIARY_VARS
@@ -75,11 +76,12 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         """
         super().__init__()
         # The following makes all args available as, e.g., self.hparams.batch_size
-        self.save_hyperparameters(ignore=['model_config'])
+        self.save_hyperparameters(ignore=['model_config', 'prediction_data'])
         self.model_config = model_config
         self._data_train = self._data_val = self._data_test = self._data_predict = None
         self._possible_test_sets = ['merra2', 'era5']
-        raise_error_if_invalid_value(prediction_data, self._possible_test_sets + ['val', 'same_as_test'], 'predict_data')
+        self._possible_prediction_sets = self._possible_test_sets + ['val', 'same_as_test'] + CLIMATE_MODELS_ALL
+        self.prediction_data = prediction_data
         self.hparams.auxiliary_vars = AUXILIARY_VARS
         self.window = model_config.window if hasattr(model_config, 'window') else 1
         input_var_names = [[f'{v}_mon{i}' for i in range(self.window)] for v in input_vars]
@@ -105,6 +107,38 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         # By default the month index is concatenated to the D input vars,
         # so that indices 0...D-1 are the input vars and D is the month
         return len(self.hparams.input_vars)
+
+    @property
+    def test_set_name(self) -> str:
+        train_frac, val_frac, test_frac = self.hparams.partition
+        if test_frac == 'merra2':
+            return 'test/MERRA2'
+        elif test_frac == 'era5':
+            return 'test/ERA5'
+        elif isinstance(test_frac, float):
+            return f'test/{self._esm_name}'
+        else:
+            raise ValueError(f"Unknown test_frac: {test_frac}")
+
+    @property
+    def prediction_data(self) -> str:
+        return self._prediction_data
+
+    @prediction_data.setter
+    def prediction_data(self, value: str):
+        self._prediction_data = raise_error_if_invalid_value(value, self._possible_prediction_sets, 'prediction_data')
+        self._data_predict = None
+
+    @property
+    def prediction_set_name(self) -> str:
+        if self.prediction_data == 'same_as_test':
+            return self.test_set_name.replace('test', 'predict')
+        elif self.prediction_data == 'val':
+            return f'predict/{self._esm_name}'
+        elif self.prediction_data in self._possible_test_sets or self.prediction_data in CLIMATE_MODELS_ALL:
+            return f'predict/{self.prediction_data.upper()}'
+        else:
+            raise ValueError(f"Unknown prediction data being used: {self.prediction_data}")
 
     def _check_args(self):
         """Check if the arguments are valid."""

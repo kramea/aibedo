@@ -96,7 +96,9 @@ def load_hydra_config_from_wandb(
             # also wandb-metadata.json is unexpected (was likely overwritten)
     overrides += [f'logger.wandb.id={run.id}',
                   f'logger.wandb.entity={run.entity}',
-                  f'logger.wandb.project={run.project}', f'logger.wandb.group={run.group}']
+                  f'logger.wandb.project={run.project}',
+                  f'logger.wandb.tags={run.tags}',
+                  f'logger.wandb.group={run.group}']
     config = get_config_from_hydra_compose_overrides(overrides, **kwargs)
     os.remove('hydra_config.yaml') if os.path.exists('hydra_config.yaml') else None
     if run.id != config.logger.wandb.id and run.id in config.logger.wandb.name:

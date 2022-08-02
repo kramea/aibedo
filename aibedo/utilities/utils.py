@@ -2,6 +2,7 @@
 Author: Salva Rühling Cachay
 """
 import functools
+import glob
 import logging
 import math
 import os
@@ -17,6 +18,7 @@ import torch.nn.functional as F
 from omegaconf import DictConfig, open_dict, OmegaConf
 from torch import Tensor
 from pytorch_lightning.utilities import rank_zero_only
+
 
 def no_op(*args, **kwargs):
     pass
@@ -165,6 +167,7 @@ def raise_error_if_invalid_value(value: Any, possible_values: Sequence[Any], nam
     if value not in possible_values:
         name = name or (value.__name__ if hasattr(value, '__name__') else 'value')
         raise ValueError(f"{name} must be one of {possible_values}, but was {value}")
+    return value
 
 
 # Random seed (if not using pytorch-lightning)
@@ -209,3 +212,17 @@ def get_local_ckpt_path(config: DictConfig, **kwargs):
     ckpt_filenames = [f for f in os.listdir(ckpt_direc) if os.path.isfile(os.path.join(ckpt_direc, f))]
     filename = get_epoch_ckpt_or_last(ckpt_filenames, **kwargs)
     return os.path.join(ckpt_direc, filename)
+
+
+def get_any_ensemble_id(data_dir, ESM_NAME: str) -> str:
+    sphere = "isosph"  # change here to isosph5 for level 5 runs
+    prefix = f"compress.{sphere}.{ESM_NAME}.historical"
+    if os.path.isfile(os.path.join(data_dir, f"{prefix}.r1i1p1f1.Input.Exp8_fixed.nc")):
+        fname = f"{prefix}.r1i1p1f1.Input.Exp8_fixed.nc"
+    else:
+        curdir = os.getcwd()
+        os.chdir(data_dir)
+        files = glob.glob(f"{prefix}.*.Input.Exp8_fixed.nc")
+        fname = files[0]
+        os.chdir(curdir)
+    return fname

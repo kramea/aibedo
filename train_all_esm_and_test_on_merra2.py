@@ -8,6 +8,7 @@ from hydra.core.global_hydra import GlobalHydra
 
 import aibedo.constants
 from aibedo.train import run_model
+from aibedo.utilities.utils import get_any_ensemble_id
 
 
 def single_esm_training_run(overrides, ESM: str):
@@ -18,20 +19,6 @@ def single_esm_training_run(overrides, ESM: str):
         GlobalHydra.instance().clear()  # always clean up global hydra
     config.datamodule.input_filename = get_any_ensemble_id(config.datamodule.data_dir, ESM)
     return run_model(config)
-
-
-def get_any_ensemble_id(data_dir, ESM_NAME: str) -> str:
-    sphere = "isosph"  # change here to isosph5 for level 5 runs
-    prefix = f"compress.{sphere}.{ESM_NAME}.historical"
-    if os.path.isfile(join(data_dir, f"{prefix}.r1i1p1f1.Input.Exp8_fixed.nc")):
-        fname = f"{prefix}.r1i1p1f1.Input.Exp8_fixed.nc"
-    else:
-        curdir = os.getcwd()
-        os.chdir(data_dir)
-        files = glob.glob(f"{prefix}.*.Input.Exp8_fixed.nc")
-        fname = files[0]
-        os.chdir(curdir)
-    return fname
 
 
 def all_esm_runs():
