@@ -82,7 +82,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self._possible_test_sets = ['merra2', 'era5']
         self._possible_prediction_sets = self._possible_test_sets + ['val', 'same_as_test'] + CLIMATE_MODELS_ALL
         self.prediction_data = prediction_data
-        self.hparams.auxiliary_vars = AUXILIARY_VARS
+        self.hparams.auxiliary_vars = AUXILIARY_VARS if model_config.use_auxiliary_vars else []
         self.window = model_config.window if hasattr(model_config, 'window') else 1
         input_var_names = [[f'{v}_mon{i}' for i in range(self.window)] for v in input_vars]
         self.input_var_names = list(itertools.chain(*input_var_names))  # flatten list of lists

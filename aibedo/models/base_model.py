@@ -53,6 +53,7 @@ class BaseModel(LightningModule):
                  physics_loss_weights: Sequence[float] = (0.0, 0.0, 0.0, 0.0, 0.0),
                  nonnegativity_at_train_time: bool = True,
                  month_as_feature: Union[bool, str] = False,
+                 use_auxiliary_vars: bool = True,
                  loss_function: str = "mean_squared_error",
                  name: str = "",
                  verbose: bool = True,
@@ -71,6 +72,8 @@ class BaseModel(LightningModule):
             nonnegativity_at_train_time (bool): Whether to enforce non-negativity at train time/ for backprop
                                                     Only used if physics_loss_weights[3] > 0
             month_as_feature (bool or str): Whether/How to use the month as a feature. Default is False (do not use it).
+            use_auxiliary_vars (bool): Whether to use the auxiliary variables for computing the
+                physics constraint losses (regardless of whether they are penalized). Default is True.
             loss_function (str): The name of the loss function, e.g. 'mean_squared_error'
             name (str): optional str with a name for the model
             verbose (bool): Whether to print/log or not
@@ -91,12 +94,14 @@ class BaseModel(LightningModule):
         else:
             self.input_transform: AbstractTransform = hydra.utils.instantiate(input_transform)
 
-        self._output_vars = None
+        self.AUX_VARS = AUXILIARY_VARS if use_auxiliary_vars else []
         self._input_var_to_idx = {
             var: i for i, var
             in enumerate(
-                list(datamodule_config.input_vars) + ['month'] + AUXILIARY_VARS
+                list(datamodule_config.input_vars) + ['month'] + self.AUX_VARS
             )}
+        self._output_vars = None
+
         # Infer the data dimensions
         self._data_dir = datamodule_config.data_dir
         self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
@@ -136,7 +141,7 @@ class BaseModel(LightningModule):
         self.sphere = "isosph5" if 'isosph5.' in datamodule_config.input_filename else "isosph"
         stats_kwargs = dict(data_dir=self.data_dir, files_id=self.sphere)
         # Go through all output and auxiliary vars:
-        for output_var in self.output_var_names + AUXILIARY_VARS:
+        for output_var in self.output_var_names + self.AUX_VARS:
             var_id = output_var.replace('_pre', '')
             var_mean, var_std = get_variable_stats(var_id=var_id, **stats_kwargs)
             self.register_buffer_dummy(f'{var_id}_mean', var_mean, persistent=False)
@@ -452,6 +457,10 @@ class BaseModel(LightningModule):
     # --------------------- training with PyTorch Lightning
     def on_train_start(self) -> None:
         """ Log some info about the model/data at the start of training """
+        if not self.hparams.use_auxiliary_vars:
+            psw = self.hparams.physics_loss_weights
+            if psw[0] > 0 or psw[1] > 0 or psw[2] > 0 or psw[4] > 0:
+                raise ValueError("The model is configured to not use auxiliary variables, but the physics_loss_weights are > 0!")
         self.log('Parameter count', float(self.n_params))
         self.log('Training set size', float(len(self.trainer.datamodule._data_train)))
         self.log('Validation set size', float(len(self.trainer.datamodule._data_val)))
@@ -501,7 +510,7 @@ class BaseModel(LightningModule):
             for clim_err in ['PE_clim_err', 'PS_clim_err', 'Precip_clim_err']
         }
         aux_vars_denormed: Dict[str, Tensor] = dict()
-        for aux_var in AUXILIARY_VARS:
+        for aux_var in self.AUX_VARS:
             aux_var_idx = self.input_var_to_idx[aux_var]  # e.g. index of evspsbl_pre in the X tensor
             aux_vars_denormed[aux_var.replace('_pre', '')] = self._denormalize_variable(
                 X[..., aux_var_idx], month_of_batch, output_var_name=aux_var
