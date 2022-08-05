@@ -15,6 +15,13 @@ AIBEDO is developed in Python 3.9.
     conda env create -f env_simple.yaml -n aibedo
     conda activate aibedo  # activate the environment called 'aibedo'
 
+*** Note for jupyter notebooks: *** You need to choose the above environment (aibedo) as kernel of the jupyter notebook.
+If the environment doesn't show up in the list of possible kernels, please do
+    
+    python -m ipykernel install --user --name aibedo   # change aibedo with whatever environment name you use 
+
+Then, please refresh the notebook page.
+
 ## Getting started
 
 ***Please have a look at [this README](aibedo/README.md)***
