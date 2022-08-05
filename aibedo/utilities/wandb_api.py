@@ -475,10 +475,10 @@ def get_runs_df(
         raise ValueError('Empty DF!')
     for post_filter in run_post_filters:
         all_df = post_filter(all_df)
+    all_df = clean_hparams(all_df)
     if make_hashable_df:
         all_df = all_df.applymap(lambda x: tuple(x) if isinstance(x, list) else x)
 
-    all_df = clean_hparams(all_df)
     return all_df
 
 
@@ -496,5 +496,11 @@ def clean_hparams(df: pd.DataFrame):
         del df[col]
     if 'model/time_length' in df.columns:
         getattr(df, 'model/time_length').fillna(4.0, inplace=True)
+    if 'model/loss_weights' in df.columns:
+        df['model/loss_weights'].apply(lambda x: (0.333, 0.333, 0.333) if (x != x or x is None) else x)
+    if 'model/physics_loss_weights' in df.columns:
+        df['model/physics_loss_weights'].apply(lambda x: (0.0, 0.0, 0.0, 0.0, 0.0) if x != x else x)
+    if 'model/month_as_feature' in df.columns:
+        getattr(df, 'model/month_as_feature').fillna(False, inplace=True)
 
     return df
