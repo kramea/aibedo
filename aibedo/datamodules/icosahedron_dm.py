@@ -58,7 +58,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
 
     def _get_auxiliary_data(self, dataset_in: xr.Dataset, dataset_out: xr.Dataset) -> np.ndarray:
         # Add month of the snapshot (0-11)
-        month_of_snapshot = np.array(dataset_in.indexes['time'].month) - 1  # -1 because month we want 0-indexed months
+        month_of_snapshot = np.array(dataset_out.indexes['time'].month) - 1  # -1 because month we want 0-indexed months
         # now repeat the month for each grid cell/pixel
         dataset_month = np.repeat(month_of_snapshot, self.n_pixels).reshape([-1, self.n_pixels, 1])
         if len(self.hparams.auxiliary_vars) > 0:
@@ -88,31 +88,31 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
             out_vars = [x.replace('_pre', '') for x in out_vars]
             log.info(f" Using raw output data from {os.path.basename(output_file)} -- Prediction targets: {out_vars}.")
         dataset_out = self._concat_variables_into_channel_dim(out_ds, out_vars, output_file)
-        # Auxiliary data (e.g. evaporation)
+        # Auxiliary data (e.g. output month, evaporation, ..)
         dataset_aux = self._get_auxiliary_data(in_ds, out_ds)
 
         # Reshape if using multiple timesteps for prediction
         if self.window > 1:
-            time_length = self.window
-            log.info(f" Using {time_length} timesteps for prediction.")
+            window = self.window
+            log.info(f" Using {window} timesteps for prediction.")
             in_tmp, out_tmp, aux_tmp = [], [], []
-            for i in range(0, len(dataset_in) - time_length):
+            for i in range(0, len(dataset_in) - window):
                 # concatenate time axis into feature axis
-                in_tmp += [rearrange(dataset_in[i:i + time_length, :, :], 't n d -> n (d t)')]
+                in_tmp += [rearrange(dataset_in[i:i + window, :, :], 't n d -> n (d t)')]
                 # reselect the corresponding output/aux data (at the same time as latest time step of inputs)
-                out_tmp += [dataset_out[i + time_length - 1, :, :]]
+                out_tmp += [dataset_out[i + window - 1, :, :]]
                 # similarly, the auxiliary data should be aligned to the last month too!
-                aux_tmp += [dataset_aux[i + time_length - 1, :, :]]
+                aux_tmp += [dataset_aux[i + window - 1, :, :]]
 
             dataset_in, dataset_out, dataset_aux = np.asarray(in_tmp), np.asarray(out_tmp), np.asarray(aux_tmp)
 
         if self.hparams.time_lag > 0:
-            time_lag = self.hparams.time_lag
-            raise NotImplementedError("Time lag not implemented yet, need month for both inputs and outputs!")
+            horizon = self.hparams.time_lag
+            # raise NotImplementedError("Time lag not implemented yet, need month for both inputs and outputs!")
             log.info(f" Model will be forecasting {self.hparams.time_lag} time steps ahead.")
-            dataset_in = dataset_in[:-time_lag, ...]
-            dataset_out = dataset_out[time_lag:, ...]
-            dataset_aux = dataset_aux[time_lag:, ...]
+            dataset_in = dataset_in[:-horizon, ...]
+            dataset_out = dataset_out[horizon:, ...]
+            dataset_aux = dataset_aux[horizon:, ...]
 
         # Concatenate the auxiliary data into the input data feature dimensions (dim=2)
         # Note, that this will not be fed into the model though -- the model inputs are cut off to only be dataset_in
