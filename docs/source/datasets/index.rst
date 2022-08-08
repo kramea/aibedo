@@ -204,7 +204,7 @@ Each of the above data hyper-cubes are preprocessed before ingestion into the hy
 
 Physics Constraints
 --------------------
- 
+
 To strengthen the generalisability of the AiBEDO model, we include "weak" physics-based constraints on the output to penalize unphysical results from the model.
 
 Constraint 1. Climate energy budget
