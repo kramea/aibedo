@@ -53,11 +53,6 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
      - 0
      - 1.000
      - 1.0000
-   * - E3SM-1-1-ECA
-     - 1
-     - 0
-     - 1.000
-     - 1.0000
    * - FGOALS-g3
      - 2
      - 1
@@ -108,6 +103,11 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
      - 0
      - 1.121
      - 1.1250
+   * - NorCPM1
+     - 5
+     - 0
+     - 1.9
+     - 2.5
    * - SAM0-UNICON
      - 1
      - 0
@@ -116,57 +116,73 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
 
 
 .. list-table:: Table 2. Variable list and descriptions
-   :widths: 20 20 60
+   :widths: 20 20 20 20
    :header-rows: 1
 
    * - Category
      - Variable
      - Description
-   * - Input
-     - clwvi
-     - Mass of cloud liquid water in a column
-   * - Input
-     - clivi
-     - Mass of cloud ice water in a column 
+     - Equation notation
    * - Input
      - cres
-     - TOA Cloud radiative effect in shortwave
+     - TOA Cloud radiative effect in shortwave (positive down)
+     - :math:`R_{TOA}^{cl,SW}`
    * - Input
      - cresSurf
-     - Surface Cloud radiative effect in shortwave
+     - Surface Cloud radiative effect in shortwave (positive down)
+     - :math:`R_{SRF}^{cl,SW}`
    * - Input
      - crel
-     - TOA Cloud radiative effect in longwave
+     - TOA Cloud radiative effect in longwave (positive down)
+     - :math:`R_{TOA}^{cl,LW}`
    * - Input
      - crelSurf
-     - Surface Cloud radiative effect in longwave
+     - Surface Cloud radiative effect in longwave (positive down)
+     - :math:`R_{SRF}^{cl,LW}`
    * - Input
      - netTOAcs 
-     - TOA radiation without clouds (clear-sky)
+     - TOA radiation without clouds (clear-sky) (positive down)
+     - :math:`R_{TOA}^{cs,ALL}`
    * - Input
      - netSurfcs
-     - Net Clearsky Surface radiation
-   * - Input
-     - lcloud
-     - Cloud fraction averaged between 1000 hPa and 700 hPa
+     - Net Clearsky Surface radiation and heat flux (positive down)
+     - :math:`R_{SRF}^{cs,ALL} - SH - LH`
    * - Output
      - tas
      - 2-metre air temperature
+     - :math:`T_{SRF}`
    * - Output
-     - psl
-     - Sea level pressure
+     - ps 
+     - Surface pressure
+     - :math:`p_{SRF}`
    * - Output
      - pr
      - Precipitation
-   * - Constraint
-     - ps 
-     - Surface pressure
+     - :math:`P`
    * - Constraint
      - evspsbl
      - Evaporation
+     - :math:`E`
    * - Constraint
-     - heatconv
-     - Convergence of vertically integrated heat flux
+     - hfss
+     - Surface upward sensible heat flux (positive up)
+     - :math:`SH`
+   * - Constraint
+     - netTOARad
+     - TOA All-sky radiation (positive down)
+     - :math:`R_{TOA}^{all,ALL}`
+   * - Constraint
+     - netSurfRad
+     - Surface All-sky radiation (positive down)
+     - :math:`R_{TOA}^{all,ALL}`
+   * - Constraint
+     - qtot
+     - Column integrated water vapour mass
+     - :math:`\frac{1}{g}\sum_{lev} Q dp`
+   * - Constraint
+     - dqdt
+     - Time tendency of column integrated water vapour mass
+     - :math:`\frac{1}{g}\frac{d}{dt} \sum_{lev} Q dp`
 
 The ESM data are pooled together to form the training and testing datasets for our hybrid model. However, it is important to note there are substantial differences in the climatologies and variability of some of the chosen input variables across models (Figure 1). In particular, global average cloud liquid water content, cloud ice water content, and net top of atmosphere radiation vary more across ESMs than other variables. The former two are the result of differences in cloud parameterizations between ESMs, while the latter is likely due to uncertainties in the overall magnitude of anthropogenic forcing over the historical period. Comparing spatial correlation scores (Figure 2), shows net TOA radiation fields are very similar across models while the spatial pattern of cloud ice and water content varies substantially. Such variations represent the inter-ESM uncertainty in the representation of the climate. However, many of these ESM differences are largely removed during preprocessing described below.
 
@@ -202,6 +218,7 @@ Each of the above data hyper-cubes are preprocessed before ingestion into the hy
 
   Figure 3. Example preprocessing for a surface air temperature data point.
 
+<<<<<<< HEAD
 Physics Constraints
 --------------------
 
@@ -268,7 +285,7 @@ This relationship balances the moisture flux in to (evaporation) and out of (pre
 
 where :math:`P` is the precipitation, :math:`E` is the evaporation, :math:`q` is the specific humidity, and :math:`p_s` is the surface pressure.
 
-The moisture storage term can be roughly approximated the climatological mean global mean P-E, which we subtract from the P-E we calculate for a given month of AiBEDO output such that
+Currently, we approximate the moisture storage term as the climatological mean global mean P-E, which we subtract from the P-E we calculate for a given month of AiBEDO output such that
 
 .. math:: 
   \sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} - \epsilon_q \approx 0
@@ -289,9 +306,19 @@ Using the hydrostatic balance assumption, surface pressure can be used as a prox
 .. math:: 
    \sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = C + \Delta t\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(M)_{lat,lon} \Delta A_{lat, lon}
 
-where :math:`P_s` is the surface pressure and :math:`M` is the mass flux into the atmosphere. We assume that the mass flux into the atmosphere is predominantly water vapour, such that we can assume :math:`M = E`.
+where :math:`P_s` is the surface pressure and :math:`M` is the mass flux into the atmosphere. We assume that the mass flux into the atmosphere is predominantly water vapour, such that we can assume :math:`M = P - E` and the constant :math:`C` is the mass of the dry atmosphere.
 
-Similar to constraint 5, we assume :math:`C` plus the mass flux term can be approximated by the climatological mean :math:`P_s`, which we subtract from the :math:`P_s` for a given month of AiBEDO output such that
+The time integrated :math:`P-E` is equivalent to the mass of water vapour in the atmosphere, which we estimate as
+
+.. math:: 
+  M_Q = \int_{lat=90S}^{90N} \int_{lon=180W}^{180E} \frac{-1}{g} \sum_{lev = 0}^{p_s} q_{lev,lat,lon} dp
+
+Thus,    
+
+.. math:: 
+  \sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = C + g M_Q
+
+Similar to constraint 3, we currently assume some :math:`C + M_q` can be approximated by the climatological mean :math:`P_s`, which we subtract from the :math:`P_s` for a given month of AiBEDO output such that
 
 .. math:: 
   \int_A \frac{-1}{g}p_s dA - (C + \epsilon_E) = 0
@@ -327,5 +354,4 @@ Jakob, C., Singh, M. S., & Jungandreas, L. (2019). Radiative convective equilibr
 Muller, C. J., & O’Gorman, P. A. (2011). An energetic perspective on the regional response of precipitation to climate change. Nature Climate Change, 1(5), 266-271.
 
 Zelinka, M. D., Myers, T. A., McCoy, D. T., Po‐Chedley, S., Caldwell, P. M., Ceppi, P., Klein, S.A. & Taylor, K. E. (2020). Causes of higher climate sensitivity in CMIP6 models. Geophysical Research Letters, 47(1), e2019GL085782.
-
 

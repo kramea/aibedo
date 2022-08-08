@@ -41,8 +41,9 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="datasets/index.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics/index.html">Physics Constraints</a></li>
 <li class="toctree-l1"><a class="reference internal" href="architecture/index.html">Hybrid AI Model Architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dynamics/index.html">Climate dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamics/index.html">Climate Dynamics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mcb/index.html">Marine Cloud Brightening</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial/index.html">Code usage and tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reports/index.html">AIBEDO Reports</a></li>
@@ -87,10 +88,9 @@
 <li class="toctree-l1"><a class="reference internal" href="datasets/index.html">Datasets</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="datasets/index.html#training-data">Training data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="datasets/index.html#reanalysis">Reanalysis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets/index.html#preprocessing">Preprocessing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets/index.html#physics-constraints">Physics Constraints</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datasets/index.html#preprocessing">Preprocessing</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="datasets/index.html#constraint-1-climate-energy-budget">Constraint 1. Climate energy budget</a></li>
-<li class="toctree-l3"><a class="reference internal" href="datasets/index.html#constraint-2-tropical-atmospheric-energy-budget">Constraint 2. <strong>Tropical atmospheric energy budget</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets/index.html#constraint-2-precipitation-energy-budget">Constraint 2. <strong>Precipitation energy budget</strong></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datasets/index.html#constraint-3-global-moisture-budget">Constraint 3. <strong>Global moisture budget</strong></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datasets/index.html#constraint-4-non-negative-precipitation">Constraint 4. <strong>Non-negative precipitation</strong></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datasets/index.html#constraint-5-global-atmospheric-mass-budget">Constraint 5. <strong>Global atmospheric mass budget</strong></a></li>
@@ -100,38 +100,48 @@
 <li class="toctree-l2"><a class="reference internal" href="datasets/index.html#references">References</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="physics/index.html">Physics Constraints</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="physics/index.html#constraint-1-climate-energy-budget">Constraint 1. Climate energy budget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physics/index.html#constraint-2-precipitation-energy-budget">Constraint 2. <strong>Precipitation energy budget</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="physics/index.html#constraint-3-global-moisture-budget">Constraint 3. <strong>Global moisture budget</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="physics/index.html#constraint-4-non-negative-precipitation">Constraint 4. <strong>Non-negative precipitation</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="physics/index.html#constraint-5-global-atmospheric-mass-budget">Constraint 5. <strong>Global atmospheric mass budget</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="physics/index.html#denormalization">Denormalization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physics/index.html#references">References</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="architecture/index.html">Hybrid AI Model Architecture</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="architecture/index.html#spatial-data-driven-component">Spatial Data-Driven Component</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="architecture/index.html#spherical-u-net-architecture">Spherical U-Net Architecture</a></li>
 <li class="toctree-l3"><a class="reference internal" href="architecture/index.html#sampling-module">Sampling Module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="architecture/index.html#interpolation-module">Interpolation Module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="architecture/index.html#model-library-module">Model Library Module</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="architecture/index.html#temporal-data-driven-component">Temporal Data-Driven Component</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="architecture/index.html#multi-timescale-long-short-term-memory-lstm-networks">Multi-timescale Long Short-Term Memory (LSTM) Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture/index.html#multi-timescale-temporal-data-driven-component">Multi-timescale Temporal Data-Driven Component</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture/index.html#model-performance-metrics">Model Performance Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture/index.html#preliminary-results">Preliminary Results</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="dynamics/index.html">Climate Dynamics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dynamics/index.html#clouds-and-circulation">Clouds and Circulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dynamics/index.html#clouds">Clouds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamics/index.html#circulation-controls-of-clouds">Circulation controls of clouds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamics/index.html#cloud-effects-on-circulation">Cloud effects on circulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamics/index.html#coupling-between-clouds-and-the-circulation">Coupling between clouds and the circulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamics/index.html#cmip6-cloud-and-circulation-biases">CMIP6 cloud and circulation biases</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="dynamics/index.html">Climate dynamics</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="dynamics/clouds.html">Clouds and Circulation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="dynamics/clouds.html#clouds">Clouds</a></li>
-<li class="toctree-l3"><a class="reference internal" href="dynamics/clouds.html#circulation-controls-of-clouds">Circulation controls of clouds</a></li>
-<li class="toctree-l3"><a class="reference internal" href="dynamics/clouds.html#cloud-effects-on-circulation">Cloud effects on circulation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="dynamics/clouds.html#coupling-between-clouds-and-the-circulation">Coupling between clouds and the circulation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="dynamics/clouds.html#cmip6-cloud-and-circulation-biases">CMIP6 cloud and circulation biases</a></li>
-<li class="toctree-l3"><a class="reference internal" href="dynamics/clouds.html#references">References</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="dynamics/fdtheorem.html">Fluctuation Dissipation Theorem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dynamics/index.html#fluctuation-dissipation-theorem">Fluctuation Dissipation Theorem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dynamics/index.html#references">References</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="mcb/index.html">Marine Cloud Brightening</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="mcb/index.html#background-and-introduction">Background and Introduction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mcb/index.html#stage-1-climate-model-perturbations">Stage 1: Climate Model Perturbations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mcb/index.html#stage-2-aibedo-ml-model-perturbations">Stage 2: AIbedo ML Model Perturbations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mcb/index.html#stage-3-projections-on-tipping-point-impacts">Stage 3:  Projections on Tipping Point Impacts:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mcb/index.html#stage-1-climate-model-perturbations">Stage 1: Climate Model Perturbations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mcb/index.html#planned-mcb-experiments">Planned MCB Experiments</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mcb/index.html#stage-2-aibedo-ml-model-perturbations">Stage 2: AiBEDO ML Model Perturbations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mcb/index.html#references">References</a><ul class="simple">
 </ul>
 </li>
@@ -140,12 +150,18 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorial/index.html">Code usage and tutorials</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="tutorial/index.html#preprocessing-techniques">Preprocessing Techniques</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial/index.html#interpolate-2d-gridded-data-to-spherical-grids">Interpolate 2D-gridded data to Spherical Grids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/index.html#spherical-u-net-model">Spherical U-Net Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/index.html#temporal-spherical-u-net-model">Temporal Spherical U-Net Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/index.html#visualizing-spherical-u-net-output">Visualizing Spherical U-Net Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/index.html#generating-predictions">Generating Predictions</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="reports/index.html">AIBEDO Reports</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="reports/index.html#milestone-1">Milestone 1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reports/index.html#milestone-2">Milestone 2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reports/index.html#milestone-3">Milestone 3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reports/index.html#milestone-4">Milestone 4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reports/index.html#milestone-5">Milestone 5</a></li>
 </ul>
 </li>
 </ul>

@@ -181,7 +181,6 @@ Table 2 describes examples of proposed regional climate responses we will target
      - Jet shift
      - Midlatitude sea level pressure
 
-
 ..
 	------------------
 	Stage 3:  Projections on Tipping Point Impacts:

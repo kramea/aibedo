@@ -21,6 +21,7 @@ Climate intervention techniques—like marine cloud brightening—that need to b
 
    
    datasets/index
+   physics/index
    architecture/index
    dynamics/index
    mcb/index

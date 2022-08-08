@@ -35,3 +35,10 @@ Milestone 4
 The main objective of this milestone is to assess preliminary results and elucidate the model development next steps. 
 
 `Link to milestone 4 report <https://github.com/kramea/aibedo/blob/main/docs/source/reports/Milestone4/AIBEDO_Milestone4_May13_22.pdf>`_
+
+Milestone 5
+-----------
+
+The main objective of this milestone is to illustrate the plans for Phase 2 dataset generation. The milestone also details the ongoing methodology. 
+
+`Link to milestone 5 report <https://github.com/kramea/aibedo/blob/main/docs/source/reports/Milestone5/AIBEDO_Milestone5_Jun13_22.pdf>`_

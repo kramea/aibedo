@@ -120,34 +120,30 @@ Interpolation Module
 We use the PyGSP library in Python to perform the grid transformation. It is commonly used for various graph operations to use in signal processing or social network analysis (e.g., Erdos-Reyni network). We first develop a 'backbone' structure of a spherical coordinate system (icosahedron, healpix, etc.). The properties of the spherical coordinates, such as levels or sub-divisions, are given as input. At this point, the coordinates are simply graph networks. In the next step, we assign latitude and longitude values to the graph network (x, y) so that they can be manifested in a geographical coordinate system. Finally, we use the raw data from reanalysis or ESM output and perform bilinear interpolation to obtain the final spherically-sampled data. 
 
 .. figure::
-	images/interpolated.png
+  images/sampling_pipeline.png
 
-  Figure 5. Spherical sampled and interpolated dataset from 2D-linearly gridded data
-
-Model Library Module
-~~~~~~~~~~~~~~~~~~~~~
-
-We have created a library of models, ranging from regular Convolutional Neural Network (CNN), CNN-Autoencoder, **Vanilla** U-net to Spherical U-net architectures.This allows the modeler to explore the model performance and computational needs of different types of deep learning architectures. The sampling module is independent of the model library. There exists a function that combines the interpolated dataset obtained from the sampling module with the desired model architecture chosen by the modeler as shown in Figure. 
-
-Temporal Data-Driven Component
-------------------------------
-
-While the spatial model maps cloud properties with circulation and regional climate variables for a given step, the temporal component aims to predict the output for the next time step for a set of input conditions. Our goal to model temporal component is to initially understand how the circulation, precipitation, and temperature could change over time and subsequently observe if there are any patterns of climate tipping points. The tipping point characterization in our model does not intend to model the dynamics of nonlinear feedback loops in the earth system, but we would look at the large-scale trends over time at the decadal scale first, and then narrow down to any changing trends in seasonal scale to identify "early-onset" of tipping points. 
-
-Multi-timescale Long Short-Term Memory (LSTM) Networks
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We use two distinctive LSTM networks to implement this functionality: one for modeling long-term climate impacts at the decadal scale LSTMd and another for modeling shorter-term seasonal changes LSTMs. We will run the decadal-scale model ${LSTM}_d$ first, where we will make yearly predictions. The hidden states of LSTMd at every year will then be used by LSTMs as initial states to make monthly predictions. Since the two LSTM branches may have different hidden sizes, we will feed the states through a linear state transfer layer. Figure 5 shows an illustration of a multi-time scale LSTM network. 
+  Figure 5. Pipeline to convert from 2D grid to Spherical grid
 
 .. figure::
-	images/mutilstm.png
+	images/interpolated.png
 
-  Figure 5. Multi-timescale LSTM network
+  Figure 6. Spherical sampled and interpolated dataset from 2D-linearly gridded data
 
-PARC team is implementing the temporal model using two training schemes: 
 
-#. *Teacher forcing strategy*: we are designing the both LSTM approaches as feed-forward networks, where the ground truth from a prior time step will be used as input
-#. *Curriculum learning strategy*: we will increment the task difficulty by gradually increasing the rate of using predicted value from current time step by feeding to the input of next time step prediction.
+
+Multi-timescale Temporal Data-Driven Component
+----------------------------------------------
+
+
+A response in a climate system is rarely spontaneous due to its complex convections, teleconnections across geographical regions and feedback loops. In our model, we are incorporating two kinds of temporal components: a spatially-explicit short-term component, and spatially-aggregate long-term component. The short-term component captures the response of output variables due to changes in cloud properties in a sub-yearly resolution. We ran simple lag-response experiments and idenfified that a short-term of 3-6 months captures the climate response of temperature, surface pressure and precipitation best for the chosen input properties. We implement the short-term temporal model by extending the Spherical U-Net framework developed for the spatial component. Here, we are augmenting the Spherical U-Net architecture to incorporate the temporal dimension (concatenated along the variable vector axis).
+
+This model generates the monthly output responses for different short-term input changes. To understand the long-term trend, we are aggregating the monthly responses to annual averages. We are developing these long-term trends globally as well as for each zonal region illustrated in Figure 8. In addition, we are developing a Long Short-Term Memory network models on these aggregated annual averages. These will be used to identify when the trends exactly deviate due to climate intervention experiments. For example, the loss difference of a trained LSTM between the baseline trend and climate intervention trend could pinpoint the exact timeframe as to when the deviation starts and ends. The schematic of the model operation is shown below:
+
+.. figure::
+  images/model-operation.png
+
+  Figure 8. Schematic of AiBEDO Model Operation
+
 
 Model Performance Metrics
 -------------------------
@@ -155,12 +151,12 @@ Model Performance Metrics
 In Phase 1, we are assessing the hybrid model performance on two main metrics: accuracy and speed of inference, compared to the run time of a conventional Earth system model. 
 
 * To assess model accuracy, we will report MSE (Mean Squared Error) of the model between model predictions of output variables and the 'ground truth' (values from Earth system model output). 
-* To assess regional accuracy of the model, we have divided the regions as shown in Figure 6, which consists of the tropics, midlatitudes (northern hemisphere and southern hemisphere), Arctic, and Antarctic zones. In each zone, we will report the error metrics of land and ocean areas separately using a land-sea mask attribute. 
+* To assess regional accuracy of the model, we have divided the regions as shown in Figure 9, which consists of the tropics, midlatitudes (northern hemisphere and southern hemisphere), Arctic, and Antarctic zones. In each zone, we will report the error metrics of land and ocean areas separately using a land-sea mask attribute. 
 
 .. figure::
 	images/regions_metrics.png
 
-  Figure 6. Region-wise Metrics
+  Figure 9. Region-wise Metrics
       
 * As we start including the physics constraints during model training, we will assess the impact on model performance for each additional physics constraint, as well as a combination of all the constraints. These will be reported for the entire model and the sub-regions.
 * Finally, once the full model is trained and used for inference, we will record the time taken to obtain the output predictions for a given input variable. This will be compared with the time taken to run different Earth System models (CESM, E3SM, etc.)
@@ -168,16 +164,16 @@ In Phase 1, we are assessing the hybrid model performance on two main metrics: a
 Preliminary Results
 --------------------
 
-Our initial results of the Spherical U-Net model is shown in Figure 7. We observe that the hybrid model is generally good at capturing the patterns for all three output variables. However, the model output is poor in certain regions (e.g., tropics, due to high variability). 
+Our initial results of the Spherical U-Net model is shown in Figure 10. We observe that the hybrid model is generally good at capturing the patterns for all three output variables. However, the model output is poor in certain regions (e.g., tropics, due to high variability). 
 
 .. figure::
 	images/prelim_result1.png
 
-  Figure 7. Comparison of Ground Truth and Model Predictions for Air Temperature, Sea Level Pressure and Precipitation
+  Figure 10. Comparison of Ground Truth and Model Predictions for Air Temperature, Sea Level Pressure and Precipitation
 
-To investigate this further, we plotted the errors split across regions (tropics, midlatitudes, arctic, antarctic, and over land and ocean) in Figure 8. Granular analysis of errors for different zonal regions helps us investigate how to mitigate the model performance issues, specifically, on designing physics constraints that can be incorporated accordingly. 
+To investigate this further, we plotted the errors split across regions (tropics, midlatitudes, arctic, antarctic, and over land and ocean) in Figure 11. Granular analysis of errors for different zonal regions helps us investigate how to mitigate the model performance issues, specifically, on designing physics constraints that can be incorporated accordingly. 
 
 .. figure::
 	images/prelim_result2.png
 
-  Figure 8. Region-wise plot of errors
+  Figure 11. Region-wise plot of errors

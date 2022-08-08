@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Physics Constraints &mdash; AIBEDO 0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Hybrid AI Model Architecture" href="../architecture/index.html" />
+    <link rel="prev" title="Datasets" href="../datasets/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> AIBEDO
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../datasets/index.html">Datasets</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Physics Constraints</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#constraint-1-climate-energy-budget">Constraint 1. Climate energy budget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#constraint-2-precipitation-energy-budget">Constraint 2. <strong>Precipitation energy budget</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#constraint-3-global-moisture-budget">Constraint 3. <strong>Global moisture budget</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#constraint-4-non-negative-precipitation">Constraint 4. <strong>Non-negative precipitation</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#constraint-5-global-atmospheric-mass-budget">Constraint 5. <strong>Global atmospheric mass budget</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#denormalization">Denormalization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../architecture/index.html">Hybrid AI Model Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dynamics/index.html">Climate Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcb/index.html">Marine Cloud Brightening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/index.html">Code usage and tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reports/index.html">AIBEDO Reports</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">AIBEDO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Physics Constraints</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/physics/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="physics-constraints">
+<span id="aibedo-physics"></span><h1>Physics Constraints<a class="headerlink" href="#physics-constraints" title="Permalink to this headline"></a></h1>
+<p>To strengthen the generalisability of the AiBEDO model, we include “weak” physics-based constraints on the output to penalize unphysical results from the model.</p>
+<section id="constraint-1-climate-energy-budget">
+<h2>Constraint 1. Climate energy budget<a class="headerlink" href="#constraint-1-climate-energy-budget" title="Permalink to this headline"></a></h2>
+<p>In this constraint, the energy is budgeted between the heat storage and radiative fluxes at TOA on timescales over which atmospheric energy storage is minimal. This constraint is related to the energy budget used to calculate the transient climate sensitivity (e.g. Bitz et al., 2012).</p>
+<div class="math notranslate nohighlight">
+\[\sum_{t}^{&gt; 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta {R^{TOA}_{lat, lon}} - \lambda_{ECS}\Delta T_{lat, lon}\Delta A_{lat, lon}) = 0\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Delta R^{TOA}\)</span> is heat storage/top of atmosphere radiative imbalance, <span class="math notranslate nohighlight">\(\lambda_{ECS}\)</span> feedback constant, <span class="math notranslate nohighlight">\(T\)</span> is surface temperature and <span class="math notranslate nohighlight">\(A\)</span> is the area of the cell.
+For the <span class="math notranslate nohighlight">\(\lambda_{ECS}\)</span> feedback constant, we use the CESM2 equilibrium feedback computed from a 2xCO<sub>2</sub> simulation.
+The Planck, water vapour, cloud, and albedo feedbacks are provided as seasonally varying zonal averages.
+We sum all the feedback components together, map across longitude values, and then interpolate to the Sphere-Icosahedral grid.
+Constraint 1 applies over longer time scales than the other constraints thus requires several months of data to compute.
+Note also that we are applying the feedback parameter <span class="math notranslate nohighlight">\(\lambda_{ECS}\)</span> from one ESM (CESM2) regardless of the source of the training data.
+This weakens the constraint as there is significant uncertainty within CMIP6 in the magnitude of the feedback parameter (Zelinka et al., 2020).</p>
+</section>
+<section id="constraint-2-precipitation-energy-budget">
+<h2>Constraint 2. <strong>Precipitation energy budget</strong><a class="headerlink" href="#constraint-2-precipitation-energy-budget" title="Permalink to this headline"></a></h2>
+<p>This is the energetic constraint on global precipitation. Globally mean radiative cooling of the atmosphere must be balanced by warming of atmosphere due to latent heat flux and sensible heat flux from the surface (Allen and Ingram, 2002; Jakob et al., 2019). Considering hemispheric asymmetries and seasonal cycle this budget can be written as follows -</p>
+<div class="math notranslate nohighlight">
+\[\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (PL + SH + R_{TOA} -R_{SFC})_{lat,lon} \Delta A_{lat,lon} - \epsilon_E \approx 0\]</div>
+<p>where <span class="math notranslate nohighlight">\(\epsilon_E\)</span> is the climatological <span class="math notranslate nohighlight">\(\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (PL + SH + R_{TOA} -R_{SFC})_{lat,lon} \Delta A_{lat,lon}\)</span>, <span class="math notranslate nohighlight">\(L\)</span> is the latent heat of vaporization (2.4536106 J/kg), <span class="math notranslate nohighlight">\(P\)</span> is the precipitation, <span class="math notranslate nohighlight">\(SH\)</span> is the sensible heat flux, <span class="math notranslate nohighlight">\(R_{TOA}\)</span> is the net radiation at top of the atmosphere and <span class="math notranslate nohighlight">\(R_{SFC}\)</span> is the net surface radiation.</p>
+</section>
+<section id="constraint-3-global-moisture-budget">
+<h2>Constraint 3. <strong>Global moisture budget</strong><a class="headerlink" href="#constraint-3-global-moisture-budget" title="Permalink to this headline"></a></h2>
+<p>This relationship balances the moisture flux in to (evaporation) and out of (precipitation) the atmosphere with the change in atmospheric moisture content over the globe at each time step, thus ensuring conservation of moisture in the atmosphere.</p>
+<div class="math notranslate nohighlight">
+\[\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} = \int_{lat=90S}^{90N} \int_{lon=180W}^{180E} \frac{-1}{g}\frac{\partial}{\partial t} \sum_{lev = 0}^{p_s} q_{lev,lat,lon} dp \Delta A_{lat,lon}\]</div>
+<p>where <span class="math notranslate nohighlight">\(P\)</span> is the precipitation, <span class="math notranslate nohighlight">\(E\)</span> is the evaporation, <span class="math notranslate nohighlight">\(q\)</span> is the specific humidity, and <span class="math notranslate nohighlight">\(p_s\)</span> is the surface pressure.</p>
+<p>The moisture storage term can be roughly approximated the climatological mean global mean P-E, which we subtract from the P-E we calculate for a given month of AiBEDO output such that</p>
+<div class="math notranslate nohighlight">
+\[\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} - \epsilon_q \approx 0\]</div>
+<p>where <span class="math notranslate nohighlight">\(\epsilon_q\)</span> is the climatological <span class="math notranslate nohighlight">\(\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon}\)</span></p>
+</section>
+<section id="constraint-4-non-negative-precipitation">
+<h2>Constraint 4. <strong>Non-negative precipitation</strong><a class="headerlink" href="#constraint-4-non-negative-precipitation" title="Permalink to this headline"></a></h2>
+<p>A simple yet relevant constraint is to ensure negative precipitation (<span class="math notranslate nohighlight">\(P\)</span>) values are set to zero during model training. This will then ensure maximum penalty for the erring grid point when compared to the ground truth data.</p>
+<div class="math notranslate nohighlight">
+\[P \ge 0, lat \in [90S, 90N], lon \in [180E, 180W]\]</div>
+</section>
+<section id="constraint-5-global-atmospheric-mass-budget">
+<h2>Constraint 5. <strong>Global atmospheric mass budget</strong><a class="headerlink" href="#constraint-5-global-atmospheric-mass-budget" title="Permalink to this headline"></a></h2>
+<p>Using the hydrostatic balance assumption, surface pressure can be used as a proxy for the mass of the atmosphere. This simple constraint ensures atmospheric mass conservation summed over the globe for monthly mean data.</p>
+<div class="math notranslate nohighlight">
+\[\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = C + \Delta t\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(M)_{lat,lon} \Delta A_{lat, lon}\]</div>
+<p>where <span class="math notranslate nohighlight">\(P_s\)</span> is the surface pressure and <span class="math notranslate nohighlight">\(M\)</span> is the mass flux into the atmosphere. We assume that the mass flux into the atmosphere is predominantly water vapour, such that we can assume <span class="math notranslate nohighlight">\(M = E\)</span>.</p>
+<p>Similar to constraint 5, we assume <span class="math notranslate nohighlight">\(C\)</span> plus the mass flux term can be approximated by the climatological mean <span class="math notranslate nohighlight">\(P_s\)</span>, which we subtract from the <span class="math notranslate nohighlight">\(P_s\)</span> for a given month of AiBEDO output such that</p>
+<div class="math notranslate nohighlight">
+\[\int_A \frac{-1}{g}p_s dA - (C + \epsilon_E) = 0\]</div>
+<p>where <span class="math notranslate nohighlight">\(C + \epsilon_E\)</span> is the climatological average of <span class="math notranslate nohighlight">\(\int_A \frac{-1}{g}p_s dA\)</span>.</p>
+</section>
+<section id="denormalization">
+<h2>Denormalization<a class="headerlink" href="#denormalization" title="Permalink to this headline"></a></h2>
+<p>As the AiBEDO model deals with normalized variables while the constraint require the variables in their original units (and with physically realistic spatial variations), we must “denormalize” the model output to apply the constraints.
+The training data fed into the model is detrended and deseasonalized, thus filtering out all low frequency information. However, the climatology and variability change as anthropogenic climate change intensifies.
+Furthermore, the data is derived from a range of models with differing mean climatology and interannual variability patterns.
+Thus, passing through the climatology and variability associated with the model and time period of training time step provides additional information about model uncertainty and GHG forced climate change that is undesirable when training in a Fluctuation Dissipation framework.
+As a result, we select a single reference climatology and variability with which to denormalize the model output for calculating constraints.
+This reference can thus be thought to represent the climatology and variability of the AiBEDO model.</p>
+<p>We select the CMIP6 multi-ESM ensemble average climatology and variability for the denormalization (though we might equally consider using reanalysis data).
+The average variability is computed as the square root of the average of the interannual variances across the ESMs.
+Note that we must still deal with a seasonal cycle in the climatology. A simple approach is to use a single month or season as the basis for the denormalization. More sophisticated methods of incorporating seasonal information are currently under consideration.</p>
+<figure class="align-default" id="id1">
+<img alt="../_images/CMIP6_tas_pr_evap_MMmean1.png" src="../_images/CMIP6_tas_pr_evap_MMmean1.png" />
+<figcaption>
+<p><span class="caption-text">Figure 4. March climatology and interannual variability in the CMIP6 multi-model average.</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline"></a></h2>
+<p>Bitz, C. M., Shell, K. M., Gent, P. R., Bailey, D. A., Danabasoglu, G., Armour, K. C., Holland M. M. &amp; Kiehl, J. T. (2012). Climate sensitivity of the community climate system model, version 4. Journal of Climate, 25(9), 3053-3070.</p>
+<p>Jakob, C., Singh, M. S., &amp; Jungandreas, L. (2019). Radiative convective equilibrium and organized convection: An observational perspective. Journal of Geophysical Research: Atmospheres, 124(10), 5418-5430.</p>
+<p>Muller, C. J., &amp; O’Gorman, P. A. (2011). An energetic perspective on the regional response of precipitation to climate change. Nature Climate Change, 1(5), 266-271.</p>
+<p>Zelinka, M. D., Myers, T. A., McCoy, D. T., Po‐Chedley, S., Caldwell, P. M., Ceppi, P., Klein, S.A. &amp; Taylor, K. E. (2020). Causes of higher climate sensitivity in CMIP6 models. Geophysical Research Letters, 47(1), e2019GL085782.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../datasets/index.html" class="btn btn-neutral float-left" title="Datasets" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../architecture/index.html" class="btn btn-neutral float-right" title="Hybrid AI Model Architecture" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Ramea.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -42,12 +42,17 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../datasets/index.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../physics/index.html">Physics Constraints</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../architecture/index.html">Hybrid AI Model Architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../dynamics/index.html">Climate dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dynamics/index.html">Climate Dynamics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mcb/index.html">Marine Cloud Brightening</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Code usage and tutorials</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#preprocessing-techniques">Preprocessing Techniques</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#interpolate-2d-gridded-data-to-spherical-grids">Interpolate 2D-gridded data to Spherical Grids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spherical-u-net-model">Spherical U-Net Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#temporal-spherical-u-net-model">Temporal Spherical U-Net Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualizing-spherical-u-net-output">Visualizing Spherical U-Net Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#generating-predictions">Generating Predictions</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../reports/index.html">AIBEDO Reports</a></li>
@@ -83,8 +88,11 @@
 <ol class="arabic simple">
 <li><p>Preprocess ESM model output data</p></li>
 <li><p>Interpolate 2D-gridded data to Spherical grids</p></li>
-<li><p>Methods to train the hybrid model</p></li>
-<li><p>Visualizing the results</p></li>
+<li><p>Spherical U-Net Model</p></li>
+<li><p>Temporal Spherical U-Net Model</p></li>
+<li><p>Visualizing the Spherical U-Net output results</p></li>
+<li><p>Generating Predictions</p></li>
+<li><p>Long-term LSTM Model</p></li>
 <li><p>Tools for interpreting and postprocessing the results</p></li>
 </ol>
 <section id="preprocessing-techniques">
@@ -166,6 +174,110 @@
 <p>The following script is given in command line to generate the interpolated file for model training:</p>
 <p><code class="docutils literal notranslate"><span class="pre">cdo</span> <span class="pre">remapbil,icosphere_6.txt</span> <span class="pre">in.nc</span> <span class="pre">out.nc</span></code></p>
 <p>Here, <code class="docutils literal notranslate"><span class="pre">in.nc</span></code> is the 2D-gridded file from ESM model ensembles or Reanalysis datasets, and <code class="docutils literal notranslate"><span class="pre">out.nc</span></code> is the name of the interpolated file that will be used for model training.</p>
+</section>
+<section id="spherical-u-net-model">
+<h2>Spherical U-Net Model<a class="headerlink" href="#spherical-u-net-model" title="Permalink to this headline"></a></h2>
+<p>Spherical U-Net model is developed using PyTorch package and wrapped in <a class="reference external" href="https://pytorch.org/ignite/index.html">Ignite</a> to create a scalable framework. The preprocessed file in the previous steps can be directly used to train this model. The accompanying model parameters is given in a <code class="docutils literal notranslate"><span class="pre">config.yml</span></code> file. Example contents of the yml file is shown below. The <code class="docutils literal notranslate"><span class="pre">pooling_class</span></code>, <code class="docutils literal notranslate"><span class="pre">depth</span></code>, and <code class="docutils literal notranslate"><span class="pre">laplacian_type</span></code> refer to the grid shape of the data type that we have generated. MODEL PARAMS include the modeling details of the Spherical U-Net model: <code class="docutils literal notranslate"><span class="pre">partition</span></code> refers to the train, validation and test sizes; <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> refers to the training batch size (larger size requires more GPU memory); <code class="docutils literal notranslate"><span class="pre">learning_rate</span></code> is the model learning rate during training; <code class="docutils literal notranslate"><span class="pre">n_epochs</span></code> refers to the number of epochs.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">IMAGE PARAMS</span><span class="p">:</span>
+  <span class="nt">pooling_class</span><span class="p">:</span> <span class="s">&quot;icosahedron&quot;</span>
+  <span class="nt">depth</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">6</span>
+  <span class="nt">laplacian_type</span><span class="p">:</span> <span class="s">&quot;combinatorial&quot;</span>
+
+<span class="nt">MODEL PARAMS</span><span class="p">:</span>
+  <span class="nt">partition</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.8</span><span class="p p-Indicator">,</span><span class="nv">0.1</span><span class="p p-Indicator">,</span><span class="nv">0.1</span><span class="p p-Indicator">]</span>
+  <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10</span>
+  <span class="nt">learning_rate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.001</span>
+  <span class="nt">n_epochs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
+  <span class="nt">kernel_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+
+<span class="nt">INPUT PARAMS</span><span class="p">:</span>
+  <span class="nt">input_file</span><span class="p">:</span> <span class="s">&quot;/data_aibedo/compress.isosph.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc&quot;</span>
+  <span class="nt">output_file</span><span class="p">:</span> <span class="s">&quot;/data_aibedo/compress.isosph.CESM2.historical.r1i1p1f1.Output.nc&quot;</span>
+  <span class="nt">output_path</span><span class="p">:</span> <span class="s">&quot;output_sunet&quot;</span>
+  <span class="nt">input_vars</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;clivi_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;clwvi_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;crelSurf_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;crel_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;cresSurf_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;cres_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;netTOAcs_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;netSurfcs_pre&#39;</span><span class="p p-Indicator">]</span>
+  <span class="nt">output_vars</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;tas_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;psl_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;pr_pre&#39;</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+<p>This file is given as command line input while running the Spherical U-Net model. The code for Spherical U-Net model can be found <a class="reference external" href="https://github.com/kramea/aibedo/blob/sunet/skeleton_framework/sunet_compress_gpu.py">here</a>.</p>
+<p>To start model training on CPU mode, give the below command:</p>
+<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">&lt;sunet_code.py&gt;</span> <span class="pre">--config-file</span> <span class="pre">&lt;config</span> <span class="pre">file&gt;</span></code></p>
+<p>To run the same code with GPUs, add the <code class="docutils literal notranslate"><span class="pre">--gpu</span></code> flag and provide the actual GPU number(s). For example, to run the code with the GPU 3, provide <cite>–gpu 3`</cite> at the end of the command line input. For running multiple GPUs (e.g. run on 7, 8, 9), add the flag <code class="docutils literal notranslate"><span class="pre">--gpu</span> <span class="pre">7</span> <span class="pre">8</span> <span class="pre">9</span></code> in the command line.</p>
+</section>
+<section id="temporal-spherical-u-net-model">
+<h2>Temporal Spherical U-Net Model<a class="headerlink" href="#temporal-spherical-u-net-model" title="Permalink to this headline"></a></h2>
+<p>Temporal Spherical U-Net model is similar to Spherical U-Net, in terms of implementation. The only difference between the two is the former has additional timesteps as input variables. This model includes a configuration file as input. Here, we add an additional variable <code class="docutils literal notranslate"><span class="pre">time_length</span></code>, which introduces the lag response in models. For instance, a <code class="docutils literal notranslate"><span class="pre">time_length</span></code> value of <code class="docutils literal notranslate"><span class="pre">4</span></code> results in 3-month lag response, i.e., input variables consist of values from months t1, t2, and t3, and output variable is predicted at t4 (each of these variables are at monthly scale). An example of the configuration file for the Temporal Spherical U-Net model is shown below:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">IMAGE PARAMS</span><span class="p">:</span>
+  <span class="nt">pooling_class</span><span class="p">:</span> <span class="s">&quot;icosahedron&quot;</span>
+  <span class="nt">depth</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">6</span>
+  <span class="nt">laplacian_type</span><span class="p">:</span> <span class="s">&quot;combinatorial&quot;</span>
+  <span class="nt">time_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">4</span> <span class="c1">#&gt;=1 for s-convlstm</span>
+
+<span class="nt">MODEL PARAMS</span><span class="p">:</span>
+  <span class="nt">partition</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.8</span><span class="p p-Indicator">,</span><span class="nv">0.1</span><span class="p p-Indicator">,</span><span class="nv">0.1</span><span class="p p-Indicator">]</span>
+  <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10</span>
+  <span class="nt">learning_rate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.001</span>
+  <span class="nt">n_epochs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
+  <span class="nt">kernel_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+
+<span class="nt">INPUT PARAMS</span><span class="p">:</span>
+  <span class="nt">input_file</span><span class="p">:</span> <span class="s">&quot;/data_aibedo/compress.isosph.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc&quot;</span>
+  <span class="nt">output_file</span><span class="p">:</span> <span class="s">&quot;/data_aibedo/compress.isosph.CESM2.historical.r1i1p1f1.Output.nc&quot;</span>
+  <span class="nt">output_path</span><span class="p">:</span> <span class="s">&quot;output_temporal_sunet&quot;</span>
+  <span class="nt">input_vars</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;clivi_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;clwvi_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;crel_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;cresSurf_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;cres_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;netSurf_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;netTOA_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;netTOAcs_pre&#39;</span><span class="p p-Indicator">]</span>
+  <span class="nt">output_vars</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;tas_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;psl_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;pr_pre&#39;</span><span class="p p-Indicator">]</span>
+
+<span class="nt">EARLY_STOPPING</span><span class="p">:</span>
+  <span class="nt">earlystopping_patience</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">30</span>
+</pre></div>
+</div>
+<p>The code for Spherical U-Net model can be found <a class="reference external" href="https://github.com/kramea/aibedo/blob/sunet/skeleton_framework/sunetlstm_compress_gpu.py">here</a>.</p>
+<p>To start model training on CPU mode, give the below command:</p>
+<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">&lt;sunetlstm_code.py&gt;</span> <span class="pre">--config-file</span> <span class="pre">&lt;config</span> <span class="pre">file&gt;</span></code></p>
+<p>To run the same code with GPUs, add the <code class="docutils literal notranslate"><span class="pre">--gpu</span></code> flag and provide the actual GPU number(s). For example, to run the code with the GPU 3, provide <cite>–gpu 3`</cite> at the end of the command line input. For running multiple GPUs (e.g. run on 7, 8, 9), add the flag <code class="docutils literal notranslate"><span class="pre">--gpu</span> <span class="pre">7</span> <span class="pre">8</span> <span class="pre">9</span></code> in the command line.</p>
+</section>
+<section id="visualizing-spherical-u-net-output">
+<h2>Visualizing Spherical U-Net Output<a class="headerlink" href="#visualizing-spherical-u-net-output" title="Permalink to this headline"></a></h2>
+<p>We use <code class="docutils literal notranslate"><span class="pre">cartopy</span></code> package to visualize the results of (Temporal) Spherical U-Net model. After the model is trained, the predictions of test datasets are stored as <code class="docutils literal notranslate"><span class="pre">.npy</span></code> files. We also need the corresponding input or output <code class="docutils literal notranslate"><span class="pre">netCDF4</span></code> file to read the preprocessed latitude and longitude values to plot. We use different colormaps for each output variable: <code class="docutils literal notranslate"><span class="pre">rainbow</span></code> for Air Temperature, <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> for Surface Pressure and <code class="docutils literal notranslate"><span class="pre">bwr</span></code> for Precipitation. The Jupyter notebook for generating the visualization can be found <a class="reference external" href="https://github.com/kramea/aibedo/blob/sunet/skeleton_framework/Viz_sunet.ipynb">here</a>.</p>
+<p>Here, the code randomly chooses a snapshot of time from the test dataset to visualize. An example visualization is shown below:</p>
+<figure class="align-default" id="id6">
+<img alt="../_images/results_tutorial_sunet.png" src="../_images/results_tutorial_sunet.png" />
+<figcaption>
+<p><span class="caption-text">Figure 1. Visualization of Spherical U-Net Output</span><a class="headerlink" href="#id6" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="generating-predictions">
+<h2>Generating Predictions<a class="headerlink" href="#generating-predictions" title="Permalink to this headline"></a></h2>
+<p>Once the model is trained, the weights are saved in a <code class="docutils literal notranslate"><span class="pre">.pt</span></code> file. This file can be used to generate predictions for new input files. The code for generating predictions can be found <a class="reference external" href="https://github.com/kramea/aibedo/blob/sunet/skeleton_framework/gen_predictions.py">here</a>. To run the file, a config file needs to be given as input that consists of <code class="docutils literal notranslate"><span class="pre">model_file</span></code> as an additional variable. An example config file to generate predictions for the CMCC model ensemble is shown below (and can be found <a class="reference external" href="https://github.com/kramea/aibedo/blob/sunet/skeleton_framework/config_yml/cmcc.yml">here</a>).</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">IMAGE PARAMS</span><span class="p">:</span>
+  <span class="nt">pooling_class</span><span class="p">:</span> <span class="s">&quot;icosahedron&quot;</span>
+  <span class="nt">depth</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">6</span>
+  <span class="nt">laplacian_type</span><span class="p">:</span> <span class="s">&quot;combinatorial&quot;</span>
+  <span class="nt">time_lag</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span> <span class="c1">#dummy for s-convlstm</span>
+  <span class="nt">time_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">4</span> <span class="c1">#&gt;=1 for s-convlstm</span>
+
+<span class="nt">MODEL PARAMS</span><span class="p">:</span>
+  <span class="nt">partition</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.8</span><span class="p p-Indicator">,</span><span class="nv">0.1</span><span class="p p-Indicator">,</span><span class="nv">0.1</span><span class="p p-Indicator">]</span>
+  <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10</span>
+  <span class="nt">learning_rate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0001</span>
+  <span class="nt">n_epochs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
+  <span class="nt">kernel_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+
+<span class="nt">INPUT PARAMS</span><span class="p">:</span>
+  <span class="nt">input_file</span><span class="p">:</span> <span class="s">&quot;/data-ssd/kramea/data_aibedo/compress.isosph.CMCC-CM2-SR5.historical.r1i1p1f1.Input.Exp8_fixed.nc&quot;</span>
+  <span class="nt">output_file</span><span class="p">:</span> <span class="s">&quot;/data-ssd/kramea/data_aibedo/compress.isosph.CMCC-CM2-SR5.historical.r1i1p1f1.Output.nc&quot;</span>
+  <span class="nt">output_path</span><span class="p">:</span> <span class="s">&quot;output_sunet&quot;</span>
+  <span class="nt">input_vars</span><span class="p">:</span> <span class="p p-Indicator">[</span> <span class="s">&#39;crelSurf_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;crel_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;cresSurf_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;cres_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;netTOAcs_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;lsMask&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;netSurfcs_pre&#39;</span><span class="p p-Indicator">]</span>
+  <span class="nt">output_vars</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;tas_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;psl_pre&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;pr_pre&#39;</span><span class="p p-Indicator">]</span>
+  <span class="nt">model_file</span><span class="p">:</span> <span class="s">&quot;/data-ssd/kramea/data_aibedo/unet_state_6.pt&quot;</span>
+
+<span class="nt">EARLY_STOPPING</span><span class="p">:</span>
+  <span class="nt">earlystopping_patience</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">30</span>
+</pre></div>
+</div>
+<p>To generate predictions, install all the required packages as described <a class="reference external" href="https://github.com/kramea/aibedo/tree/sunet/skeleton_framework">here</a>. Then give the following command</p>
+<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">gen_predictions.py</span> <span class="pre">--config-file</span> <span class="pre">cmcc.yml</span> <span class="pre">--gpu</span> <span class="pre">0</span></code></p>
+<p>The above command generates predictions for the CMCC model ensemble using GPU 0. Multiple GPU instances can be activated by providing GPU IDs, e.g. <code class="docutils literal notranslate"><span class="pre">gpu</span> <span class="pre">1</span> <span class="pre">2</span> <span class="pre">4</span></code> runs GPUs 1, 2 and 4. The predictions can also be generated without a GPU instance, but for Level 6 predictions, this might take a long time due to the input file size.</p>
 </section>
 </section>
 

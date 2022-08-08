@@ -19,7 +19,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Code usage and tutorials" href="../tutorial/index.html" />
-    <link rel="prev" title="Fluctuation Dissipation Theorem" href="../dynamics/fdtheorem.html" /> 
+    <link rel="prev" title="Climate Dynamics" href="../dynamics/index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -42,13 +42,16 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../datasets/index.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../physics/index.html">Physics Constraints</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../architecture/index.html">Hybrid AI Model Architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../dynamics/index.html">Climate dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dynamics/index.html">Climate Dynamics</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Marine Cloud Brightening</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#background-and-introduction">Background and Introduction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#stage-1-climate-model-perturbations">Stage 1: Climate Model Perturbations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#stage-2-aibedo-ml-model-perturbations">Stage 2: AIbedo ML Model Perturbations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#stage-3-projections-on-tipping-point-impacts">Stage 3:  Projections on Tipping Point Impacts:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#stage-1-climate-model-perturbations">Stage 1: Climate Model Perturbations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#planned-mcb-experiments">Planned MCB Experiments</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#stage-2-aibedo-ml-model-perturbations">Stage 2: AiBEDO ML Model Perturbations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#references">References</a><ul class="simple">
 </ul>
 </li>
@@ -166,12 +169,107 @@ The project will first introduce perturbations in the cloud fields in the CESM2 
 <li><p>Q6. What is the variability of the climate response?</p></li>
 <li><p>Q7. Can one “optimize” the MCB to achieve particular climate goals?</p></li>
 </ul>
+<section id="planned-mcb-experiments">
+<h3>Planned MCB Experiments<a class="headerlink" href="#planned-mcb-experiments" title="Permalink to this headline"></a></h3>
+<p>The AiBEDO team will participate in this inter-model comparison by contributing CESM2 simulations (outlined in Table 1) with perturbed cloud droplet number concentrations. In addition to the science conducted as part of the above described study, these simulations will serve as validation datasets for the AiBEDO response to cloud perturbations. As these simulations will have strong, out of sample perturbations and well sampled climate responses, they are the ideal test bed for evaluating the AiBEDO’s ability to project climate responses to large perturbations in cloud droplet number of the kind required for MCB.</p>
+<table class="colwidths-given docutils align-default" id="id1">
+<caption><span class="caption-text">Table 1. MCB Experiments for model intercomparison</span><a class="headerlink" href="#id1" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Experiment ID</p></th>
+<th class="head"><p>Simulation Nickname</p></th>
+<th class="head"><p>Model Configuration</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Length (model years x ensemble members)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>E1</p></td>
+<td><p>MCB Calibration R1 + R2 + R3</p></td>
+<td><p>Fixed-SST</p></td>
+<td><p>Short atmosphere-only experiments aimed at identifying CDNC values in NE Pac (R1), SE Pac (R2), and SE Atl (R3) required to achieve -1.8Wm-2 forcing</p></td>
+<td><p>10 x 5</p></td>
+</tr>
+<tr class="row-odd"><td><p>E2</p></td>
+<td><p>E3SM Control</p></td>
+<td><p>Fully Coupled</p></td>
+<td><p>Control SSP2-4.5 experiments</p></td>
+<td><p>2015 to 2070 x 10</p></td>
+</tr>
+<tr class="row-even"><td><p>E3</p></td>
+<td><p>E3SM Control</p></td>
+<td><p>Fully Coupled + CDNC Fixed R1</p></td>
+<td><p>SSP2-4.5 experiments with CDNC forcing applied in the NE tropical Pacific</p></td>
+<td><p>2015 to 2070 x 3</p></td>
+</tr>
+<tr class="row-odd"><td><p>E4</p></td>
+<td><p>E3SM Control</p></td>
+<td><p>Fully Coupled + CDNC Fixed R2</p></td>
+<td><p>SSP2-4.5 experiments with CDNC forcing applied in the SE tropical Pacific</p></td>
+<td><p>2015 to 2070 x 3</p></td>
+</tr>
+<tr class="row-even"><td><p>E5</p></td>
+<td><p>E3SM Control</p></td>
+<td><p>Fully Coupled + CDNC Fixed R3</p></td>
+<td><p>SSP2-4.5 experiments with CDNC forcing applied in the SE tropical Atlantic</p></td>
+<td><p>2015 to 2070 x 3</p></td>
+</tr>
+<tr class="row-odd"><td><p>E6</p></td>
+<td><p>E3SM Control</p></td>
+<td><p>Fully Coupled + CDNC Fixed R1 + R2 + R3</p></td>
+<td><p>SSP2-4.5 experiments with CDNC forcing applied in the NE Pac, SE Pac, and SE Atl</p></td>
+<td><p>2015 to 2070 x 10</p></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="stage-2-aibedo-ml-model-perturbations">
-<h2>Stage 2: AIbedo ML Model Perturbations<a class="headerlink" href="#stage-2-aibedo-ml-model-perturbations" title="Permalink to this headline"></a></h2>
-</section>
-<section id="stage-3-projections-on-tipping-point-impacts">
-<h2>Stage 3:  Projections on Tipping Point Impacts:<a class="headerlink" href="#stage-3-projections-on-tipping-point-impacts" title="Permalink to this headline"></a></h2>
+<h2>Stage 2: AiBEDO ML Model Perturbations<a class="headerlink" href="#stage-2-aibedo-ml-model-perturbations" title="Permalink to this headline"></a></h2>
+<p>Following successful training and validation of AiBEDO, we will use the model to generate cloud perturbation scenarios targeting key regional climate signals that may be associated with climate tipping points. These scenarios will then be tested in MCB CDNC perturbation experiments to verify the AiBEDO results and further study the physical mechanisms underlying the responses.</p>
+<p>Table 2 describes examples of proposed regional climate responses we will target using AiBEDO and CESM2 experiments.</p>
+<table class="colwidths-given docutils align-default" id="id2">
+<caption><span class="caption-text">Table 2. Regional perturbations targeted using AiBEDO</span><a class="headerlink" href="#id2" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Region</p></th>
+<th class="head"><p>Associated tipping point/climate response of interest</p></th>
+<th class="head"><p>Variables changes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>West Antarctic</p></td>
+<td><p>West Antarctic ice sheet collapse</p></td>
+<td><p>Antarctic surface temperature increase</p></td>
+</tr>
+<tr class="row-odd"><td><p>North Atlantic</p></td>
+<td><p>Atlantic Meridional Overturning Circulation (AMOC) collapse</p></td>
+<td><p>North Atlantic precipitation increase; Arctic surface temperature increase</p></td>
+</tr>
+<tr class="row-even"><td><p>Arctic</p></td>
+<td><p>Greenlandic ice sheet collapse; Arctic sea ice loss</p></td>
+<td><p>Arctic surface temperature increase</p></td>
+</tr>
+<tr class="row-odd"><td><p>Amazon</p></td>
+<td><p>Southern Amazon drought and rainforest loss</p></td>
+<td><p>South American precipitation decrease</p></td>
+</tr>
+<tr class="row-even"><td><p>NH Mid-latitudes</p></td>
+<td><p>Jet shift</p></td>
+<td><p>Midlatitude sea level pressure</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline"></a></h2>
@@ -179,10 +277,10 @@ The project will first introduce perturbations in the cloud fields in the CESM2 
 <li><p>Mcnutt, Marcia, et al. Climate Intervention: Carbon Dioxide Removal and Reliable Sequestration. Washington, D.C.: National Academies Press, 2015. <a class="reference external" href="https://doi.org/10.17226/18805">https://doi.org/10.17226/18805</a>.</p></li>
 <li><p>Mcnutt, Marcia, et al. Climate Intervention: Reflecting Sunlight to Cool Earth. Washington, D.C.: National Academies Press, 2015. <a class="reference external" href="https://doi.org/10.17226/18988">https://doi.org/10.17226/18988</a>.</p></li>
 <li><p>Latham, John, Keith Bower, Tom Choularton, Hugh Coe, Paul Connolly, Gary Cooper, Tim Craft, et al. “Marine Cloud Brightening.” Philosophical Transactions of the Royal Society A: Mathematical, Physical and Engineering Sciences 370, no. 1974 (September 13, 2012): 4217–62. <a class="reference external" href="https://doi.org/10.1098/rsta.2012.0086">https://doi.org/10.1098/rsta.2012.0086</a>.</p></li>
-<li><p>Jones, A., and J. M. Haywood. “Sea-Spray Geoengineering in the HadGEM2-ES Earth-System Model: Radiative Impact and Climate Response.” Atmospheric Chemistry and Physics 12, no. 22 (November 16, 2012): 10887–98. <a class="reference external" href="https://doi.org/10.5194/acp-12-10887-2012">https://doi.org/10.5194/acp-12-10887-2012</a>.</p></li>
-<li><p>Jones, Andy, Jim Haywood, and Olivier Boucher. “Climate Impacts of Geoengineering Marine Stratocumulus Clouds.” Journal of Geophysical Research 114, no. D10 (May 27, 2009): D10106. <a class="reference external" href="https://doi.org/10.1029/2008JD011450">https://doi.org/10.1029/2008JD011450</a>.</p></li>
-<li><p>Rasch, Philip J, John Latham, and Chih-Chieh (Jack) Chen. “Geoengineering by Cloud Seeding: Influence on Sea Ice and Climate System.” Environmental Research Letters 4, no. 4 (October 2009): 045112. <a class="reference external" href="https://doi.org/10.1088/1748-9326/4/4/045112">https://doi.org/10.1088/1748-9326/4/4/045112</a>.</p></li>
 </ol>
+<p>4.      Jones, A., and J. M. Haywood. “Sea-Spray Geoengineering in the HadGEM2-ES Earth-System Model: Radiative Impact and Climate Response.” Atmospheric Chemistry and Physics 12, no. 22 (November 16, 2012): 10887–98. <a class="reference external" href="https://doi.org/10.5194/acp-12-10887-2012">https://doi.org/10.5194/acp-12-10887-2012</a>.
+1.      Jones, Andy, Jim Haywood, and Olivier Boucher. “Climate Impacts of Geoengineering Marine Stratocumulus Clouds.” Journal of Geophysical Research 114, no. D10 (May 27, 2009): D10106. <a class="reference external" href="https://doi.org/10.1029/2008JD011450">https://doi.org/10.1029/2008JD011450</a>.
+2.      Rasch, Philip J, John Latham, and Chih-Chieh (Jack) Chen. “Geoengineering by Cloud Seeding: Influence on Sea Ice and Climate System.” Environmental Research Letters 4, no. 4 (October 2009): 045112. <a class="reference external" href="https://doi.org/10.1088/1748-9326/4/4/045112">https://doi.org/10.1088/1748-9326/4/4/045112</a>.</p>
 <div class="toctree-wrapper compound">
 </div>
 </section>
@@ -192,7 +290,7 @@ The project will first introduce perturbations in the cloud fields in the CESM2 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../dynamics/fdtheorem.html" class="btn btn-neutral float-left" title="Fluctuation Dissipation Theorem" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../dynamics/index.html" class="btn btn-neutral float-left" title="Climate Dynamics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="../tutorial/index.html" class="btn btn-neutral float-right" title="Code usage and tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

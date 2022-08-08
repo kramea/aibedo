@@ -18,8 +18,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Climate dynamics" href="../dynamics/index.html" />
-    <link rel="prev" title="Datasets" href="../datasets/index.html" /> 
+    <link rel="next" title="Climate Dynamics" href="../dynamics/index.html" />
+    <link rel="prev" title="Physics Constraints" href="../physics/index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -42,21 +42,20 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../datasets/index.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../physics/index.html">Physics Constraints</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Hybrid AI Model Architecture</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#spatial-data-driven-component">Spatial Data-Driven Component</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#spherical-u-net-architecture">Spherical U-Net Architecture</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sampling-module">Sampling Module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#interpolation-module">Interpolation Module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#model-library-module">Model Library Module</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#temporal-data-driven-component">Temporal Data-Driven Component</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#multi-timescale-long-short-term-memory-lstm-networks">Multi-timescale Long Short-Term Memory (LSTM) Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multi-timescale-temporal-data-driven-component">Multi-timescale Temporal Data-Driven Component</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#model-performance-metrics">Model Performance Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preliminary-results">Preliminary Results</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="../dynamics/index.html">Climate dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dynamics/index.html">Climate Dynamics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mcb/index.html">Marine Cloud Brightening</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial/index.html">Code usage and tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../reports/index.html">AIBEDO Reports</a></li>
@@ -216,35 +215,64 @@ eter. Healpix is constructed in such a way that the areas of each pixel for a gi
 <h3>Interpolation Module<a class="headerlink" href="#interpolation-module" title="Permalink to this headline"></a></h3>
 <p>We use the PyGSP library in Python to perform the grid transformation. It is commonly used for various graph operations to use in signal processing or social network analysis (e.g., Erdos-Reyni network). We first develop a ‘backbone’ structure of a spherical coordinate system (icosahedron, healpix, etc.). The properties of the spherical coordinates, such as levels or sub-divisions, are given as input. At this point, the coordinates are simply graph networks. In the next step, we assign latitude and longitude values to the graph network (x, y) so that they can be manifested in a geographical coordinate system. Finally, we use the raw data from reanalysis or ESM output and perform bilinear interpolation to obtain the final spherically-sampled data.</p>
 <figure class="align-default" id="id7">
+<img alt="../_images/sampling_pipeline.png" src="../_images/sampling_pipeline.png" />
+<figcaption>
+<p><span class="caption-text">Figure 5. Pipeline to convert from 2D grid to Spherical grid</span><a class="headerlink" href="#id7" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id8">
 <img alt="../_images/interpolated.png" src="../_images/interpolated.png" />
 <figcaption>
-<p><span class="caption-text">Figure 5. Spherical sampled and interpolated dataset from 2D-linearly gridded data</span><a class="headerlink" href="#id7" title="Permalink to this image"></a></p>
+<p><span class="caption-text">Figure 6. Spherical sampled and interpolated dataset from 2D-linearly gridded data</span><a class="headerlink" href="#id8" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 </section>
-<section id="model-library-module">
-<h3>Model Library Module<a class="headerlink" href="#model-library-module" title="Permalink to this headline"></a></h3>
-<p>We have created a library of models, ranging from regular Convolutional Neural Network (CNN), CNN-Autoencoder, <strong>Vanilla</strong> U-net to Spherical U-net architectures.This allows the modeler to explore the model performance and computational needs of different types of deep learning architectures. The sampling module is independent of the model library. There exists a function that combines the interpolated dataset obtained from the sampling module with the desired model architecture chosen by the modeler as shown in Figure.</p>
 </section>
-</section>
-<section id="temporal-data-driven-component">
-<h2>Temporal Data-Driven Component<a class="headerlink" href="#temporal-data-driven-component" title="Permalink to this headline"></a></h2>
-<p>While the spatial model maps cloud properties with circulation and regional climate variables for a given step, the temporal component aims to predict the output for the next time step for a set of input conditions. Our goal to model temporal component is to initially understand how the circulation, precipitation, and temperature could change over time and subsequently observe if there are any patterns of climate tipping points. The tipping point characterization in our model does not intend to model the dynamics of nonlinear feedback loops in the earth system, but we would look at the large-scale trends over time at the decadal scale first, and then narrow down to any changing trends in seasonal scale to identify “early-onset” of tipping points.</p>
-<section id="multi-timescale-long-short-term-memory-lstm-networks">
-<h3>Multi-timescale Long Short-Term Memory (LSTM) Networks<a class="headerlink" href="#multi-timescale-long-short-term-memory-lstm-networks" title="Permalink to this headline"></a></h3>
-<p>We use two distinctive LSTM networks to implement this functionality: one for modeling long-term climate impacts at the decadal scale LSTMd and another for modeling shorter-term seasonal changes LSTMs. We will run the decadal-scale model ${LSTM}_d$ first, where we will make yearly predictions. The hidden states of LSTMd at every year will then be used by LSTMs as initial states to make monthly predictions. Since the two LSTM branches may have different hidden sizes, we will feed the states through a linear state transfer layer. Figure 5 shows an illustration of a multi-time scale LSTM network.</p>
-<figure class="align-default" id="id8">
-<img alt="../_images/mutilstm.png" src="../_images/mutilstm.png" />
+<section id="multi-timescale-temporal-data-driven-component">
+<h2>Multi-timescale Temporal Data-Driven Component<a class="headerlink" href="#multi-timescale-temporal-data-driven-component" title="Permalink to this headline"></a></h2>
+<p>A response in a climate system is rarely spontaneous due to its complex convections, teleconnections across geographical regions and feedback loops. In our model, we are incorporating two kinds of temporal components: a spatially-explicit short-term component, and spatially-aggregate long-term component. The short-term component captures the response of output variables due to changes in cloud properties in a sub-yearly resolution. We ran simple lag-response experiments and idenfified that a short-term of 3-6 months captures the climate response of temperature, surface pressure and precipitation best for the chosen input properties. We implement the short-term temporal model by extending the Spherical U-Net framework developed for the spatial component. Here, we are augmenting the Spherical U-Net architecture to incorporate the temporal dimension (concatenated along the variable vector axis).</p>
+<p>This model generates the monthly output responses for different short-term input changes. To understand the long-term trend, we are aggregating the monthly responses to annual averages. We are developing these long-term trends globally as well as for each zonal region illustrated in Figure 8. In addition, we are developing a Long Short-Term Memory network models on these aggregated annual averages. These will be used to identify when the trends exactly deviate due to climate intervention experiments. For example, the loss difference of a trained LSTM between the baseline trend and climate intervention trend could pinpoint the exact timeframe as to when the deviation starts and ends. The schematic of the model operation is shown below:</p>
+<figure class="align-default" id="id9">
+<img alt="../_images/model-operation.png" src="../_images/model-operation.png" />
 <figcaption>
-<p><span class="caption-text">Figure 5. Multi-timescale LSTM network</span><a class="headerlink" href="#id8" title="Permalink to this image"></a></p>
+<p><span class="caption-text">Figure 8. Schematic of AiBEDO Model Operation</span><a class="headerlink" href="#id9" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
-<p>PARC team is implementing the temporal model using two training schemes:</p>
-<ol class="arabic simple">
-<li><p><em>Teacher forcing strategy</em>: we are designing the both LSTM approaches as feed-forward networks, where the ground truth from a prior time step will be used as input</p></li>
-<li><p><em>Curriculum learning strategy</em>: we will increment the task difficulty by gradually increasing the rate of using predicted value from current time step by feeding to the input of next time step prediction.</p></li>
-</ol>
 </section>
+<section id="model-performance-metrics">
+<h2>Model Performance Metrics<a class="headerlink" href="#model-performance-metrics" title="Permalink to this headline"></a></h2>
+<p>In Phase 1, we are assessing the hybrid model performance on two main metrics: accuracy and speed of inference, compared to the run time of a conventional Earth system model.</p>
+<ul class="simple">
+<li><p>To assess model accuracy, we will report MSE (Mean Squared Error) of the model between model predictions of output variables and the ‘ground truth’ (values from Earth system model output).</p></li>
+<li><p>To assess regional accuracy of the model, we have divided the regions as shown in Figure 9, which consists of the tropics, midlatitudes (northern hemisphere and southern hemisphere), Arctic, and Antarctic zones. In each zone, we will report the error metrics of land and ocean areas separately using a land-sea mask attribute.</p></li>
+</ul>
+<figure class="align-default" id="id10">
+<img alt="../_images/regions_metrics.png" src="../_images/regions_metrics.png" />
+<figcaption>
+<p><span class="caption-text">Figure 9. Region-wise Metrics</span><a class="headerlink" href="#id10" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<ul class="simple">
+<li><p>As we start including the physics constraints during model training, we will assess the impact on model performance for each additional physics constraint, as well as a combination of all the constraints. These will be reported for the entire model and the sub-regions.</p></li>
+<li><p>Finally, once the full model is trained and used for inference, we will record the time taken to obtain the output predictions for a given input variable. This will be compared with the time taken to run different Earth System models (CESM, E3SM, etc.)</p></li>
+</ul>
+</section>
+<section id="preliminary-results">
+<h2>Preliminary Results<a class="headerlink" href="#preliminary-results" title="Permalink to this headline"></a></h2>
+<p>Our initial results of the Spherical U-Net model is shown in Figure 10. We observe that the hybrid model is generally good at capturing the patterns for all three output variables. However, the model output is poor in certain regions (e.g., tropics, due to high variability).</p>
+<figure class="align-default" id="id11">
+<img alt="../_images/prelim_result1.png" src="../_images/prelim_result1.png" />
+<figcaption>
+<p><span class="caption-text">Figure 10. Comparison of Ground Truth and Model Predictions for Air Temperature, Sea Level Pressure and Precipitation</span><a class="headerlink" href="#id11" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>To investigate this further, we plotted the errors split across regions (tropics, midlatitudes, arctic, antarctic, and over land and ocean) in Figure 11. Granular analysis of errors for different zonal regions helps us investigate how to mitigate the model performance issues, specifically, on designing physics constraints that can be incorporated accordingly.</p>
+<figure class="align-default" id="id12">
+<img alt="../_images/prelim_result2.png" src="../_images/prelim_result2.png" />
+<figcaption>
+<p><span class="caption-text">Figure 11. Region-wise plot of errors</span><a class="headerlink" href="#id12" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
 </section>
 </section>
 
@@ -252,8 +280,8 @@ eter. Healpix is constructed in such a way that the areas of each pixel for a gi
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../datasets/index.html" class="btn btn-neutral float-left" title="Datasets" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../dynamics/index.html" class="btn btn-neutral float-right" title="Climate dynamics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../physics/index.html" class="btn btn-neutral float-left" title="Physics Constraints" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../dynamics/index.html" class="btn btn-neutral float-right" title="Climate Dynamics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -19,7 +19,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Hybrid AI Model Architecture" href="../architecture/index.html" />
+    <link rel="next" title="Physics Constraints" href="../physics/index.html" />
     <link rel="prev" title="AIBEDO: a hybrid AI framework to capture the effects of cloud properties on global circulation and regional climate patterns." href="../index.html" /> 
 </head>
 
@@ -45,10 +45,9 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Datasets</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#training-data">Training data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#reanalysis">Reanalysis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#preprocessing">Preprocessing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#physics-constraints">Physics Constraints</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing">Preprocessing</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#constraint-1-climate-energy-budget">Constraint 1. Climate energy budget</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#constraint-2-tropical-atmospheric-energy-budget">Constraint 2. <strong>Tropical atmospheric energy budget</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#constraint-2-precipitation-energy-budget">Constraint 2. <strong>Precipitation energy budget</strong></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#constraint-3-global-moisture-budget">Constraint 3. <strong>Global moisture budget</strong></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#constraint-4-non-negative-precipitation">Constraint 4. <strong>Non-negative precipitation</strong></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#constraint-5-global-atmospheric-mass-budget">Constraint 5. <strong>Global atmospheric mass budget</strong></a></li>
@@ -58,8 +57,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../physics/index.html">Physics Constraints</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../architecture/index.html">Hybrid AI Model Architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../dynamics/index.html">Climate dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dynamics/index.html">Climate Dynamics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mcb/index.html">Marine Cloud Brightening</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial/index.html">Code usage and tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../reports/index.html">AIBEDO Reports</a></li>
@@ -154,71 +154,71 @@
 <td><p>1.000</p></td>
 <td><p>1.0000</p></td>
 </tr>
-<tr class="row-odd"><td><p>E3SM-1-1-ECA</p></td>
-<td><p>1</p></td>
-<td><p>0</p></td>
-<td><p>1.000</p></td>
-<td><p>1.0000</p></td>
-</tr>
-<tr class="row-even"><td><p>FGOALS-g3</p></td>
+<tr class="row-odd"><td><p>FGOALS-g3</p></td>
 <td><p>2</p></td>
 <td><p>1</p></td>
 <td><p>2.278</p></td>
 <td><p>2.0000</p></td>
 </tr>
-<tr class="row-odd"><td><p>GFDL-CM4</p></td>
+<tr class="row-even"><td><p>GFDL-CM4</p></td>
 <td><p>1</p></td>
 <td><p>1</p></td>
 <td><p>1.000</p></td>
 <td><p>1.2500</p></td>
 </tr>
-<tr class="row-even"><td><p>GFDL-ESM4</p></td>
+<tr class="row-odd"><td><p>GFDL-ESM4</p></td>
 <td><p>1</p></td>
 <td><p>1</p></td>
 <td><p>1.000</p></td>
 <td><p>1.2500</p></td>
 </tr>
-<tr class="row-odd"><td><p>GISS-E2-1-H</p></td>
+<tr class="row-even"><td><p>GISS-E2-1-H</p></td>
 <td><p>1</p></td>
 <td><p>0</p></td>
 <td><p>2.000</p></td>
 <td><p>2.5000</p></td>
 </tr>
-<tr class="row-even"><td><p>MIROC-ES2L</p></td>
+<tr class="row-odd"><td><p>MIROC-ES2L</p></td>
 <td><p>3</p></td>
 <td><p>0</p></td>
 <td><p>2.789</p></td>
 <td><p>2.8125</p></td>
 </tr>
-<tr class="row-odd"><td><p>MIROC6</p></td>
+<tr class="row-even"><td><p>MIROC6</p></td>
 <td><p>1</p></td>
 <td><p>0</p></td>
 <td><p>1.400</p></td>
 <td><p>1.4062</p></td>
 </tr>
-<tr class="row-even"><td><p>MPI-ESM-1-2-HAM</p></td>
+<tr class="row-odd"><td><p>MPI-ESM-1-2-HAM</p></td>
 <td><p>1</p></td>
 <td><p>0</p></td>
 <td><p>1.865</p></td>
 <td><p>1.8750</p></td>
 </tr>
-<tr class="row-odd"><td><p>MPI-ESM1-2-HR</p></td>
+<tr class="row-even"><td><p>MPI-ESM1-2-HR</p></td>
 <td><p>1</p></td>
 <td><p>0</p></td>
 <td><p>0.935</p></td>
 <td><p>0.9375</p></td>
 </tr>
-<tr class="row-even"><td><p>MPI-ESM1-2-LR</p></td>
+<tr class="row-odd"><td><p>MPI-ESM1-2-LR</p></td>
 <td><p>1</p></td>
 <td><p>0</p></td>
 <td><p>1.865</p></td>
 <td><p>1.8750</p></td>
 </tr>
-<tr class="row-odd"><td><p>MRI-ESM2-0</p></td>
+<tr class="row-even"><td><p>MRI-ESM2-0</p></td>
 <td><p>1</p></td>
 <td><p>0</p></td>
 <td><p>1.121</p></td>
 <td><p>1.1250</p></td>
+</tr>
+<tr class="row-odd"><td><p>NorCPM1</p></td>
+<td><p>5</p></td>
+<td><p>0</p></td>
+<td><p>1.9</p></td>
+<td><p>2.5</p></td>
 </tr>
 <tr class="row-even"><td><p>SAM0-UNICON</p></td>
 <td><p>1</p></td>
@@ -231,76 +231,93 @@
 <table class="colwidths-given docutils align-default" id="id2">
 <caption><span class="caption-text">Table 2. Variable list and descriptions</span><a class="headerlink" href="#id2" title="Permalink to this table"></a></caption>
 <colgroup>
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 60%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Category</p></th>
 <th class="head"><p>Variable</p></th>
 <th class="head"><p>Description</p></th>
+<th class="head"><p>Equation notation</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>Input</p></td>
-<td><p>clwvi</p></td>
-<td><p>Mass of cloud liquid water in a column</p></td>
-</tr>
-<tr class="row-odd"><td><p>Input</p></td>
-<td><p>clivi</p></td>
-<td><p>Mass of cloud ice water in a column</p></td>
-</tr>
-<tr class="row-even"><td><p>Input</p></td>
 <td><p>cres</p></td>
-<td><p>TOA Cloud radiative effect in shortwave</p></td>
+<td><p>TOA Cloud radiative effect in shortwave (positive down)</p></td>
+<td><p><span class="math notranslate nohighlight">\(R_{TOA}^{cl,SW}\)</span></p></td>
 </tr>
 <tr class="row-odd"><td><p>Input</p></td>
 <td><p>cresSurf</p></td>
-<td><p>Surface Cloud radiative effect in shortwave</p></td>
+<td><p>Surface Cloud radiative effect in shortwave (positive down)</p></td>
+<td><p><span class="math notranslate nohighlight">\(R_{SRF}^{cl,SW}\)</span></p></td>
 </tr>
 <tr class="row-even"><td><p>Input</p></td>
 <td><p>crel</p></td>
-<td><p>TOA Cloud radiative effect in longwave</p></td>
+<td><p>TOA Cloud radiative effect in longwave (positive down)</p></td>
+<td><p><span class="math notranslate nohighlight">\(R_{TOA}^{cl,LW}\)</span></p></td>
 </tr>
 <tr class="row-odd"><td><p>Input</p></td>
 <td><p>crelSurf</p></td>
-<td><p>Surface Cloud radiative effect in longwave</p></td>
+<td><p>Surface Cloud radiative effect in longwave (positive down)</p></td>
+<td><p><span class="math notranslate nohighlight">\(R_{SRF}^{cl,LW}\)</span></p></td>
 </tr>
 <tr class="row-even"><td><p>Input</p></td>
 <td><p>netTOAcs</p></td>
-<td><p>TOA radiation without clouds (clear-sky)</p></td>
+<td><p>TOA radiation without clouds (clear-sky) (positive down)</p></td>
+<td><p><span class="math notranslate nohighlight">\(R_{TOA}^{cs,ALL}\)</span></p></td>
 </tr>
 <tr class="row-odd"><td><p>Input</p></td>
 <td><p>netSurfcs</p></td>
-<td><p>Net Clearsky Surface radiation</p></td>
-</tr>
-<tr class="row-even"><td><p>Input</p></td>
-<td><p>lcloud</p></td>
-<td><p>Cloud fraction averaged between 1000 hPa and 700 hPa</p></td>
-</tr>
-<tr class="row-odd"><td><p>Output</p></td>
-<td><p>tas</p></td>
-<td><p>2-metre air temperature</p></td>
+<td><p>Net Clearsky Surface radiation and heat flux (positive down)</p></td>
+<td><p><span class="math notranslate nohighlight">\(R_{SRF}^{cs,ALL} - SH - LH\)</span></p></td>
 </tr>
 <tr class="row-even"><td><p>Output</p></td>
-<td><p>psl</p></td>
-<td><p>Sea level pressure</p></td>
+<td><p>tas</p></td>
+<td><p>2-metre air temperature</p></td>
+<td><p><span class="math notranslate nohighlight">\(T_{SRF}\)</span></p></td>
 </tr>
 <tr class="row-odd"><td><p>Output</p></td>
-<td><p>pr</p></td>
-<td><p>Precipitation</p></td>
-</tr>
-<tr class="row-even"><td><p>Constraint</p></td>
 <td><p>ps</p></td>
 <td><p>Surface pressure</p></td>
+<td><p><span class="math notranslate nohighlight">\(p_{SRF}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Output</p></td>
+<td><p>pr</p></td>
+<td><p>Precipitation</p></td>
+<td><p><span class="math notranslate nohighlight">\(P\)</span></p></td>
 </tr>
 <tr class="row-odd"><td><p>Constraint</p></td>
 <td><p>evspsbl</p></td>
 <td><p>Evaporation</p></td>
+<td><p><span class="math notranslate nohighlight">\(E\)</span></p></td>
 </tr>
 <tr class="row-even"><td><p>Constraint</p></td>
-<td><p>heatconv</p></td>
-<td><p>Convergence of vertically integrated heat flux</p></td>
+<td><p>hfss</p></td>
+<td><p>Surface upward sensible heat flux (positive up)</p></td>
+<td><p><span class="math notranslate nohighlight">\(SH\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Constraint</p></td>
+<td><p>netTOARad</p></td>
+<td><p>TOA All-sky radiation (positive down)</p></td>
+<td><p><span class="math notranslate nohighlight">\(R_{TOA}^{all,ALL}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Constraint</p></td>
+<td><p>netSurfRad</p></td>
+<td><p>Surface All-sky radiation (positive down)</p></td>
+<td><p><span class="math notranslate nohighlight">\(R_{TOA}^{all,ALL}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Constraint</p></td>
+<td><p>qtot</p></td>
+<td><p>Column integrated water vapour mass</p></td>
+<td><p><span class="math notranslate nohighlight">\(\frac{1}{g}\sum_{lev} Q dp\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Constraint</p></td>
+<td><p>dqdt</p></td>
+<td><p>Time tendency of column integrated water vapour mass</p></td>
+<td><p><span class="math notranslate nohighlight">\(\frac{1}{g}\frac{d}{dt} \sum_{lev} Q dp\)</span></p></td>
 </tr>
 </tbody>
 </table>
@@ -340,9 +357,9 @@ MERRA2 includes data from 1980 to 2020 at 0.5 degree resolution and ERA5 include
 <p><span class="caption-text">Figure 3. Example preprocessing for a surface air temperature data point.</span><a class="headerlink" href="#id5" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
-</section>
-<section id="physics-constraints">
-<h2>Physics Constraints<a class="headerlink" href="#physics-constraints" title="Permalink to this headline"></a></h2>
+<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+Physics Constraints
+——————–</p>
 <p>To strengthen the generalisability of the AiBEDO model, we include “weak” physics-based constraints on the output to penalize unphysical results from the model.</p>
 <section id="constraint-1-climate-energy-budget">
 <h3>Constraint 1. Climate energy budget<a class="headerlink" href="#constraint-1-climate-energy-budget" title="Permalink to this headline"></a></h3>
@@ -357,27 +374,26 @@ Constraint 1 applies over longer time scales than the other constraints thus req
 Note also that we are applying the feedback parameter <span class="math notranslate nohighlight">\(\lambda_{ECS}\)</span> from one ESM (CESM2) regardless of the source of the training data.
 This weakens the constraint as there is significant uncertainty within CMIP6 in the magnitude of the feedback parameter (Zelinka et al., 2020).</p>
 </section>
-<section id="constraint-2-tropical-atmospheric-energy-budget">
-<h3>Constraint 2. <strong>Tropical atmospheric energy budget</strong><a class="headerlink" href="#constraint-2-tropical-atmospheric-energy-budget" title="Permalink to this headline"></a></h3>
-<p>This atmospheric budget balances the contributions from upward net radiative heat flux at the TOA and SFC to the heat convergence in the tropics (Muller and O’Gorman, 2011)).</p>
+<section id="constraint-2-precipitation-energy-budget">
+<h3>Constraint 2. <strong>Precipitation energy budget</strong><a class="headerlink" href="#constraint-2-precipitation-energy-budget" title="Permalink to this headline"></a></h3>
+<p>This is the energetic constraint on global precipitation. Annual mean global precipitation changes are constrained by this relationship. Globally averaged annual mean radiative cooling of the atmosphere must be balanced by latent heat flux due to condensation and sensible heat flux from the surface (Allen and Ingram, 2002; Jakob et al., 2019).</p>
 <div class="math notranslate nohighlight">
-\[\sum_{lat=30N}^{30N} \sum_{lon=180W}^{180E}(LP - R_{TOA} + R_{SFC} + SH + Q)_{lat,lon} \Delta A_{lat, lon} = 0\]</div>
-<p>where <span class="math notranslate nohighlight">\(L\)</span> is the latent heat of vaporization (<span class="math notranslate nohighlight">\(2.4536 10^6\)</span> J/kg), <span class="math notranslate nohighlight">\(P\)</span> is the precipitation, <span class="math notranslate nohighlight">\(SH\)</span> is the sensible heat flux, <span class="math notranslate nohighlight">\(R_{TOA}\)</span> is the upwelling surface radiation, <span class="math notranslate nohighlight">\(R_{TOA}\)</span> is the upwelling surface radiation, and <span class="math notranslate nohighlight">\(Q\)</span> is the convergence of vertically integrated dry static energy (DSE) flux.
-Functionally, <span class="math notranslate nohighlight">\(R^{TOA}\)</span> and <span class="math notranslate nohighlight">\(R^{SFC}\)</span> can be calculated as the sum of the long wave and shortwave radiation at the top of atmosphere (TOA) and surface (SFC).
-<span class="math notranslate nohighlight">\(Q\)</span> is computed at each grid cell as</p>
+\[\sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta LP + \Delta SH) = \sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta R_{TOA} - \Delta R_{SFC})\]</div>
+<p>This can be written as -</p>
 <div class="math notranslate nohighlight">
-\[Q = -\frac{1}{g}\nabla \cdot \sum_{p=0}^{p_s} (c_p T + g Z) \vec{u} \Delta p\]</div>
-<p>which is the horizontal convergence of heat energy into the grid cell and balances the radiation and heat fluxes into the cell.
-As we only use monthly mean data, we do not have information about the sub-monthly covariance of the variables used to compute <span class="math notranslate nohighlight">\(Q\)</span>, thus the balance only holds assuming this sub-monthly covariability (A.K.A. “transient eddy” effects) are negligible.
-This is approximately true in tropical regions, where mean flow dominates, but does not hold in the subtropics and poleward, where transient eddies play a much larger role.
-Thus, we compute this constraint only in the tropics.</p>
+\[\sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta LP + \Delta SH - \Delta R_{TOA} + \Delta R_{SFC}) = 0\]</div>
+<p>where <span class="math notranslate nohighlight">\(L\)</span> is the latent heat of vaporization (<span class="math notranslate nohighlight">\(2.4536 10^6\)</span> J/kg), <span class="math notranslate nohighlight">\(P\)</span> is the precipitation, <span class="math notranslate nohighlight">\(SH\)</span> is the sensible heat flux, <span class="math notranslate nohighlight">\(R_{TOA}\)</span> is the upwelling TOA radiation, <span class="math notranslate nohighlight">\(R_{SFC}\)</span> is the upwelling surface radiation. <span class="math notranslate nohighlight">\(\Delta\)</span> represents anomalies of respective variable.</p>
 </section>
 <section id="constraint-3-global-moisture-budget">
 <h3>Constraint 3. <strong>Global moisture budget</strong><a class="headerlink" href="#constraint-3-global-moisture-budget" title="Permalink to this headline"></a></h3>
-<p>This relationship balances the moisture flux in to (evaporation) and out of (precipitation) the atmosphere over the globe at each time step, thus ensuring conservation of moisture in the atmosphere.</p>
+<p>This relationship balances the moisture flux in to (evaporation) and out of (precipitation) the atmosphere with the change in atmospheric moisture content over the globe at each time step, thus ensuring conservation of moisture in the atmosphere.</p>
 <div class="math notranslate nohighlight">
-\[\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} = 0\]</div>
-<p>where <span class="math notranslate nohighlight">\(P\)</span> is the precipitation and <span class="math notranslate nohighlight">\(E\)</span> is the evaporation.</p>
+\[\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} = \int_{lat=90S}^{90N} \int_{lon=180W}^{180E} \frac{-1}{g}\frac{\partial}{\partial t} \sum_{lev = 0}^{p_s} q_{lev,lat,lon} dp \Delta A_{lat,lon}\]</div>
+<p>where <span class="math notranslate nohighlight">\(P\)</span> is the precipitation, <span class="math notranslate nohighlight">\(E\)</span> is the evaporation, <span class="math notranslate nohighlight">\(q\)</span> is the specific humidity, and <span class="math notranslate nohighlight">\(p_s\)</span> is the surface pressure.</p>
+<p>Currently, we approximate the moisture storage term as the climatological mean global mean P-E, which we subtract from the P-E we calculate for a given month of AiBEDO output such that</p>
+<div class="math notranslate nohighlight">
+\[\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} - \epsilon_q \approx 0\]</div>
+<p>where <span class="math notranslate nohighlight">\(\epsilon_q\)</span> is the climatological <span class="math notranslate nohighlight">\(\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon}\)</span></p>
 </section>
 <section id="constraint-4-non-negative-precipitation">
 <h3>Constraint 4. <strong>Non-negative precipitation</strong><a class="headerlink" href="#constraint-4-non-negative-precipitation" title="Permalink to this headline"></a></h3>
@@ -387,10 +403,20 @@ Thus, we compute this constraint only in the tropics.</p>
 </section>
 <section id="constraint-5-global-atmospheric-mass-budget">
 <h3>Constraint 5. <strong>Global atmospheric mass budget</strong><a class="headerlink" href="#constraint-5-global-atmospheric-mass-budget" title="Permalink to this headline"></a></h3>
-<p>Using the hydrostatic balance assumption, surface pressure can be used as a proxy for the mass of the atmosphere. This simple constraint ensures atmospheric mass conservation summed over the globe at each time step.</p>
+<p>Using the hydrostatic balance assumption, surface pressure can be used as a proxy for the mass of the atmosphere. This simple constraint ensures atmospheric mass conservation summed over the globe for monthly mean data.</p>
 <div class="math notranslate nohighlight">
-\[\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = 0\]</div>
-<p>where <span class="math notranslate nohighlight">\(P_s\)</span> is the surface pressure.</p>
+\[\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = C + \Delta t\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(M)_{lat,lon} \Delta A_{lat, lon}\]</div>
+<p>where <span class="math notranslate nohighlight">\(P_s\)</span> is the surface pressure and <span class="math notranslate nohighlight">\(M\)</span> is the mass flux into the atmosphere. We assume that the mass flux into the atmosphere is predominantly water vapour, such that we can assume <span class="math notranslate nohighlight">\(M = P - E\)</span> and the constant <span class="math notranslate nohighlight">\(C\)</span> is the mass of the dry atmosphere.</p>
+<p>The time integrated <span class="math notranslate nohighlight">\(P-E\)</span> is equivalent to the mass of water vapour in the atmosphere, which we estimate as</p>
+<div class="math notranslate nohighlight">
+\[M_Q = \int_{lat=90S}^{90N} \int_{lon=180W}^{180E} \frac{-1}{g} \sum_{lev = 0}^{p_s} q_{lev,lat,lon} dp\]</div>
+<p>Thus,</p>
+<div class="math notranslate nohighlight">
+\[\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = C + g M_Q\]</div>
+<p>Similar to constraint 3, we currently assume some <span class="math notranslate nohighlight">\(C + M_q\)</span> can be approximated by the climatological mean <span class="math notranslate nohighlight">\(P_s\)</span>, which we subtract from the <span class="math notranslate nohighlight">\(P_s\)</span> for a given month of AiBEDO output such that</p>
+<div class="math notranslate nohighlight">
+\[\int_A \frac{-1}{g}p_s dA - (C + \epsilon_E) = 0\]</div>
+<p>where <span class="math notranslate nohighlight">\(C + \epsilon_E\)</span> is the climatological average of <span class="math notranslate nohighlight">\(\int_A \frac{-1}{g}p_s dA\)</span>.</p>
 </section>
 <section id="denormalizing">
 <h3>Denormalizing<a class="headerlink" href="#denormalizing" title="Permalink to this headline"></a></h3>
@@ -413,9 +439,11 @@ Note that we must still deal with a seasonal cycle in the climatology. A simple 
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline"></a></h2>
-<p>Bitz, C. M., K. M. Shell, P. R. Gent, D. A. Bailey, G. Danabasoglu, K. C. Armour, M. M. Holland, and J. T. Kiehl. “Climate Sensitivity of the Community Climate System Model, Version 4.” Journal of Climate 25, no. 9 (May 2012): 3053–70. <a class="reference external" href="https://doi.org/10.1175/JCLI-D-11-00290.1">https://doi.org/10.1175/JCLI-D-11-00290.1</a>.</p>
-<p>Zelinka, M.D., Myers, T.A., McCoy, D.T., Po‐Chedley, S., Caldwell, P.M., Ceppi, P., Klein, S.A., Taylor, K.E., 2020. Causes of Higher Climate Sensitivity in CMIP6 Models. Geophys. Res. Lett. 47. <a class="reference external" href="https://doi.org/10.1029/2019GL085782">https://doi.org/10.1029/2019GL085782</a></p>
-<p>Muller, C. J., and P. A. O’Gorman. “An Energetic Perspective on the Regional Response of Precipitation to Climate Change.” Nature Climate Change 1, no. 5 (August 2011): 266–71. <a class="reference external" href="https://doi.org/10.1038/nclimate1169">https://doi.org/10.1038/nclimate1169</a>.</p>
+<p>Allen, M. R., &amp; Ingram, W. J. (2002). Constraints on future changes in climate and the hydrologic cycle. Nature, 419(6903), 228-232.</p>
+<p>Bitz, C. M., Shell, K. M., Gent, P. R., Bailey, D. A., Danabasoglu, G., Armour, K. C., Holland M. M. &amp; Kiehl, J. T. (2012). Climate sensitivity of the community climate system model, version 4. Journal of Climate, 25(9), 3053-3070.</p>
+<p>Jakob, C., Singh, M. S., &amp; Jungandreas, L. (2019). Radiative convective equilibrium and organized convection: An observational perspective. Journal of Geophysical Research: Atmospheres, 124(10), 5418-5430.</p>
+<p>Muller, C. J., &amp; O’Gorman, P. A. (2011). An energetic perspective on the regional response of precipitation to climate change. Nature Climate Change, 1(5), 266-271.</p>
+<p>Zelinka, M. D., Myers, T. A., McCoy, D. T., Po‐Chedley, S., Caldwell, P. M., Ceppi, P., Klein, S.A. &amp; Taylor, K. E. (2020). Causes of higher climate sensitivity in CMIP6 models. Geophysical Research Letters, 47(1), e2019GL085782.</p>
 </section>
 </section>
 
@@ -424,7 +452,7 @@ Note that we must still deal with a seasonal cycle in the climatology. A simple 
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../index.html" class="btn btn-neutral float-left" title="AIBEDO: a hybrid AI framework to capture the effects of cloud properties on global circulation and regional climate patterns." accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../architecture/index.html" class="btn btn-neutral float-right" title="Hybrid AI Model Architecture" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../physics/index.html" class="btn btn-neutral float-right" title="Physics Constraints" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
