@@ -6,7 +6,6 @@ import hydra
 import numpy as np
 import torch
 from omegaconf import DictConfig
-from timm.optim import create_optimizer_v2
 from torch import Tensor, nn
 import torch.nn.functional as F
 from pytorch_lightning import LightningModule
@@ -147,11 +146,12 @@ class BaseModel(LightningModule):
             self.register_buffer_dummy(f'{var_id}_mean', var_mean, persistent=False)
             self.register_buffer_dummy(f'{var_id}_std', var_std, persistent=False)
 
-        # Go through all climatology auxiliary arrays:
-        for aux_clim_err in ['Precip', 'PE', 'PS']:
-            err_id = f'{aux_clim_err}_clim_err'
-            err_arr = get_clim_err(err_id=err_id, **stats_kwargs)
-            self.register_buffer_dummy(err_id, err_arr, persistent=False)
+        if use_auxiliary_vars:
+            # Go through all climatology auxiliary arrays:
+            for aux_clim_err in ['Precip', 'PE', 'PS']:
+                err_id = f'{aux_clim_err}_clim_err'
+                err_arr = get_clim_err(err_id=err_id, **stats_kwargs)
+                self.register_buffer_dummy(err_id, err_arr, persistent=False)
 
         if physics_loss_weights[1] > 0:
             self.log_text.info(" Using constraint (#2)")
@@ -174,7 +174,7 @@ class BaseModel(LightningModule):
     def input_var_to_idx(self) -> Dict[str, int]:
         """ Returns the index of the month (the month being a scalar in {0, 1, .., 11}) in the input data """
         # if self._input_var_to_idx is None:
-        if hasattr(self, 'trainer') and self.trainer is not None:
+        if self._trainer is not None:
             self._input_var_to_idx = self.trainer.datamodule.input_var_to_idx
         return self._input_var_to_idx
 
@@ -693,6 +693,8 @@ class BaseModel(LightningModule):
         Method that returns the torch.optim optimizer object.
         May be overridden in subclasses to provide custom optimizers.
         """
+        return torch.optim.AdamW(self.parameters(), **kwargs)
+        from timm.optim import create_optimizer_v2
         return create_optimizer_v2(model_or_params=self, opt=optim_name, **kwargs)
 
     def configure_optimizers(self):
@@ -705,7 +707,6 @@ class BaseModel(LightningModule):
             self.log_text.info(" Model has method no_weight_decay, which will be used.")
         optim_kwargs = {k: v for k, v in self.hparams.optimizer.items() if k not in ['name', '_target_']}
         optimizer = self._get_optim(self.hparams.optimizer.name, **optim_kwargs)
-
         # Build the scheduler
         if self.hparams.scheduler is None:
             return optimizer  # no scheduler
