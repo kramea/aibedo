@@ -22,6 +22,10 @@ If the environment doesn't show up in the list of possible kernels, please do
 
 Then, please refresh the notebook page.
 
+## Demo
+
+Please visit [this notebook](notebooks/DEMO.ipynb) for a demo of AIBEDO.
+
 ## Getting started
 
 ***Please have a look at [this README](aibedo/README.md)***
