@@ -26,4 +26,5 @@ Climate intervention techniques—like marine cloud brightening—that need to b
    dynamics/index
    mcb/index
    tutorial/index
+   interface/index
    reports/index
