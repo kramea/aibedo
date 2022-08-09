@@ -8,5 +8,7 @@ Our frontend interactive visual analysis (VA) system lets the climate scientists
 
 
 .. image:: images/aibedo_VA_screenshot.png
-
+   :width: 620
+   :height: 283
+   
    Figure 1 High-level overview of the VA system.
