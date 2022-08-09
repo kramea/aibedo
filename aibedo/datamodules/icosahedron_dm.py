@@ -5,9 +5,7 @@ import torch
 import xarray as xr
 import numpy as np
 from einops import rearrange
-from pytorch_lightning import seed_everything
 from torch import Tensor
-from torch.utils.data import TensorDataset, Dataset
 
 from aibedo.constants import CLIMATE_MODELS_ALL
 from aibedo.datamodules.abstract_datamodule import AIBEDO_DataModule
@@ -57,9 +55,8 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         return dataset
 
     def _get_auxiliary_data(self, dataset_in: xr.Dataset, dataset_out: xr.Dataset) -> np.ndarray:
-        # Add month of the snapshot (0-11)
-        month_of_snapshot = np.array(dataset_out.indexes['time'].month) - 1  # -1 because month we want 0-indexed months
-        # now repeat the month for each grid cell/pixel
+        # Add month of the snapshot (0-11) # -1 because month we want 0-indexed months
+        month_of_snapshot = np.array(dataset_out.indexes['time'].month, dtype=np.float32) - 1  # now repeat the month for each grid cell/pixel
         dataset_month = np.repeat(month_of_snapshot, self.n_pixels).reshape([-1, self.n_pixels, 1])
         if len(self.hparams.auxiliary_vars) > 0:
             dataset_aux = self._concat_variables_into_channel_dim(dataset_out, self.hparams.auxiliary_vars)
@@ -104,7 +101,9 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
                 # similarly, the auxiliary data should be aligned to the last month too!
                 aux_tmp += [dataset_aux[i + window - 1, :, :]]
 
-            dataset_in, dataset_out, dataset_aux = np.asarray(in_tmp), np.asarray(out_tmp), np.asarray(aux_tmp)
+            dataset_in = np.asarray(in_tmp, dtype=np.float32)
+            dataset_out = np.asarray(out_tmp, dtype=np.float32)
+            dataset_aux = np.asarray(aux_tmp, dtype=np.float32)
 
         if self.hparams.time_lag > 0:
             horizon = self.hparams.time_lag

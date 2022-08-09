@@ -488,20 +488,28 @@ def plot_training_set_vs_test_performance(
         max_diff = max(errors) - min(errors)
         ax.set_ylim([max(min(errors) - max_diff - max(stds), ax.get_ylim()[0]), ax.get_ylim()[1]])
         metric_name = metric.upper().replace('_EPOCH', '').replace('TEST/', '').replace('/', ' ').replace('VAL', 'Val')
+        for ref in ["ERA5", "MERRA2"]:
+            if ref in title and ref in metric_name:
+                metric_name = metric_name.replace(ref, "").strip()
+
         title_save = f"{title}_" if title else ""
         save_to = os.path.join(save_to_dir, f'{title_save}{metric_name}.png') if save_to_dir else None
+        if i < len(metrics_to_plot) - 1:
+            pass # xlabels = []
         set_labels_and_ticks(
             ax,
             xlabel='', ylabel=metric_name,
             xticks=x_pos, xtick_labels=xlabels,
-            xlabel_fontsize=14, ylabel_fontsize=14 if n_metrics <= 2 else 10,
-            xticks_fontsize=8, yticks_fontsize=14 if n_metrics <= 2 else 10,
+            xlabel_fontsize=14 if n_metrics <= 2 else 6,
+            ylabel_fontsize=14 if n_metrics <= 2 else 8,
+            xticks_fontsize=6,
+            yticks_fontsize=14 if n_metrics <= 2 else 9,
             x_ticks_rotation=10,  # 45
             show=False, legend=False, legend_loc='best',
             grid=True,
-            save_to=save_to if save_to else None,
+            save_to=save_to if save_to and i == len(metrics_to_plot) - 1 else None,
             title=title if i == 0 else None,
             **kwargs
         )
-    plt.subplots_adjust(wspace=0.01, hspace=0.23)
+    plt.subplots_adjust(wspace=0.01, hspace=0.26, bottom=0.06, left=0.055, right=0.99, top=0.96)
     return fig, axs
