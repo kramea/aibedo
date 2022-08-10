@@ -7,7 +7,7 @@ Physics Constraints
  
 To strengthen the generalisability of the AiBEDO model, we include "weak" physics-based constraints on the output to penalize unphysical results from the model.
 
-Constraint 1. Climate energy budget
+Constraint 1. **Climate energy budget**
 -----------------------------------
 
 In this constraint, the energy is budgeted between the heat storage and radiative fluxes at TOA on timescales over which atmospheric energy storage is minimal. This constraint is related to the energy budget used to calculate the transient climate sensitivity (e.g. Bitz et al., 2012).
@@ -20,7 +20,7 @@ For the :math:`\lambda_{ECS}` feedback constant, we use the CESM2 equilibrium fe
 The Planck, water vapour, cloud, and albedo feedbacks are provided as seasonally varying zonal averages. 
 We sum all the feedback components together, map across longitude values, and then interpolate to the Sphere-Icosahedral grid.
 Constraint 1 applies over longer time scales than the other constraints thus requires several months of data to compute. 
-Note also that we are applying the feedback parameter :math:`\lambda_{ECS}` from one ESM (CESM2) regardless of the source of the training data. 
+Also, note that we are applying the feedback parameter :math:`\lambda_{ECS}` from one ESM (CESM2) regardless of the source of the training data. 
 This weakens the constraint as there is significant uncertainty within CMIP6 in the magnitude of the feedback parameter (Zelinka et al., 2020).
 
 ..
@@ -49,25 +49,25 @@ Constraint 2. **Precipitation energy budget**
 This is the energetic constraint on global precipitation. Globally mean radiative cooling of the atmosphere must be balanced by warming of atmosphere due to latent heat flux and sensible heat flux from the surface (Allen and Ingram, 2002; Jakob et al., 2019). Considering hemispheric asymmetries and seasonal cycle this budget can be written as follows - 
 
 .. math:: 
-  \sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (PL + SH + R_{TOA} -R_{SFC})_{lat,lon} \Delta A_{lat,lon} - \epsilon_E \approx 0
+  \sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (PL + SH + R_{TOA} -R_{SFC})_{lat,lon} \Delta A_{lat,lon} = L\int_{lat=90S}^{90N} \int_{lon=180W}^{180E} \frac{-1}{g}\frac{\partial}{\partial t} \sum_{lev = 0}^{p_s} q_{lev,lat,lon} dp \Delta A_{lat,lon} = \frac{-L}{g} \frac{d}{dt} Q_{tot}
 
-where :math:`\epsilon_E` is the climatological :math:`\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (PL + SH + R_{TOA} -R_{SFC})_{lat,lon} \Delta A_{lat,lon}`, :math:`L` is the latent heat of vaporization (2.4536106 J/kg), :math:`P` is the precipitation, :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the net radiation at top of the atmosphere and :math:`R_{SFC}` is the net surface radiation.  
+where :math:`L` is the latent heat of vaporization (2.4536106 J/kg), :math:`P` is the precipitation, :math:`SH` is the sensible heat flux, :math:`R_{TOA}` is the net radiation at top of the atmosphere and :math:`R_{SFC}` is the net surface radiation. We approximate the right hand side term using, :math:`\epsilon_E` which is the climatological :math:`\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (PL + SH + R_{TOA} -R_{SFC})_{lat,lon} \Delta A_{lat,lon}`.
 
 Constraint 3. **Global moisture budget**
 ----------------------------------------
 This relationship balances the moisture flux in to (evaporation) and out of (precipitation) the atmosphere with the change in atmospheric moisture content over the globe at each time step, thus ensuring conservation of moisture in the atmosphere.
 
 .. math:: 
-  \sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} = \int_{lat=90S}^{90N} \int_{lon=180W}^{180E} \frac{-1}{g}\frac{\partial}{\partial t} \sum_{lev = 0}^{p_s} q_{lev,lat,lon} dp \Delta A_{lat,lon}
+  \sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} = \int_{lat=90S}^{90N} \int_{lon=180W}^{180E} \frac{-1}{g}\frac{\partial}{\partial t} \sum_{lev = 0}^{p_s} q_{lev,lat,lon} dp \Delta A_{lat,lon} = \frac{-1}{g} \frac{d}{dt} Q_{tot}
 
 where :math:`P` is the precipitation, :math:`E` is the evaporation, :math:`q` is the specific humidity, and :math:`p_s` is the surface pressure.
 
-The moisture storage term can be roughly approximated the climatological mean global mean P-E, which we subtract from the P-E we calculate for a given month of AiBEDO output such that
+Currently, we approximate the moisture storage term as the climatological mean global mean :math:`P-E`, which we subtract from the :math:`P-E` we calculate for a given month of AiBEDO output such that
 
 .. math:: 
   \sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} - \epsilon_q \approx 0
 
-where :math:`\epsilon_q` is the climatological :math:`\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon}`
+where :math:`\epsilon_q` is the climatological :math:`\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon}`. However in future work we plan to explicitly include the moisture storage term in the constraint.
 
 Constraint 4. **Non-negative precipitation**
 --------------------------------------------
@@ -81,19 +81,29 @@ Constraint 5. **Global atmospheric mass budget**
 Using the hydrostatic balance assumption, surface pressure can be used as a proxy for the mass of the atmosphere. This simple constraint ensures atmospheric mass conservation summed over the globe for monthly mean data.
 
 .. math:: 
-   \sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = C + \Delta t\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(M)_{lat,lon} \Delta A_{lat, lon}
+   \sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = C + \sum_{t} \sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(M)_{lat,lon} \Delta A_{lat, lon}
 
-where :math:`P_s` is the surface pressure and :math:`M` is the mass flux into the atmosphere. We assume that the mass flux into the atmosphere is predominantly water vapour, such that we can assume :math:`M = E`.
+where :math:`P_s` is the surface pressure and :math:`M` is the mass flux into the atmosphere. We assume that the mass flux into the atmosphere is predominantly water vapour, such that we can assume :math:`M = P - E` and the constant :math:`C` is the mass of the dry atmosphere.
 
-Similar to constraint 5, we assume :math:`C` plus the mass flux term can be approximated by the climatological mean :math:`P_s`, which we subtract from the :math:`P_s` for a given month of AiBEDO output such that
+The time integrated :math:`P-E` is equivalent to the mass of water vapour in the atmosphere, which we estimate as
+
+.. math:: 
+  Q_{tot} = \int_{lat=90S}^{90N} \int_{lon=180W}^{180E} \frac{-1}{g} \sum_{lev = 0}^{p_s} q_{lev,lat,lon} dp
+
+Thus,    
+
+.. math:: 
+  \sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = C + g Q_{tot}
+
+Similar to constraint 3, we currently assume some :math:`C + M_q` can be approximated by the climatological mean :math:`P_s`, which we subtract from the :math:`P_s` for a given month of AiBEDO output such that
 
 .. math:: 
   \int_A \frac{-1}{g}p_s dA - (C + \epsilon_E) = 0
 
-where :math:`C + \epsilon_E` is the climatological average of :math:`\int_A \frac{-1}{g}p_s dA`.
+where :math:`C + \epsilon_E` is the climatological average of :math:`\int_A \frac{-1}{g}p_s dA`. However in future work we plan to explicitly include the moisture storage term in the constraint.
 
-Denormalization
----------------
+Denormalizing
+~~~~~~~~~~~~~~~
 As the AiBEDO model deals with normalized variables while the constraint require the variables in their original units (and with physically realistic spatial variations), we must "denormalize" the model output to apply the constraints.
 The training data fed into the model is detrended and deseasonalized, thus filtering out all low frequency information. However, the climatology and variability change as anthropogenic climate change intensifies.
 Furthermore, the data is derived from a range of models with differing mean climatology and interannual variability patterns.
@@ -109,9 +119,9 @@ Note that we must still deal with a seasonal cycle in the climatology. A simple 
 	images/CMIP6_tas_pr_evap_MMmean.png
 
 	Figure 4. March climatology and interannual variability in the CMIP6 multi-model average.
-
 References
 -----------
+Allen, M. R., & Ingram, W. J. (2002). Constraints on future changes in climate and the hydrologic cycle. Nature, 419(6903), 228-232.
 
 Bitz, C. M., Shell, K. M., Gent, P. R., Bailey, D. A., Danabasoglu, G., Armour, K. C., Holland M. M. & Kiehl, J. T. (2012). Climate sensitivity of the community climate system model, version 4. Journal of Climate, 25(9), 3053-3070.
 

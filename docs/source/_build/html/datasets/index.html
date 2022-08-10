@@ -45,16 +45,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Datasets</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#training-data">Training data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#reanalysis">Reanalysis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#preprocessing">Preprocessing</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#constraint-1-climate-energy-budget">Constraint 1. Climate energy budget</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#constraint-2-precipitation-energy-budget">Constraint 2. <strong>Precipitation energy budget</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#constraint-3-global-moisture-budget">Constraint 3. <strong>Global moisture budget</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#constraint-4-non-negative-precipitation">Constraint 4. <strong>Non-negative precipitation</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#constraint-5-global-atmospheric-mass-budget">Constraint 5. <strong>Global atmospheric mass budget</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#denormalizing">Denormalizing</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing">Preprocessing</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../physics/index.html">Physics Constraints</a></li>
@@ -312,12 +303,12 @@
 <tr class="row-odd"><td><p>Constraint</p></td>
 <td><p>qtot</p></td>
 <td><p>Column integrated water vapour mass</p></td>
-<td><p><span class="math notranslate nohighlight">\(\frac{1}{g}\sum_{lev} Q dp\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(Q_{tot} = \frac{1}{g}\sum_{lev} Q dp\)</span></p></td>
 </tr>
 <tr class="row-even"><td><p>Constraint</p></td>
 <td><p>dqdt</p></td>
 <td><p>Time tendency of column integrated water vapour mass</p></td>
-<td><p><span class="math notranslate nohighlight">\(\frac{1}{g}\frac{d}{dt} \sum_{lev} Q dp\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(\frac{dQ_{tot}}{dt} = \frac{1}{g}\frac{d}{dt} \sum_{lev} Q dp\)</span></p></td>
 </tr>
 </tbody>
 </table>
@@ -357,93 +348,6 @@ MERRA2 includes data from 1980 to 2020 at 0.5 degree resolution and ERA5 include
 <p><span class="caption-text">Figure 3. Example preprocessing for a surface air temperature data point.</span><a class="headerlink" href="#id5" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
-<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
-Physics Constraints
-——————–</p>
-<p>To strengthen the generalisability of the AiBEDO model, we include “weak” physics-based constraints on the output to penalize unphysical results from the model.</p>
-<section id="constraint-1-climate-energy-budget">
-<h3>Constraint 1. Climate energy budget<a class="headerlink" href="#constraint-1-climate-energy-budget" title="Permalink to this headline"></a></h3>
-<p>In this constraint, the energy is budgeted between the heat storage and radiative fluxes at TOA on timescales over which atmospheric energy storage is minimal. This constraint is related to the energy budget used to calculate the transient climate sensitivity (e.g. Bitz et al., 2012).</p>
-<div class="math notranslate nohighlight">
-\[\sum_{t}^{&gt; 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta {R^{TOA}_{lat, lon}} - \lambda_{ECS}\Delta T_{lat, lon}\Delta A_{lat, lon}) = 0\]</div>
-<p>where <span class="math notranslate nohighlight">\(\Delta R^{TOA}\)</span> is heat storage/top of atmosphere radiative imbalance, <span class="math notranslate nohighlight">\(\lambda_{ECS}\)</span> feedback constant, <span class="math notranslate nohighlight">\(T\)</span> is surface temperature and <span class="math notranslate nohighlight">\(A\)</span> is the area of the cell.
-For the <span class="math notranslate nohighlight">\(\lambda_{ECS}\)</span> feedback constant, we use the CESM2 equilibrium feedback computed from a 2xCO<sub>2</sub> simulation.
-The Planck, water vapour, cloud, and albedo feedbacks are provided as seasonally varying zonal averages.
-We sum all the feedback components together, map across longitude values, and then interpolate to the Sphere-Icosahedral grid.
-Constraint 1 applies over longer time scales than the other constraints thus requires several months of data to compute.
-Note also that we are applying the feedback parameter <span class="math notranslate nohighlight">\(\lambda_{ECS}\)</span> from one ESM (CESM2) regardless of the source of the training data.
-This weakens the constraint as there is significant uncertainty within CMIP6 in the magnitude of the feedback parameter (Zelinka et al., 2020).</p>
-</section>
-<section id="constraint-2-precipitation-energy-budget">
-<h3>Constraint 2. <strong>Precipitation energy budget</strong><a class="headerlink" href="#constraint-2-precipitation-energy-budget" title="Permalink to this headline"></a></h3>
-<p>This is the energetic constraint on global precipitation. Annual mean global precipitation changes are constrained by this relationship. Globally averaged annual mean radiative cooling of the atmosphere must be balanced by latent heat flux due to condensation and sensible heat flux from the surface (Allen and Ingram, 2002; Jakob et al., 2019).</p>
-<div class="math notranslate nohighlight">
-\[\sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta LP + \Delta SH) = \sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta R_{TOA} - \Delta R_{SFC})\]</div>
-<p>This can be written as -</p>
-<div class="math notranslate nohighlight">
-\[\sum_{t}^{ 1 yr} \sum_{lat=90S}^{90N}\sum_{lon=180W}^{180E}(\Delta LP + \Delta SH - \Delta R_{TOA} + \Delta R_{SFC}) = 0\]</div>
-<p>where <span class="math notranslate nohighlight">\(L\)</span> is the latent heat of vaporization (<span class="math notranslate nohighlight">\(2.4536 10^6\)</span> J/kg), <span class="math notranslate nohighlight">\(P\)</span> is the precipitation, <span class="math notranslate nohighlight">\(SH\)</span> is the sensible heat flux, <span class="math notranslate nohighlight">\(R_{TOA}\)</span> is the upwelling TOA radiation, <span class="math notranslate nohighlight">\(R_{SFC}\)</span> is the upwelling surface radiation. <span class="math notranslate nohighlight">\(\Delta\)</span> represents anomalies of respective variable.</p>
-</section>
-<section id="constraint-3-global-moisture-budget">
-<h3>Constraint 3. <strong>Global moisture budget</strong><a class="headerlink" href="#constraint-3-global-moisture-budget" title="Permalink to this headline"></a></h3>
-<p>This relationship balances the moisture flux in to (evaporation) and out of (precipitation) the atmosphere with the change in atmospheric moisture content over the globe at each time step, thus ensuring conservation of moisture in the atmosphere.</p>
-<div class="math notranslate nohighlight">
-\[\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} = \int_{lat=90S}^{90N} \int_{lon=180W}^{180E} \frac{-1}{g}\frac{\partial}{\partial t} \sum_{lev = 0}^{p_s} q_{lev,lat,lon} dp \Delta A_{lat,lon}\]</div>
-<p>where <span class="math notranslate nohighlight">\(P\)</span> is the precipitation, <span class="math notranslate nohighlight">\(E\)</span> is the evaporation, <span class="math notranslate nohighlight">\(q\)</span> is the specific humidity, and <span class="math notranslate nohighlight">\(p_s\)</span> is the surface pressure.</p>
-<p>Currently, we approximate the moisture storage term as the climatological mean global mean P-E, which we subtract from the P-E we calculate for a given month of AiBEDO output such that</p>
-<div class="math notranslate nohighlight">
-\[\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon} - \epsilon_q \approx 0\]</div>
-<p>where <span class="math notranslate nohighlight">\(\epsilon_q\)</span> is the climatological <span class="math notranslate nohighlight">\(\sum_{lat=90S}^{90N} \sum_{lon=180W}^{180E} (P-E)_{lat,lon} \Delta A_{lat,lon}\)</span></p>
-</section>
-<section id="constraint-4-non-negative-precipitation">
-<h3>Constraint 4. <strong>Non-negative precipitation</strong><a class="headerlink" href="#constraint-4-non-negative-precipitation" title="Permalink to this headline"></a></h3>
-<p>A simple yet relevant constraint is to ensure negative precipitation (<span class="math notranslate nohighlight">\(P\)</span>) values are set to zero during model training. This will then ensure maximum penalty for the erring grid point when compared to the ground truth data.</p>
-<div class="math notranslate nohighlight">
-\[P \ge 0, lat \in [90S, 90N], lon \in [180E, 180W]\]</div>
-</section>
-<section id="constraint-5-global-atmospheric-mass-budget">
-<h3>Constraint 5. <strong>Global atmospheric mass budget</strong><a class="headerlink" href="#constraint-5-global-atmospheric-mass-budget" title="Permalink to this headline"></a></h3>
-<p>Using the hydrostatic balance assumption, surface pressure can be used as a proxy for the mass of the atmosphere. This simple constraint ensures atmospheric mass conservation summed over the globe for monthly mean data.</p>
-<div class="math notranslate nohighlight">
-\[\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = C + \Delta t\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(M)_{lat,lon} \Delta A_{lat, lon}\]</div>
-<p>where <span class="math notranslate nohighlight">\(P_s\)</span> is the surface pressure and <span class="math notranslate nohighlight">\(M\)</span> is the mass flux into the atmosphere. We assume that the mass flux into the atmosphere is predominantly water vapour, such that we can assume <span class="math notranslate nohighlight">\(M = P - E\)</span> and the constant <span class="math notranslate nohighlight">\(C\)</span> is the mass of the dry atmosphere.</p>
-<p>The time integrated <span class="math notranslate nohighlight">\(P-E\)</span> is equivalent to the mass of water vapour in the atmosphere, which we estimate as</p>
-<div class="math notranslate nohighlight">
-\[M_Q = \int_{lat=90S}^{90N} \int_{lon=180W}^{180E} \frac{-1}{g} \sum_{lev = 0}^{p_s} q_{lev,lat,lon} dp\]</div>
-<p>Thus,</p>
-<div class="math notranslate nohighlight">
-\[\sum_{lat=90S}^{90N}\sum_{lon=190W}^{180E}(P_s)_{lat,lon} \Delta A_{lat, lon} = C + g M_Q\]</div>
-<p>Similar to constraint 3, we currently assume some <span class="math notranslate nohighlight">\(C + M_q\)</span> can be approximated by the climatological mean <span class="math notranslate nohighlight">\(P_s\)</span>, which we subtract from the <span class="math notranslate nohighlight">\(P_s\)</span> for a given month of AiBEDO output such that</p>
-<div class="math notranslate nohighlight">
-\[\int_A \frac{-1}{g}p_s dA - (C + \epsilon_E) = 0\]</div>
-<p>where <span class="math notranslate nohighlight">\(C + \epsilon_E\)</span> is the climatological average of <span class="math notranslate nohighlight">\(\int_A \frac{-1}{g}p_s dA\)</span>.</p>
-</section>
-<section id="denormalizing">
-<h3>Denormalizing<a class="headerlink" href="#denormalizing" title="Permalink to this headline"></a></h3>
-<p>As the AiBEDO model deals with normalized variables while the constraint require the variables in their original units (and with physically realistic spatial variations), we must “denormalize” the model output to apply the constraints.
-The training data fed into the model is detrended and deseasonalized, thus filtering out all low frequency information. However, the climatology and variability change as anthropogenic climate change intensifies.
-Furthermore, the data is derived from a range of models with differing mean climatology and interannual variability patterns.
-Thus, passing through the climatology and variability associated with the model and time period of training time step provides additional information about model uncertainty and GHG forced climate change that is undesirable when training in a Fluctuation Dissipation framework.
-As a result, we select a single reference climatology and variability with which to denormalize the model output for calculating constraints.
-This reference can thus be thought to represent the climatology and variability of the AiBEDO model.</p>
-<p>We select the CMIP6 multi-ESM ensemble average climatology and variability for the denormalization (though we might equally consider using reanalysis data).
-The average variability is computed as the square root of the average of the interannual variances across the ESMs.
-Note that we must still deal with a seasonal cycle in the climatology. A simple approach is to use a single month or season as the basis for the denormalization. More sophisticated methods of incorporating seasonal information are currently under consideration.</p>
-<figure class="align-default" id="id6">
-<img alt="../_images/CMIP6_tas_pr_evap_MMmean.png" src="../_images/CMIP6_tas_pr_evap_MMmean.png" />
-<figcaption>
-<p><span class="caption-text">Figure 4. March climatology and interannual variability in the CMIP6 multi-model average.</span><a class="headerlink" href="#id6" title="Permalink to this image"></a></p>
-</figcaption>
-</figure>
-</section>
-</section>
-<section id="references">
-<h2>References<a class="headerlink" href="#references" title="Permalink to this headline"></a></h2>
-<p>Allen, M. R., &amp; Ingram, W. J. (2002). Constraints on future changes in climate and the hydrologic cycle. Nature, 419(6903), 228-232.</p>
-<p>Bitz, C. M., Shell, K. M., Gent, P. R., Bailey, D. A., Danabasoglu, G., Armour, K. C., Holland M. M. &amp; Kiehl, J. T. (2012). Climate sensitivity of the community climate system model, version 4. Journal of Climate, 25(9), 3053-3070.</p>
-<p>Jakob, C., Singh, M. S., &amp; Jungandreas, L. (2019). Radiative convective equilibrium and organized convection: An observational perspective. Journal of Geophysical Research: Atmospheres, 124(10), 5418-5430.</p>
-<p>Muller, C. J., &amp; O’Gorman, P. A. (2011). An energetic perspective on the regional response of precipitation to climate change. Nature Climate Change, 1(5), 266-271.</p>
-<p>Zelinka, M. D., Myers, T. A., McCoy, D. T., Po‐Chedley, S., Caldwell, P. M., Ceppi, P., Klein, S.A. &amp; Taylor, K. E. (2020). Causes of higher climate sensitivity in CMIP6 models. Geophysical Research Letters, 47(1), e2019GL085782.</p>
 </section>
 </section>
 
