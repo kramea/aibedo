@@ -47,7 +47,7 @@ def getData(query:dict):
             mapper = fs.get_mapper(zstore)
             ### !!!! Note decode times is false so we can use integer time values !!!!
             ### open_zarr, so datasets are not loaded yet
-            return_ds = xr.open_zarr(mapper, consolidated=True,decode_times=False)
+            return_ds = xr.open_zarr(mapper, consolidated=True)
     return(return_ds)
 
 def removeSC(x:np.ndarray):
@@ -95,6 +95,7 @@ def preprocess(data:np.ndarray, tdata:np.ndarray, window:int = 31,proc:int = 40)
     ### remove cubic fit
     print('Detrend')
     print(tdata.shape)
+    print(deseas.shape)
     detre = detrend(deseas,tdata)
     t3 = time.time()
     print('Time : ',t3-t2)
@@ -208,7 +209,11 @@ def vert_int(data:xr.Dataset, a:np.ndarray, b:np.ndarray, ps:np.ndarray,
         p_max = p_max*1e2
         p_min = p_min*1e2
         data_interp = data_interp.where((data_interp.plev < ps).transpose("time","plev","lat","lon")).fillna(0.)
-    ### get weights depending on thickness of level
+
+    integral = vert_int_press(data_interp, ps, p_max, p_min)
+    return integral
+    '''
+    # Slice up levels
     if plevels[0] < plevels[1]:
         data_sel = data_interp.sel(plev=slice(p_min,p_max))
     elif plevels[0] > plevels[1]:
@@ -222,8 +227,38 @@ def vert_int(data:xr.Dataset, a:np.ndarray, b:np.ndarray, ps:np.ndarray,
     var_weights=data_sel.copy()
     var_weights.values=geocat.comp.dpres_plevel(pressure_levels,ps,p_min).fillna(0.0).values
 
-    ### calculate weighted mean
+    # calculate weighted mean
     integral=data_sel.weighted(var_weights).mean(dim='plev')
+    return integral
+    '''
+
+def vert_int_press(data:xr.Dataset, ps:np.ndarray, p_max:float, p_min:float):
+    '''
+    Calculate the vertical integral between two levels for data on pressure coordinates
+    data (xr.Dataset) : 4D input dataset in pressure coordinates
+    ps (np.ndarray) : 3D input dataset with surface pressures (Pa)
+    p_max (float) : maximum pressure level (Pa)
+    p_min (float) : minimum pressure level (p_min < p_max) (Pa)
+    plevels (np.ndarray) : array of target pressure levels for interpolation (Pa)
+    '''
+
+    # Slice up levels
+    if data.plev[0] < data.plev[1]:
+        data_sel = data.sel(plev=slice(p_min,p_max))
+    elif data.plev[0] > data.plev[1]:
+        data_sel = data.sel(plev=slice(p_max,p_min))
+
+    ### calculate vertical integral
+    pressure_levels = data_sel.plev
+    pressure_levels=pressure_levels.assign_attrs({'units':'Pa'})
+
+    # use geocat to get the weights for pressure interpolation
+    var_weights=data_sel.copy()
+    var_weights.values=geocat.comp.dpres_plevel(pressure_levels,ps,p_min).fillna(0.0).values
+
+    # calculate weighted mean
+    integral=data_sel.weighted(var_weights).mean(dim='plev')
+
     return integral
     
 def calc_var_integral(data:dict, var:str, varname:str, attributes:dict = {},
@@ -249,36 +284,6 @@ def calc_var_integral(data:dict, var:str, varname:str, attributes:dict = {},
         p_min = 200e2
         attributes['minlevel'] = p_min
 
-    ### parse different hybrid pressure-sigma coordinate weight formats
-    if 'formula' in data[var]['lev'].attrs:
-        # if there is a formula provided, we can use it to standardize the a,b arrays
-        formula = data[var]['lev'].attrs['formula']
-        if formula == 'p = ptop + sigma*(ps - ptop)':
-            # FGOALS
-            sigma = data[var]['lev'].load()
-            ptop = data[var]['ptop'].load()
-            hy_a = (1-sigma) * ptop/P0
-            hy_b = sigma
-        elif formula == 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)' or formula == 'p = ap + b*ps':
-            #GFDL, AWI
-            hy_a = data[var]['ap'].load()/P0
-            hy_b = data[var]['b'].load()
-        elif formula == 'p = a*p0 + b*ps':
-            #most other hybrid sigma-press
-            hy_a = data[var]['a'].load()
-            hy_b = data[var]['b'].load()
-            if data[var]['p0'].values == 1: # special case for GISS-E2-1-H
-                hy_a = data[var]['a'].load()/1000e2
-        elif formula == 'z = a + b*orog':
-            # UK models use hybrid sigma-level, implement later if needed
-            raise Exception('Can\'t do hybrid sigma-meters at this time')
-    else:
-        if 'a' in data[var].variables and 'b' in data[var].variables:
-            hy_a = data[var]['a'].load()
-            hy_b = data[var]['b'].load()
-        else:
-            raise Exception('dont understand vertical coordinate')
-
     # get surface pressure data
     if 'ps' in data[var].variables:
         ps = data[var].ps.load()
@@ -287,12 +292,47 @@ def calc_var_integral(data:dict, var:str, varname:str, attributes:dict = {},
         print(ps.shape)
     else:
         raise Exception('No surface pressure data')
-    
-    ds = data[var][var].load()
+        
+    if 'lev' in data[var].variables:
+        ### parse different hybrid pressure-sigma coordinate weight formats
+        if 'formula' in data[var]['lev'].attrs:
+            # if there is a formula provided, we can use it to standardize the a,b arrays
+            formula = data[var]['lev'].attrs['formula']
+            if formula == 'p = ptop + sigma*(ps - ptop)':
+                # FGOALS
+                sigma = data[var]['lev'].load()
+                ptop = data[var]['ptop'].load()
+                hy_a = (1-sigma) * ptop/P0
+                hy_b = sigma
+            elif formula == 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)' or formula == 'p = ap + b*ps':
+                #GFDL, AWI
+                hy_a = data[var]['ap'].load()/P0
+                hy_b = data[var]['b'].load()
+            elif formula == 'p = a*p0 + b*ps':
+                #most other hybrid sigma-press
+                hy_a = data[var]['a'].load()
+                hy_b = data[var]['b'].load()
+                if data[var]['p0'].values == 1: # special case for GISS-E2-1-H
+                    hy_a = data[var]['a'].load()/1000e2
+            elif formula == 'z = a + b*orog':
+                # UK models use hybrid sigma-level, implement later if needed
+                raise Exception('Can\'t do hybrid sigma-meters at this time')
+        else:
+            if 'a' in data[var].variables and 'b' in data[var].variables:
+                hy_a = data[var]['a'].load()
+                hy_b = data[var]['b'].load()
+            else:
+                raise Exception('dont understand vertical coordinate')
 
-    ## compute integral
-    integrated = vert_int(ds.copy(), hy_a, hy_b, ps, p_max, p_min, usegeocat=usegeocat)
+        ds = data[var][var].load()
 
+        ## compute integral
+        integrated = vert_int(ds.copy(), hy_a, hy_b, ps, p_max, p_min, usegeocat=usegeocat)
+    elif 'plev' in data[var].variables:
+        ds = data[var][var].load()
+        integrated=vert_int_press(ds, ps, p_max, p_min)
+    else:
+        raise Exception;
     ## convert to array for the vertical integrated data
     print(integrated)
     orig= xr.DataArray(name=varname, data=integrated, attrs=attributes, 
@@ -301,7 +341,8 @@ def calc_var_integral(data:dict, var:str, varname:str, attributes:dict = {},
         raise Exception(varname+' calculation went wrong')
 
     ## run the preprocessing
-    out = preprocess(integrated.copy().values,data[var].time.values.copy())
+    time_array = np.array(data[var].indexes['time'].to_datetimeindex(),dtype=float)/1e9/60/60/24
+    out = preprocess(integrated.copy().values,time_array)
     attributes_processed = attributes.copy()
     if 'long_name' in attributes_processed: 
         attributes_processed['long_name'] += ' Pre-processed'
@@ -311,7 +352,7 @@ def calc_var_integral(data:dict, var:str, varname:str, attributes:dict = {},
                                 coords={'time': data[var].time,'lat': data[var].lat,'lon': data[var].lon})
     return processed, orig
 
-def calc_var(data:dict, variables:list, signs:list, varname:str, attributes:dict = {}):
+def calc_var(data:dict, variables:list, signs:list, varname:str, attributes:dict = {},years:tuple = None):
     '''
     Handles calculation and preprocessing of variables
     written for calculating different radiation terms where a sequence of radiation variables are differenced
@@ -342,7 +383,10 @@ def calc_var(data:dict, variables:list, signs:list, varname:str, attributes:dict
 
     # Run the preprocessing
     # note we need to copy the data and time arrays to avoid changing the values in the input dataset
-    out = preprocess(val.copy(),data[var1].time.values.copy())
+    # We have time in cftime.DatetimeNoLeap values, so we convert to datetime64[ns] in float values then
+    # convert to days
+    time_array = np.array(data[var1].indexes['time'].to_datetimeindex(),dtype=float)/1e9/60/60/24
+    out = preprocess(val.copy(),time_array)
 
     # convert output np.ndarrays to xarray DataArrays
     attributes_processed = attributes.copy()
@@ -357,8 +401,9 @@ def calc_var(data:dict, variables:list, signs:list, varname:str, attributes:dict
 
 def run_preprocess(experiment:str, modelName:str, member:str, variables_in:list,
             variables_out:list, attribute_path:str = 'variable_defs.json',
-            out_path:str = Nones,lf_query:str = None,
-            append:bool=False,frequency:='Amon'):
+            out_path:str = None,lf_query:str = None,
+            append:bool=False,frequency:str='Amon',
+            years:tuple=None):
     '''
     Wrapper function that executes the preprocessing pipeline
     experiment (str) : experiment name (experiment_id)
@@ -400,7 +445,12 @@ def run_preprocess(experiment:str, modelName:str, member:str, variables_in:list,
     for var in variables_in:
         dict_query['variable_id'] = var
         data[var] = getData(dict_query)
-
+    ## select years
+    if years:
+        for var in data:
+            #print(data[var].time.max,data[var].time.min)
+            data[var] = data[var].sel(time = slice('{0}-01-01'.format(years[0]), '{0}-12-31'.format(years[1])))
+        
     # Load land fraction data
     if lf_query is None:
         # if query isn't provided, attempt to load from current experiment
@@ -439,7 +489,7 @@ def run_preprocess(experiment:str, modelName:str, member:str, variables_in:list,
             # if we are integrating a 3D variable
             processed[var], orig[var] = calc_var_integral(data,variables[0],var,attributes = attributes)
         else:
-            processed[var], orig[var] = calc_var(data, variables, signs, var,attributes = attributes)
+            processed[var], orig[var] = calc_var(data, variables, signs, var,attributes = attributes,years=years)
     
     # Cast the fixed land fraction data into a time series
     if lf_query: # set lf_query=False to skip

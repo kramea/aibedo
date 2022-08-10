@@ -1,0 +1,20 @@
+{
+    "cres":{"long_name":"TOA Cloud radiative effect in shortwave", "units" :"W m-2", "Description":"FSNT - FSNTC",
+        "variables":["FSNT","FSNTC"],"signs":[1,-1],"positive":"down"},
+    "crel":{"long_name":"Cloud radiative effect in longwave", "units" :"W m-2", "Description":"-FLNT + FLNTC",
+        "variables":["FLNT","FLNTC"],"signs":[-1,1],"positive":"down"},
+    "netTOAcs":{"long_name":"Net TOA radiation without clouds (clear sky)", "units" :"W m-2", "Description":"FSNTC - FLNTC",
+        "variables":["FSNTC","FLNTC"],"signs":[1,-1],"positive":"down"},
+    "netSurf":{"long_name":"Net Surface heat flux", "units" :"W m-2", "Description":"FSNS - FLNS - SHFLX - LHFLX",
+        "variables":["FSNS","FLNS","SHFLX","LHFLX"],"signs":[1,-1,-1,-1],"positive":"down"},
+    "netTOA":{"long_name":"Net TOA radiation", "units" :"W m-2", "Description":"FSNT - FLNT",
+        "variables":["FSNT","FLNT"],"signs":[1,-1],"positive":"down"},
+    "netSurfcs":{"long_name":"Clearsky Net Surface radiation", "units" :"W m-2", "Description":"FSNSC - FLNSC - SHFLX - LHFLX",
+                "variables":["FSNSC","FLNSC","SHFLX","LHFLX"],"signs":[1,-1,-1,-1],"positive":"down"},
+    "cresSurf":{"long_name":"Cloud radiative effect in shortwave", "units" :"W m-2", "Description":"FSNS - FSNSC",
+        "variables":["FSNS","FSNSC"],"signs":[1,-1],"positive":"down"},
+    "crelSurf":{"long_name":"Cloud radiative effect in longwave", "units" :"W m-2", "Description":"-FLNS + FLNSC",
+        "variables":["FLNS","FLNSC"],"signs":[-1,1],"positive":"down"},
+    "lcloud":{"long_name":"Low cloud fraction", "units":"%", "Description":"Cloud fraction integrated below 700hPa",
+        "variables":["CLOUD"],"minlevel":700e2, "maxlevel":1000e2, "integral":"vertical","signs":[1]}
+}

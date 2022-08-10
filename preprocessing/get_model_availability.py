@@ -8,10 +8,11 @@ import intake
 col = intake.open_esm_datastore("https://cmip6-pds.s3.amazonaws.com/pangeo-cmip6.json")
 
 # list of required variables
-required_variables = ['clwvi','clivi','rlut','rsut','rsdt','rsutcs','rlutcs','hfss',
-                    'hfls','rlus','rsus','rsds','rlds','cl','ps','pr','tas','psl',
-                    'rsuscs','rsdscs','rldscs']
+required_variables = ['rlut','rsut','rsdt','rsutcs','rlutcs','hfss',
+                    'hfls','rlus','rsus','rsds','rlds','ps','pr','tas','psl',
+                    'rsuscs','rsdscs','rldscs','evspsbl','hus']
 
+#'clwvi','clivi','cl',
 # experiments to query
 experiments = ['historical','ssp585']
 freq = 'Amon'
@@ -62,4 +63,4 @@ print(l_models)
 DF = pd.DataFrame([[gr[0],gr[1],gr[2],d_lfquery[gr[0]]] for gr in l_forprocess if gr[0] in l_models],
                 columns = ['model','member','experiment','lfquery'])
 
-DF.to_csv('toprocess_sfc_cs.csv')
+DF.to_csv('toprocess_no_cl.csv')

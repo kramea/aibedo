@@ -16,5 +16,13 @@
     "crelSurf":{"long_name":"Cloud radiative effect in longwave", "units" :"W m-2", "Description":"rlds - rldscs",
         "variables":["rlds","rldscs"],"signs":[1,-1],"positive":"down"},
     "lcloud":{"long_name":"Low cloud fraction", "units":"%", "Description":"Cloud fraction integrated below 700hPa",
-        "variables":["cl"],"minlevel":700e2, "maxlevel":1000e2, "integral":"vertical","signs":[1]}
+        "variables":["cl"],"minlevel":700e2, "maxlevel":1000e2, "integral":"vertical","signs":[1]},
+    "qtot":{"long_name":"Vertically Integrated Specific Humidity", "units":"Pa", "Description":"Specific Humidity (hus) vertically integrated",
+        "variables":["hus"],"minlevel":0, "maxlevel":1000e2, "integral":"vertical","signs":[1]},
+    "netSurfRad":{"long_name":"Net Surface radiation", "units" :"W m-2", "Description":"rsds - rsus + rlds - rlus",
+        "variables":["rsds","rsus","rlds","rlus"],"signs":[1,-1,1,-1,-1,-1],"positive":"down"},
+    "netTOARad":{"long_name":"Net TOA radiation", "units" :"W m-2", "Description":"rsdt - rsut - rlut",
+        "variables":["rsdt","rsut","rlut"],"signs":[1,-1,-1],"positive":"down"},
+    "hfss":{"long_name":"upward sensible heat flux", "units" :"W m-2", "Description":"hfss",
+        "variables":["hfss"],"signs":[1],"positive":"up"}
 }
