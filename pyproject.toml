@@ -1,6 +1,6 @@
 [project]
 name = "aibedo"
-authors = [{name = "KalaiRamea", email = "kramea@parc"}]
+authors = [{name = "KalaiRamea", email = "kramea@parc.com"}]
 dynamic = ["version", "description"]
 
 [tool.pydocstyle]
