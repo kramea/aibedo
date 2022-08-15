@@ -17,13 +17,19 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',  # Supports Google-style docstrings
 ]
+
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'sphinx': ('https://www.sphinx-doc.org/en/master/', None),
+    'numpy': ('https://numpy.org/doc/stable', None),
 }
 intersphinx_disabled_domains = ['std']
+
+napoleon_use_ivar = True
+napoleon_custom_sections = [('Returns', 'params_style')]
 
 templates_path = ['_templates']
 
