@@ -4,9 +4,9 @@
 Marine Cloud Brightening
 ========================
 
-------------------
+---------------------------
 Background and Introduction
------------------- 
+---------------------------
 
 The AIbedo project will use the AI model to evaluate some possible
 environmental impacts of a climate intervention strategy\ :sup:`1`,\
@@ -46,9 +46,9 @@ the full Global Climate Models (GCM) with the predicted responses produced using
 AIbedo ML model. In **Stage 3** we will use the AIbedo model to assess
 the impact of MCB on events relevant to tipping points.
 
-------------------
+------------------------------------
 Stage 1: Climate Model Perturbations
------------------- 
+------------------------------------
 
 The intercomparison activity if intended to look for common, and differing impacts of MCB in three different climate models (the DOE E3SM model, the CESM2 (done within this project), and the United Kingdom Meteorological Office model (UKMO-ESM).The study uses 9 sets of simulations to
 sstablish some baseline simulations for each model in the presence of
@@ -98,9 +98,9 @@ The specific science questions to be addressed by these experiments are:
 * Q6. What is the variability of the climate response?
 * Q7. Can one “optimize” the MCB to achieve particular climate goals?
 
-~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 Planned MCB Experiments
-~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The AiBEDO team will participate in this inter-model comparison by contributing CESM2 simulations (outlined in Table 1) with perturbed cloud droplet number concentrations. In addition to the science conducted as part of the above described study, these simulations will serve as validation datasets for the AiBEDO response to cloud perturbations. As these simulations will have strong, out of sample perturbations and well sampled climate responses, they are the ideal test bed for evaluating the AiBEDO's ability to project climate responses to large perturbations in cloud droplet number of the kind required for MCB.
 
@@ -150,9 +150,9 @@ The AiBEDO team will participate in this inter-model comparison by contributing 
 
 	do you want figure showing shiptracks?
 
-------------------
+--------------------------------------
 Stage 2: AiBEDO ML Model Perturbations
------------------- 
+--------------------------------------
 
 Following successful training and validation of AiBEDO, we will use the model to generate cloud perturbation scenarios targeting key regional climate signals that may be associated with climate tipping points. These scenarios will then be tested in MCB CDNC perturbation experiments to verify the AiBEDO results and further study the physical mechanisms underlying the responses.
 
