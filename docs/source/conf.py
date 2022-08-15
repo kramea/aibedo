@@ -159,4 +159,4 @@ def linkcode_resolve(domain: str, info: Dict[str, str]):
     # Format the link
     filename = module_name.replace('.', '/')
     commit_sha = _COMMIT_SHA
-    return f'https://github.com/mosaicml/composer/blob/{commit_sha}/{filename}.py#L{lineno}'
+    return f'https://github.com/kramea/aibedo/blob/{commit_sha}/{filename}.py#L{lineno}'
