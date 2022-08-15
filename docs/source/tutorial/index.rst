@@ -232,4 +232,21 @@ To generate predictions, install all the required packages as described `here <h
 
 ``python gen_predictions.py --config-file cmcc.yml --gpu 0`` 
 
-The above command generates predictions for the CMCC model ensemble using GPU 0. Multiple GPU instances can be activated by providing GPU IDs, e.g. ``gpu 1 2 4`` runs GPUs 1, 2 and 4. The predictions can also be generated without a GPU instance, but for Level 6 predictions, this might take a long time due to the input file size.  
+The above command generates predictions for the CMCC model ensemble using GPU 0. Multiple GPU instances can be activated by providing GPU IDs, e.g. ``gpu 1 2 4`` runs GPUs 1, 2 and 4. The predictions can also be generated without a GPU instance, but for Level 6 predictions, this might take a long time due to the input file size.
+
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Tutorials
+   :name: start
+   :glob:
+
+   examples/**/*
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Tutorials 2
+
+   examples/DEMO.ipynb
