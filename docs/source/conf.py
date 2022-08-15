@@ -28,6 +28,10 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.extlinks',  # For external links
+    'sphinx.ext.linkcode',  # For source code links
+    'sphinx_copybutton', # For copy button of code blocks
+    'sphinx_panels',
     'sphinx.ext.napoleon',  # Supports Google-style docstrings
     'nbsphinx',  # notebooks
 ]

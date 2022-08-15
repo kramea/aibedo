@@ -25,7 +25,6 @@ Climate intervention techniques—like marine cloud brightening—that need to b
    architecture/index
    dynamics/index
    mcb/index
-   tutorial/index
    code_usage/index
    interface/index
    reports/index
@@ -34,6 +33,7 @@ Climate intervention techniques—like marine cloud brightening—that need to b
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
    :caption: Tutorials
 
    examples/DEMO.ipynb
