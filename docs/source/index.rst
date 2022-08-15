@@ -30,3 +30,10 @@ Climate intervention techniques—like marine cloud brightening—that need to b
    interface/index
    reports/index
 
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Tutorials
+
+   examples/DEMO.ipynb
