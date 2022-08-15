@@ -1,8 +1,13 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
+requires = ["flit_core >=3.2,<4", "git"]
 build-backend = "flit_core.buildapi"
 
 [project]
 name = "aibedo"
 authors = [{name = "KalaiRamea", email = "kramea@parc"}]
 dynamic = ["version", "description"]
+
+[tool.pydocstyle]
+convention="google"
+add_ignore="D102,D105,D107,D401"
+add_select="D400,D404"
