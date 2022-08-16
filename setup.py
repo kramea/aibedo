@@ -68,7 +68,7 @@ install_requires = [
     'numpy>=1.21.5,<1.23.0',
     'hydra-core',
     'torchmetrics',
-    'pytorch=1.9.0',
+    'pytorch==1.9.0',
     'pytorch-lightning>=1.5.8',
 ]
 extra_deps = dict()
