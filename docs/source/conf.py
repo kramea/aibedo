@@ -43,6 +43,7 @@ extensions = [
     'sphinxcontrib.images',  # For images
     'sphinx.ext.napoleon',  # Supports Google-style docstrings
     'nbsphinx',  # notebooks
+    'myst_parser',
 ]
 
 intersphinx_mapping = {
