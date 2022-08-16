@@ -1,6 +1,6 @@
 .. _aibedo_code:
 
-Code usage
+Overview of Full Pipeline
 ========================
 
 This section provides directions on:
