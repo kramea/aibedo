@@ -1,0 +1,81 @@
+# Getting started with AIBEDO
+
+## Environment
+AIBEDO is developed in Python 3.9.
+
+    # create new environment, if you want to use a different name, change the name (after -n) in the next line
+    conda env create -f env_simple.yaml -n aibedo
+    conda activate aibedo  # activate the environment called 'aibedo'
+
+*** Note for jupyter notebooks: *** You need to choose the above environment (aibedo) as kernel of the jupyter notebook.
+If the environment doesn't show up in the list of possible kernels, please do
+    
+    python -m ipykernel install --user --name aibedo   # change aibedo with whatever environment name you use 
+
+Then, please refresh the notebook page.
+
+
+## Train a model
+
+    python train.py trainer.gpus=0 model=mlp logger=none callbacks=default
+
+### Training Arguments and Hyperparameters
+- To run on CPU ``trainer.gpus=0``, to use a single GPU ``trainer.gpus=1``, etc.
+- To train a specific model ``model=<model_name>``, e.g. ``model=sunet``, ``model=mlp``, etc.,
+    where [configs/model/](configs/model)<model_name>.yaml is the configuration file for the model.
+
+- To override the data directory use either of the two options below:
+   1) ``datamodule.data_dir=<data-dir>``
+   2) Create a config file called [configs/local/](configs/local)default.yaml adapted 
+  from e.g. this example local config [configs/local/example_local_config.yaml](configs/local/example_local_config.yaml).
+  Its values will be automatically used whenever you run ``train.py``.
+
+## Inference - Using the AiBEDO model
+We demonstrate the full pipeline in [this notebook](examples/DEMO.ipynb).
+
+### Wandb support
+<details>
+  <summary><b> Requirement </b></summary>
+The following requires you to have a wandb (team) account and you need to login with ``wandb login`` before you can use it.
+
+</details>
+
+- To log metrics to [wandb](https://wandb.ai/site) use ``logger=wandb``.
+- To use some nice wandb specific callbacks in addition, use ``callbacks=wandb`` (e.g. save the best trained model to the wandb cloud).
+
+## Tips
+
+<details>
+    <summary><b> Overriding nested Hydra config groups </b></summary>
+
+Nested config groups need to be overridden with a slash - not with a dot, since it would be interpreted as a string otherwise.
+For example, if you want to change the filter in the AFNO transformer:
+``python run.py model=afno model/mixer=self_attention``
+And if you want to change the optimizer, you should run:
+``python run.py  model=graphnet  optimizer@model.optimizer=SGD``
+</details>
+
+<details>
+  <summary><b> Local configurations </b></summary>
+
+You can easily use a local config file (that,e.g., overrides data dirs, working dir etc.), by putting such a yaml config 
+in the [configs/local/](configs/local) subdirectory (Hydra searches for & uses by default the file configs/local/default.yaml, if it exists)
+</details>
+
+<details>
+    <summary><b> Wandb </b></summary>
+
+If you use Wandb, make sure to select the "Group first prefix" option in the panel settings of the web app.
+This will make it easier to browse through the logged metrics.
+</details>
+
+<details>
+    <summary><b> Credits & Resources </b></summary>
+
+The following template was extremely useful for getting started with the PL+Hydra implementation:
+[ashleve/lightning-hydra-template](https://github.com/ashleve/lightning-hydra-template)
+</details>
+
+
+
+

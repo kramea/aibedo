@@ -2,6 +2,9 @@
 
 AIBEDO is a hybrid AI framework to capture the effects of cloud properties on global circulation and regional climate patterns. 
 
+## Getting started
+
+***Please have a look at [this README](aibedo/README.md)***
 
 ## Documentation
 
