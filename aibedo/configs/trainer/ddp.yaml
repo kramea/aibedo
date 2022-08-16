@@ -1,0 +1,5 @@
+defaults:
+  - default.yaml
+
+gpus: -1
+strategy: "ddp_find_unused_parameters_false"

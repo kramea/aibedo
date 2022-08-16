@@ -1,0 +1,17 @@
+# @package _global_
+# This is an exemplary local config file that you can adapt for your local configurations:
+# E.g.: Only use CPU, or change the data_dir, or the input file names, or the number of workers for dataloading etc..
+defaults:
+  - override /trainer: default.yaml
+
+# override data dir for local runs
+datamodule:
+  data_dir: "C:/Users/salvarc/data/"
+  input_filename: "compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
+  num_workers: 1
+
+trainer:
+  gpus: 0
+
+model:
+  hidden_dims: [64]

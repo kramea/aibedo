@@ -1,0 +1,12 @@
+monitor: "val/mse"   # which logged value/metric to monitor (used for checkpointing/early stopping/LR scheduling)
+mode: "min"          # "min" means higher metric value is better, can also be "max"
+window: 1
+loss_weights: [0.333, 0.333, 0.333] # weights for the sub-losses
+physics_loss_weights: [0.0, 0.0, 0.0, 0.0, 0.0]
+month_as_feature: False
+nonnegativity_at_train_time: True
+use_auxiliary_vars: True
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.ExponentialLR
+  gamma: 0.98

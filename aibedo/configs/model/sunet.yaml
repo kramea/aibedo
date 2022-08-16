@@ -1,0 +1,13 @@
+_target_: aibedo.models.unet.SphericalUNet
+
+defaults:
+  - _self_
+  - base_model_config.yaml   # general, model independent, parameters
+  - /optimizer: adamw.yaml
+
+pooling_class: "icosahedron"
+laplacian_type: "combinatorial"
+
+kernel_size: 3
+ratio: 1.0
+depth: 6

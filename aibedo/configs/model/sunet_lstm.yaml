@@ -1,0 +1,6 @@
+defaults:
+  - sunet.yaml   # general, model independent, parameters
+  - _self_       # anything written down below potentially overrides anything in sunet.yaml
+
+_target_: aibedo.models.unet.SphericalUNetLSTM
+time_len: 4             # >=1 for s-convlstm
