@@ -37,8 +37,10 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',  # For external links
     'sphinx.ext.linkcode',  # For source code links
-    'sphinx_copybutton', # For copy button of code blocks
+    'sphinx_copybutton',  # For copy button of code blocks
+    'sphinxemoji.sphinxemoji',  # For emoji
     'sphinx_panels',
+    'sphinxcontrib.images',  # For images
     'sphinx.ext.napoleon',  # Supports Google-style docstrings
     'nbsphinx',  # notebooks
 ]
@@ -103,6 +105,7 @@ nbsphinx_prolog = f"""
         :target: https://colab.research.google.com/github/{notebook_path}
         :alt: Open in Colab
 """
+
 
 def _recursive_getattr(obj: Any, path: str):
     parts = path.split('.')
