@@ -68,9 +68,13 @@ install_requires = [
     'numpy>=1.21.5,<1.23.0',
     'hydra-core',
     'torchmetrics>=0.7.0',
-    'torch==1.9.0',
+    'torch>=1.10,<2',
+    'yahp>=0.1.3,<0.2',
+    'requests>=2.26.0,<3',
+    'tqdm>=4.62.3,<5',
     'pytorch-lightning>=1.5.8',
-    'setuptools==59.5.0',
+    'xarray>=0.19.0',
+    'wandb'
 ]
 extra_deps = dict()
 
