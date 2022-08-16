@@ -67,8 +67,8 @@ install_requires = [
     'matplotlib>=3.4.2',
     'numpy>=1.21.5,<1.23.0',
     'hydra-core',
-    'torchmetrics',
-    'pytorch==1.9.0',
+    'torchmetrics>=0.7.0',
+    'torch==1.9.0',
     'pytorch-lightning>=1.5.8',
 ]
 extra_deps = dict()
