@@ -26,7 +26,6 @@ MLP
 ~~~~
 .. automodule:: aibedo.models.MLP
     :members:
-    :undoc-members: [train_step_initial_log_dict]
     :show-inheritance: False
 
 
