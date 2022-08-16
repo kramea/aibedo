@@ -1,7 +1,7 @@
 .. _aibedo_code:
 
 Overview of Full Pipeline
-========================
+=========================
 
 This section provides directions on:
 
