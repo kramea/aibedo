@@ -73,6 +73,7 @@ class BaseModel(LightningModule):
                  loss_function: str = "mean_squared_error",
                  name: str = "",
                  verbose: bool = True,
+                 input_transform=None,  # todo: deprecate argument
                  ):
         super().__init__()
         # The following saves all the args that are passed to the constructor to self.hparams
@@ -176,7 +177,8 @@ class BaseModel(LightningModule):
 
     @property
     def prediction_set_name(self) -> str:
-        return self.trainer.datamodule.prediction_set_name if hasattr(self.trainer.datamodule, 'prediction_set_name') else 'predict'
+        return self.trainer.datamodule.prediction_set_name if hasattr(self.trainer.datamodule,
+                                                                      'prediction_set_name') else 'predict'
 
     @property
     def test_metrics(self):
@@ -200,14 +202,14 @@ class BaseModel(LightningModule):
         if self._predict_metrics is None:
             self._predict_metrics = nn.ModuleDict({
                 **{
-                      f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/mae": torchmetrics.MeanAbsoluteError()
-                      for output_var in self.output_var_names
-                  },
-                **{
-                f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/rmse":
-                    torchmetrics.MeanSquaredError(squared=False)
+                    f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/mae": torchmetrics.MeanAbsoluteError()
                     for output_var in self.output_var_names
-            }}).to(self.device)
+                },
+                **{
+                    f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/rmse":
+                        torchmetrics.MeanSquaredError(squared=False)
+                    for output_var in self.output_var_names
+                }}).to(self.device)
         return self._predict_metrics
 
     @property
@@ -315,7 +317,8 @@ class BaseModel(LightningModule):
                 E.g. 'pr_pre', 'tas_pre' will all be the keys to the respective predicted/target tensor.
         """
         if outputs_tensor.shape[-1] != len(self.output_var_names):
-            raise ValueError(f"outputs_tensor.shape[-1]={outputs_tensor.shape[-1]}, but #output-vars={len(self.output_var_names)}")
+            raise ValueError(
+                f"outputs_tensor.shape[-1]={outputs_tensor.shape[-1]}, but #output-vars={len(self.output_var_names)}")
         preds_per_target_variable = {
             var_name: outputs_tensor[..., i]  # index the tensor along the last dimension
             for i, var_name in enumerate(self.output_var_names)
@@ -508,7 +511,8 @@ class BaseModel(LightningModule):
         if not self.hparams.use_auxiliary_vars:
             psw = self.hparams.physics_loss_weights
             if psw[0] > 0 or psw[1] > 0 or psw[2] > 0 or psw[4] > 0:
-                raise ValueError("The model is configured to not use auxiliary variables, but the physics_loss_weights are > 0!")
+                raise ValueError(
+                    "The model is configured to not use auxiliary variables, but the physics_loss_weights are > 0!")
         self.log('Parameter count', float(self.n_params))
         self.log('Training set size', float(len(self.trainer.datamodule._data_train)))
         self.log('Validation set size', float(len(self.trainer.datamodule._data_val)))
@@ -716,7 +720,7 @@ class BaseModel(LightningModule):
         # directly predict full original-scale outputs (separated per output variable into a dictionary)
         preds: Dict[str, Tensor] = self.predict(X)
         # Only split the targets into per-output variable tensors + use the correct output var names (without '_pre')
-        Y = {k.replace('_pre', ''): v for k,v in self._split_raw_preds_per_target_variable(Y).items()}
+        Y = {k.replace('_pre', ''): v for k, v in self._split_raw_preds_per_target_variable(Y).items()}
         # evaluate the predictions vs the original-scale targets
         _ = self._evaluation_per_variable(preds, Y, self.predict_metrics, manually_call_update=True)
         # Not possible in predict:
