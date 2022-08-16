@@ -101,7 +101,7 @@ notebook_path = 'kramea/aibedo/blob/' + _COMMIT_SHA + '/{{ env.doc2path(env.docn
 # Include an "Open in Colab" link at the beginning of all notebooks
 nbsphinx_prolog = f"""
 .. tip::
-    This tutorial is available as a `Jupyter notebook <https://github.com/{notebook_path}>`_.
+    This tutorial is available as a `Jupyter notebook <https://github.com/{notebook_path}>`_.\n
     
     ..  image:: https://colab.research.google.com/assets/colab-badge.svg
         :target: https://colab.research.google.com/github/{notebook_path}
