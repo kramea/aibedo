@@ -70,6 +70,7 @@ install_requires = [
     'torchmetrics>=0.7.0',
     'torch==1.9.0',
     'pytorch-lightning>=1.5.8',
+    'setuptools==59.5.0',
 ]
 extra_deps = dict()
 
