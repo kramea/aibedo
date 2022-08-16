@@ -1,10 +1,11 @@
 .. _aibedo_code
 
 
-.. automodule:: aibedo.models
 
-Base AiBEDO class
---------------------
+Base AIBEDO class
+==================
+
+.. automodule:: aibedo.models
 
 .. autoclass:: BaseModel
 
@@ -18,15 +19,21 @@ Base AiBEDO class
     BaseModel.postprocess_raw_predictions
     BaseModel.predict
 
+Specific AIBEDO models
+----------------------
+
+MLP
+~~~~
 .. automodule:: aibedo.models.MLP
     :members:
     :undoc-members: [train_step_initial_log_dict]
     :show-inheritance: False
 
+
 .. automodule:: aibedo
 
 Training and Testing
---------------------
+=====================
 
 The following are the main functions that you want to use for training and/or testing
 the AiBEDO models.
@@ -41,7 +48,7 @@ the AiBEDO models.
 
 
 Interface
-----------
+=====================
 
 The main
 :func:`training <aibedo.train.run_model>` and
