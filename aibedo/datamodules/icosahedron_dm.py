@@ -10,9 +10,8 @@ from torch import Tensor
 from aibedo.constants import CLIMATE_MODELS_ALL
 from aibedo.datamodules.abstract_datamodule import AIBEDO_DataModule
 from aibedo.datamodules.torch_dataset import AIBEDOTensorDataset
-from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value, get_any_ensemble_id
-from aibedo.skeleton_framework.data_loader import shuffle_data
-from aibedo.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
+from aibedo.utilities.samplings import icosahedron_nodes_calculator
+from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value, get_any_ensemble_id, shuffle_data
 
 log = get_logger(__name__)
 
@@ -31,7 +30,6 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         # The following makes all args available as, e.g.: self.hparams.order, self.hparams.batch_size
         self.save_hyperparameters(ignore=[])
         self.n_pixels = icosahedron_nodes_calculator(self.hparams.order)
-        # compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc
         self._check_args()
 
     @property

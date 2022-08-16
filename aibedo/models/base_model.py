@@ -11,15 +11,15 @@ import torch.nn.functional as F
 from pytorch_lightning import LightningModule
 import torchmetrics
 import importlib
+
 if importlib.util.find_spec("wandb"):
     import wandb
 
 from aibedo.data_transforms.normalization import get_variable_stats, get_clim_err, destandardize, standardize
-from aibedo.data_transforms.transforms import AbstractTransform
+from aibedo.utilities.samplings import icosahedron_nodes_calculator
 from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint, \
     mass_conservation_constraint, AUXILIARY_VARS, precipitation_energy_budget_constraint
 from aibedo.utilities.utils import get_logger, to_DictConfig, get_loss, raise_error_if_invalid_value
-from aibedo.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
 
 
 class BaseModel(LightningModule):

@@ -226,3 +226,18 @@ def get_any_ensemble_id(data_dir, ESM_NAME: str) -> str:
         fname = files[0]
         os.chdir(curdir)
     return fname
+
+def shuffle_data(d1, d2):
+    n = len(d1)
+    m = len(d2)
+    assert (n == m)
+    idx = [i for i in range(m)]
+    random.shuffle(idx)
+    d1_out = []
+    d2_out = []
+    for i in idx:
+        d1_out.append(d1[i:i + 1])
+        d2_out.append(d2[i:i + 1])
+    d1_out2 = np.concatenate(d1_out, axis=0)
+    d2_out2 = np.concatenate(d2_out, axis=0)
+    return d1_out2, d2_out2
