@@ -30,6 +30,12 @@ Climate intervention techniques—like marine cloud brightening—that need to b
    reports/index
 
 
+.. tip::
+    This tutorial is available as a `Jupyter notebook <https://github.com/{notebook_path}>`_.
+
+    ..  image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/{notebook_path}
+        :alt: Open in Colab
 
 .. toctree::
    :hidden:
