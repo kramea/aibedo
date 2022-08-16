@@ -13,6 +13,7 @@ _IS_ROOT = os.getuid() == 0
 _IS_USER = '--user' in sys.argv[1:]
 _IS_VIRTUALENV = 'VIRTUAL_ENV' in os.environ
 
+
 # From https://stackoverflow.com/questions/51292333/how-to-tell-from-setup-py-if-the-module-is-being-installed-in-editable-mode
 class develop(develop_orig):
     """Override the ``develop`` class to error if attempting an editable install as root."""
@@ -24,7 +25,7 @@ class develop(develop_orig):
                     When installing in editable mode as root outside of a virtual environment,
                     please specify `--user`. Editable installs as the root user outside of a virtual environment
                     do not work without the `--user` flag. Please instead run something like: `pip install --user -e .`"""
-                               ))
+                                ))
         super().run()
 
 
