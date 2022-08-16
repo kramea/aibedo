@@ -1,7 +1,5 @@
 .. _aibedo_code
 
-
-
 Base AIBEDO class
 ==================
 
