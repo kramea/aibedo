@@ -62,8 +62,14 @@ while True:
         long_description = long_description[:start] + long_description[end + len(end_tag):]
 
 install_requires = [
+    'einops',
     'pyyaml>=6.0,<7',
+    'matplotlib>=3.4.2',
     'numpy>=1.21.5,<1.23.0',
+    'hydra-core',
+    'torchmetrics',
+    'pytorch=1.9.0',
+    'pytorch-lightning>=1.5.8',
 ]
 extra_deps = dict()
 
