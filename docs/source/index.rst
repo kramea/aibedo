@@ -1,5 +1,5 @@
 AIBEDO: a hybrid AI framework to capture the effects of cloud properties on global circulation and regional climate patterns.
-===================================
+============================================================================================================================================
 
 .. note::
 
@@ -13,5 +13,18 @@ Contents
 
    dynamics/index
    datasets/index
-   architecture/index
+   preprocessing/index
    reports/index
+
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Tutorials
+
+   notebooks/DEMO.ipynb
+
+.. toctree::
+   :hidden:
+   :maxdepth: 3
+   :caption: Code usage

@@ -1,8 +1,23 @@
-[build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
-
 [project]
 name = "aibedo"
-authors = [{name = "KalaiRamea", email = "kramea@parc"}]
+authors = [{name = "KalaiRamea", email = "kramea@parc.com"}]
 dynamic = ["version", "description"]
+
+# Pyright
+[tool.pyright]
+include = [
+    "aibedo/**",
+    "tests/**",
+    "examples/**",
+    "preprocessing/**",
+]
+exclude = [
+    "build/**",
+    "node_modules/**",
+]
+
+
+[tool.pydocstyle]
+convention="google"
+add_ignore="D102,D105,D107,D401"
+add_select="D400,D404"
