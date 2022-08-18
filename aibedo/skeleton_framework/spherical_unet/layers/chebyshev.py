@@ -127,7 +127,10 @@ class SphericalChebConv(nn.Module):
             kernel_size (int): polynomial degree. Defaults to 3.
         """
         super().__init__()
-        self.register_buffer("laplacian", lap, persistent=False)
+        try:
+            self.register_buffer("laplacian", lap, persistent=False)
+        except TypeError:
+            self.register_buffer("laplacian", lap)
         self.chebconv = ChebConv(in_channels, out_channels, kernel_size)
 
     def forward(self, x):

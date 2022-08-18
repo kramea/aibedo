@@ -3,8 +3,8 @@
 # pylint: disable=W0221
 from torch import nn
 
-from spherical_unet.layers.chebyshev import SphericalChebConv
-from spherical_unet.models.spherical_unet.utils import SphericalChebBN, SphericalChebBNPool
+from aibedo.skeleton_framework.spherical_unet.layers.chebyshev import SphericalChebConv
+from aibedo.skeleton_framework.spherical_unet.models.spherical_unet.utils import SphericalChebBN, SphericalChebBNPool
 
 
 class SphericalChebBN2(nn.Module):

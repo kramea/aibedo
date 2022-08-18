@@ -6,12 +6,12 @@
 import torch
 from torch import nn
 
-from spherical_unet.layers.samplings.equiangular_pool_unpool import Equiangular
-from spherical_unet.layers.samplings.healpix_pool_unpool import Healpix
-from spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
-from spherical_unet.models.spherical_unet_shallow.decoder import Decoder
-from spherical_unet.models.spherical_unet_shallow.encoder import Encoder, EncoderTemporalConv
-from spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
+from aibedo.skeleton_framework.spherical_unet.layers.samplings.equiangular_pool_unpool import Equiangular
+from aibedo.skeleton_framework.spherical_unet.layers.samplings.healpix_pool_unpool import Healpix
+from aibedo.skeleton_framework.spherical_unet.layers.samplings.icosahedron_pool_unpool import Icosahedron
+from aibedo.skeleton_framework.spherical_unet.models.spherical_unet_shallow.decoder import Decoder
+from aibedo.skeleton_framework.spherical_unet.models.spherical_unet_shallow.encoder import Encoder, EncoderTemporalConv
+from aibedo.skeleton_framework.spherical_unet.utils.laplacian_funcs import get_equiangular_laplacians, get_healpix_laplacians, get_icosahedron_laplacians
 
 
 class SphericalUNet(nn.Module):

@@ -14,7 +14,7 @@ class AbstractTransform(ABC):
     def __init__(self):
         self.log = get_logger(__name__)
 
-    def transform(self, X:  np.ndarray) -> Any:
+    def transform(self, X: np.ndarray) -> Any:
         """
         How to transform input array before use by the actual NN layers.
         # TODO: Implementation will be applied (with multi-processing) in the _get_item(.) method of the dataset
