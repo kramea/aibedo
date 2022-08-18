@@ -28,7 +28,7 @@ var_names_to_cmap = {
     'pr': 'bwr',
 }
 
-ESM_to_color = {esm: cm.Spectral(np.linspace(0, 1, len(CLIMATE_MODELS_ALL)))[i]   # rainbow  # Spectral
+ESM_to_color = {esm: cm.Spectral(np.linspace(0, 1, len(CLIMATE_MODELS_ALL)))[i]  # rainbow  # Spectral
                 for i, esm in enumerate(CLIMATE_MODELS_ALL)}
 
 
@@ -402,15 +402,23 @@ def animate_snapshots(postprocessed_xarray: xr.Dataset,
     return animation.FuncAnimation(fig, animate_preds, frames=frames, interval=interval, blit=False), scatter
 
 
+def add_grouped_latitude(ds, resolution: float = 1.0):
+    lats_grouped = np.array([round(x) for x in ds.latitude.values])
+    ds = ds.assign_coords(latitude_grouped=('spatial_dim', lats_grouped))
+    return ds
+
+
 def zonal_error_plotting(postprocessed_xarrays: List[xr.Dataset],
                          labels: List[str] = None,
+                         linestyles=None,
                          error_to_plot: str = "bias",
                          vars_to_plot: List[str] = 'all',
                          snapshots_to_plot: List[int] = None,
                          num_snapshots_to_plot: int = 5,
                          data_dim: str = 'snapshot',
                          longitude_dim: str = 'longitude',
-                         latitude_dim: str = 'latitude',
+                         latitude_dim: str = 'latitude_grouped',
+                         fontsize=20,
                          **kwargs
                          ):
     if isinstance(postprocessed_xarrays, xr.Dataset):
@@ -418,22 +426,29 @@ def zonal_error_plotting(postprocessed_xarrays: List[xr.Dataset],
     assert len(postprocessed_xarrays) > 0, "No postprocessed xarrays provided to plot!"
     if labels is None:
         labels = [""] * len(postprocessed_xarrays)
+    if linestyles is None:
+        linestyles = ["-"] if len(postprocessed_xarrays) < 2 else ['--', ':', '-.'] * len(postprocessed_xarrays)
+
     assert len(labels) == len(postprocessed_xarrays), "Number of labels must match number of postprocessed xarrays!"
     output_vars = get_vars_to_plot(vars_to_plot, postprocessed_xarrays[0])
-    proj = ccrs.PlateCarree()
     nrows = 1  # if plot_only_errors else 3
     ncols = len(output_vars)
-    fig, axs = plt.subplots(nrows, ncols, subplot_kw={'projection': proj})
-    axs = axs.flatten() if nrows > 1 else [axs]
-    for pds, label in zip(postprocessed_xarrays, labels):
-        zonal_err = pds.mean(dim=data_dim).groupby(pds.latitude).mean()
+    fig, axs = plt.subplots(nrows, ncols)
+    axs = axs.flatten() if nrows > 1 else axs
+    for pds, label, ls in zip(postprocessed_xarrays, labels, linestyles):
+        pds = add_grouped_latitude(pds)
+        zonal_err = pds.groupby(latitude_dim).mean().mean(dim=data_dim)
+        # same as: pds.mean(dim=data_dim).groupby(latitude_dim).mean()
         for j, var in enumerate(output_vars):
             err_id = f"{var}_{error_to_plot}"
             # varTmean = pds.groupby(var.time.dt.month).mean(dim='time')
             zonal_err_var = getattr(zonal_err, err_id)
-            zonal_err_var.plot(x=latitude_dim, ax=axs[j], label=label, **kwargs)
+            zonal_err_var.plot(x=latitude_dim, ax=axs[j], label=label, linestyle=ls, **kwargs)
+            axs[j].set_ylabel(f"{var.upper()} {error_to_plot}", fontsize=fontsize)
     for ax in axs:
-        ax.legend(); ax.grid()
+        ax.legend(prop=dict(size=fontsize + 3))
+        ax.grid()
+        ax.set_xlabel('Latitude', fontsize=fontsize)
 
     return fig, axs
 
@@ -495,7 +510,7 @@ def plot_training_set_vs_test_performance(
         title_save = f"{title}_" if title else ""
         save_to = os.path.join(save_to_dir, f'{title_save}{metric_name}.png') if save_to_dir else None
         if i < len(metrics_to_plot) - 1:
-            pass # xlabels = []
+            pass  # xlabels = []
         set_labels_and_ticks(
             ax,
             xlabel='', ylabel=metric_name,
