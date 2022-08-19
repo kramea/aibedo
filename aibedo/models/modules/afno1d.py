@@ -16,17 +16,19 @@ class AFNO1D_Mixing(nn.Module):
     """
 
     def __init__(self,
-                 hidden_size: int ,
+                 hidden_size: int,
                  num_blocks: int = 8,
                  sparsity_threshold: float = 0.01,
                  hard_thresholding_fraction: float = 1.0,
-                 activation_function: str = "relu"
+                 activation_function: str = "relu",
+                 hidden_size_factor: float = 1.0,
                  ):
         super().__init__()
         assert hidden_size % num_blocks == 0, f"hidden_size {hidden_size} should be divisble by num_blocks {num_blocks}"
 
         self.hidden_size = hidden_size
         self.sparsity_threshold = sparsity_threshold
+        self.hidden_size_factor = hidden_size_factor
         self.num_blocks = num_blocks
         self.block_size = self.hidden_size // self.num_blocks
         self.hard_thresholding_fraction = hard_thresholding_fraction
