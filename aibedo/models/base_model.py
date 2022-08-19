@@ -98,8 +98,11 @@ class BaseModel(LightningModule):
         self._data_dir = datamodule_config.data_dir
         if 'order' in datamodule_config:
             self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
+            ico = "isosph5" if datamodule_config.order== 5 else "isosph"
+            self.data_files_id = f'compress.{ico}'
         else:
             self.spatial_dim = (192, 288)
+            self.data_files_id = ''
         self._num_input_features = in_channels = len(datamodule_config.input_vars)
         self._num_output_features = out_channels = len(datamodule_config.output_vars)
         self._output_vars = datamodule_config.output_vars
@@ -133,8 +136,7 @@ class BaseModel(LightningModule):
         self._check_args()
 
         # Set the target/auxiliary variable statistics needed
-        self.sphere = "isosph5" if 'isosph5.' in datamodule_config.input_filename else "isosph"
-        stats_kwargs = dict(data_dir=self.data_dir, files_id=self.sphere)
+        stats_kwargs = dict(data_dir=self.data_dir, files_id=self.data_files_id)
         # Go through all output and auxiliary vars:
         for output_var in self.output_var_names + self.AUX_VARS:
             var_id = output_var.replace('_pre', '')
@@ -368,7 +370,7 @@ class BaseModel(LightningModule):
             mean, std = getattr(self, f'{var_id}_mean'), getattr(self, f'{var_id}_std')
         else:
             # try to get the mean and std from the data directory
-            mean, std = get_variable_stats(var_id=var_id, data_dir=self.data_dir, files_id=self.sphere)
+            mean, std = get_variable_stats(var_id=var_id, data_dir=self.data_dir, files_id=self.data_files_id)
         mean, std = mean.type_as(normalized_var), std.type_as(normalized_var)
 
         batch_monthly_mean = self._get_monthly_data_for_batch(mean, months_of_batch=month_of_var, dim=0)
@@ -538,10 +540,10 @@ class BaseModel(LightningModule):
         Y = self._split_raw_preds_per_target_variable(Y)
 
         # Get the month of each example (the month is the same for all grid cells in an example)
-        # idx 0 is arbitrary; has shape (batch_size,)
-        if len(X.shape) == 4:
+        # idx 0 is arbitrary
+        if len(X.shape) == 4:  # 2D spatial data
             month_of_batch = X[:, 0, 0, self.input_var_to_idx['month']].long()  # has shape (batch_size,)
-        else:
+        else:  # Spherical data
             month_of_batch = X[:, 0, self.input_var_to_idx['month']].long()  # has shape (batch_size,)
 
         if self.hparams.physics_loss_weights[3] > 0:
