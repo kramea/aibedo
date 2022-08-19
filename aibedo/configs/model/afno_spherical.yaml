@@ -2,7 +2,7 @@ defaults:
   - _self_
   - base_model_config.yaml  # general model params (i.e. they can/may apply to all ML models)
   - /optimizer: adamw.yaml
-  - mixer: afno2d.yaml
+  - mixer: afno1d.yaml
 
 _target_: aibedo.models.afnonet.AFNONet
 hidden_dim: 384  # null to keep projected dim from input_transform  # 768

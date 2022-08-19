@@ -1,0 +1,6 @@
+_target_: aibedo.models.modules.afno2d.AFNO2D_Mixing
+
+num_blocks: 8  # 8
+sparsity_threshold: 0.0  # 0.01
+activation_function: "relu"
+hard_thresholding_fraction: 1.0

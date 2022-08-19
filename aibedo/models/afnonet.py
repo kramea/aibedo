@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.fft
+from einops import rearrange
 from omegaconf import DictConfig
 from timm.models.layers.drop import DropPath
 
@@ -17,7 +18,6 @@ from aibedo.utilities.utils import get_normalization_layer
 
 class AFNONet(BaseModel):
     def __init__(self,
-                 input_transform,
                  mixer: DictConfig,
                  hidden_dim: Optional[int] = 384,
                  num_layers: int = 4,
@@ -40,17 +40,23 @@ class AFNONet(BaseModel):
             drop_path_rate (float): stochastic depth rate
             net_normalization: (str): normalization layer
         """
-        super().__init__(input_transform=input_transform, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.save_hyperparameters()
         self.input_dim = self.num_input_features
         if hidden_dim is None:
             hidden_dim = self.input_dim
             self.embedder = nn.Identity()
+        elif 'afno2d' in mixer._target_.lower():
+            self.embedder = PatchEmbed2D(in_chans=self.input_dim, embed_dim=hidden_dim, patch_size=(16, 24))
+            num_patches = self.embedder.num_patches
+            self.example_input_array = torch.randn((1, 192, 288, self.input_dim))
+        elif 'afno1d' in mixer._target_.lower():
+            self.embedder = PatchEmbed1D(in_chans=self.input_dim, embed_dim=hidden_dim)
+            num_patches = self.spatial_dim
+            self.example_input_array = torch.randn((1, self.spatial_dim, self.input_dim))
         else:
-            self.embedder = nn.Conv1d(self.input_dim, hidden_dim, kernel_size=1, stride=1)
+            raise ValueError(f"Unknown mixer {mixer._target}")
         self.hidden_dim = hidden_dim
-        num_patches = self.spatial_dim
-        self.example_input_array = torch.randn((1, num_patches, self.input_dim))
 
         # self.num_features = self.embed_dim = hidden_dim  # num_features for consistency with other models
         # num_patches = self.patch_embed.num_patches
@@ -113,14 +119,18 @@ class AFNONet(BaseModel):
 
     def forward_features(self, x):
         if x.shape[1] != self.input_dim:
-            # get channel dimension to the middle
-            x = x.reshape(x.shape[0], self.input_dim, -1)
-        B, C, S = x.shape  # C = input_hidden_dim/ num_channels
+            # Bring channel dimension (in the input it is the last dim) to the middle
+            x = rearrange(x, 'b ... d -> b d ...')
+        # Shape of x for 1D: [batch-size, #input-channels, #patches]
+        # Shape of x for 2D: [batch-size, #input-channels, 288, 192]
+
         x = self.embedder(x)
-        # get channel dimension to the right end
-        x = x.reshape(B, S, self.hidden_dim)
+        # Shape of x: [batch-size, #patches, #hidden-channels]
+
+        # Add positional embedding
         x = x + self.positional_embedding
         x = self.pos_emb_dropout(x)
+        # Shape of x: [batch-size, #patches, #hidden-channels]
 
         for blk in self.afno_blocks:
             x = blk(x)
@@ -134,23 +144,35 @@ class AFNONet(BaseModel):
         return x
 
 
-class PatchEmbed2D(nn.Module):
-    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
+class PatchEmbed1D(nn.Module):
+    def __init__(self, in_chans=3, embed_dim=768):
         super().__init__()
-        img_size = to_2tuple(img_size)
-        patch_size = to_2tuple(patch_size)
-        num_patches = (img_size[1] // patch_size[1]) * (img_size[0] // patch_size[0])
-        self.img_size = img_size
-        self.patch_size = patch_size
-        self.num_patches = num_patches
+        self.proj = nn.Conv1d(in_chans, embed_dim, kernel_size=1, stride=1)
 
+    def forward(self, x):
+        B, C, S = x.shape  # C = input_hidden_dim/ num_channels
+        x = self.proj(x)
+        # get channel dimension to the right end
+        x = x.reshape(B, S, self.hidden_dim)
+        return x
+
+
+class PatchEmbed2D(nn.Module):
+    def __init__(self, img_size=(192, 288), patch_size=(16, 24), in_chans=3, embed_dim=768):
+        super().__init__()
+        img_size = img_size
+        patch_size = to_2tuple(patch_size)
+        self.num_patches = (img_size[0] // patch_size[0]) * (img_size[1] // patch_size[1])
+        self.img_size = img_size
+        # num_patches: 216, img_size: (192, 288), patch_size: (16, 16)
+        # num_patches: 144, img_size: (192, 288), patch_size: (16, 24)
         self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
 
     def forward(self, x):
         B, C, H, W = x.shape
+        # FIXME look at relaxing size constraints
         assert H == self.img_size[0] and W == self.img_size[1], \
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
-        # (B, C, H, W) -> (B, C, H*W) -> (B, H*W, C)
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
 

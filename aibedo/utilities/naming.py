@@ -49,6 +49,8 @@ def clean_name(class_name, **kwargs) -> str:
     if "AFNONet" in class_name:
         if 'mixer' not in kwargs or "AFNO1D_Mixing" in kwargs['mixer']:
             s = 'FNO'
+        elif  "AFNO2D_Mixing" in kwargs['mixer']:
+            s = 'FNO2D'
         elif "SelfAttention" in kwargs['mixer']:
             s = 'self-attention'
         else:
