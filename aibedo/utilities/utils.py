@@ -214,9 +214,18 @@ def get_local_ckpt_path(config: DictConfig, **kwargs):
     return os.path.join(ckpt_direc, filename)
 
 
-def get_any_ensemble_id(data_dir, ESM_NAME: str) -> str:
-    sphere = "isosph"  # change here to isosph5 for level 5 runs
-    prefix = f"compress.{sphere}.{ESM_NAME}.historical"
+def get_files_prefix(datamodule_config: DictConfig) -> str:
+    """ Get prefix for files based on the datamodule config. """
+    if 'icosahedron' in datamodule_config._target_:
+        order_s = f"isosph{datamodule_config.order}" if datamodule_config.order <= 5 else "isosph"
+        files_id = f"compress.{order_s}."
+    else:
+        files_id = ''
+    return files_id
+
+
+def get_any_ensemble_id(data_dir, ESM_NAME: str, files_id='') -> str:
+    prefix = f"{files_id}{ESM_NAME}.historical"
     if os.path.isfile(os.path.join(data_dir, f"{prefix}.r1i1p1f1.Input.Exp8_fixed.nc")):
         fname = f"{prefix}.r1i1p1f1.Input.Exp8_fixed.nc"
     else:

@@ -8,7 +8,7 @@ from hydra.core.global_hydra import GlobalHydra
 
 import aibedo.constants
 from aibedo.train import run_model
-from aibedo.utilities.utils import get_any_ensemble_id
+from aibedo.utilities.utils import get_any_ensemble_id, get_files_prefix
 
 
 def single_esm_training_run(overrides, ESM: str):
@@ -17,7 +17,8 @@ def single_esm_training_run(overrides, ESM: str):
         config = hydra.compose(config_name="main_config.yaml", overrides=overrides)
     finally:
         GlobalHydra.instance().clear()  # always clean up global hydra
-    config.datamodule.input_filename = get_any_ensemble_id(config.datamodule.data_dir, ESM)
+    data_file_id = get_files_prefix(config.datamodule)
+    config.datamodule.input_filename = get_any_ensemble_id(config.datamodule.data_dir, ESM, files_id=data_file_id)
     return run_model(config)
 
 
