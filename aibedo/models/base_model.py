@@ -96,7 +96,10 @@ class BaseModel(LightningModule):
 
         # Infer the data dimensions
         self._data_dir = datamodule_config.data_dir
-        self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
+        if 'order' in datamodule_config:
+            self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
+        else:
+            self.spatial_dim = (192, 288)
         self._num_input_features = in_channels = len(datamodule_config.input_vars)
         self._num_output_features = out_channels = len(datamodule_config.output_vars)
         self._output_vars = datamodule_config.output_vars
@@ -167,8 +170,8 @@ class BaseModel(LightningModule):
     def input_var_to_idx(self) -> Dict[str, int]:
         """ Returns the index of the month (the month being a scalar in {0, 1, .., 11}) in the input data """
         # if self._input_var_to_idx is None:
-        if self._trainer is not None:
-            self._input_var_to_idx = self.trainer.datamodule.input_var_to_idx
+        #if self._trainer is not None:
+        #    self._input_var_to_idx = self.trainer.datamodule.input_var_to_idx
         return self._input_var_to_idx
 
     @property
@@ -428,7 +431,12 @@ class BaseModel(LightningModule):
         if month_of_outputs is None:
             # Retrieve the months of the batch if not provided
             MONTH_IDX = self.input_var_to_idx['month']  # index (in the channel dim) of the month in the input tensor
-            month_of_outputs = input_tensor[:, 0, MONTH_IDX]  # idx 0 is arbitrary; has shape (batch_size,)
+            # idx 0 is arbitrary
+            if len(input_tensor.shape) == 4:
+                month_of_outputs = input_tensor[:, 0, 0, MONTH_IDX]
+            else:
+                month_of_outputs = input_tensor[:, 0, MONTH_IDX]
+            # month_of_outputs has shape (batch_size,)
         # Convert the months of the batch tensor to a LongTensor (needed for index_select indexing with it)
         month_of_outputs = month_of_outputs.type_as(outputs_tensor).long()
         # Denormalize the outputs (using the per-variable means and standard deviations)
@@ -530,7 +538,11 @@ class BaseModel(LightningModule):
         Y = self._split_raw_preds_per_target_variable(Y)
 
         # Get the month of each example (the month is the same for all grid cells in an example)
-        month_of_batch = X[:, 0, self.input_var_to_idx['month']].long()  # idx 0 is arbitrary; has shape (batch_size,)
+        # idx 0 is arbitrary; has shape (batch_size,)
+        if len(X.shape) == 4:
+            month_of_batch = X[:, 0, 0, self.input_var_to_idx['month']].long()  # has shape (batch_size,)
+        else:
+            month_of_batch = X[:, 0, self.input_var_to_idx['month']].long()  # has shape (batch_size,)
 
         if self.hparams.physics_loss_weights[3] > 0:
             # Enforce non-negative precipitation (constraint 4); needs to be done before the main loss is computed
