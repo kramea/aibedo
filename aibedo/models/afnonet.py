@@ -12,8 +12,9 @@ from timm.models.layers.drop import DropPath
 
 from timm.models.layers import to_2tuple, trunc_normal_
 from aibedo.models.base_model import BaseModel
+from aibedo.models.modules.afno2d import reshape_2d_tokens, AFNO2D_Upsampling
 from aibedo.models.modules.mlp import MLP
-from aibedo.utilities.utils import get_normalization_layer
+from aibedo.utilities.utils import get_normalization_layer, identity, raise_error_if_invalid_type
 
 
 class AFNONet(BaseModel):
@@ -46,14 +47,21 @@ class AFNONet(BaseModel):
         if hidden_dim is None:
             hidden_dim = self.input_dim
             self.embedder = nn.Identity()
-        elif 'afno2d' in mixer._target_.lower():
-            self.embedder = PatchEmbed2D(in_chans=self.input_dim, embed_dim=hidden_dim, patch_size=(16, 24))
+
+        self.project_to_head = identity
+        input_dim_head = hidden_dim
+        if 'afno2d' in mixer._target_.lower():
+            patch_size = (16, 24)
+            self.embedder = PatchEmbed2D(in_chans=self.input_dim, embed_dim=hidden_dim, patch_size=patch_size)
             num_patches = self.embedder.num_patches
-            self.example_input_array = torch.randn((1, 192, 288, self.input_dim))
+            H, W = raise_error_if_invalid_type(self.spatial_dim, [tuple, list], name='spatial_dim')
+            self.example_input_array = torch.randn((1, H, W, self.input_dim))
+            self.project_to_head = AFNO2D_Upsampling(hidden_dim, scale_by=patch_size, mode='conv')
+            input_dim_head = self.project_to_head.out_channels
         elif 'afno1d' in mixer._target_.lower():
+            self.example_input_array = torch.randn((1, self.spatial_dim, self.input_dim))
             self.embedder = PatchEmbed1D(in_chans=self.input_dim, embed_dim=hidden_dim)
             num_patches = self.spatial_dim
-            self.example_input_array = torch.randn((1, self.spatial_dim, self.input_dim))
         else:
             raise ValueError(f"Unknown mixer {mixer._target}")
         self.hidden_dim = hidden_dim
@@ -91,9 +99,9 @@ class AFNONet(BaseModel):
 
         # Classifier head
         if linear_head:
-            self.head = nn.Linear(hidden_dim, self.num_output_features)
+            self.head = nn.Linear(input_dim_head, self.num_output_features)
         else:
-            self.head = MLP(input_dim=hidden_dim,
+            self.head = MLP(input_dim=input_dim_head,
                             output_dim=self.num_output_features,
                             hidden_dims=[(hidden_dim + self.num_output_features) // 2],
                             dropout=dropout,
@@ -133,14 +141,15 @@ class AFNONet(BaseModel):
         # Shape of x: [batch-size, #patches, #hidden-channels]
 
         for blk in self.afno_blocks:
-            x = blk(x)
+            x = blk(x, spatial_dim=(12, 12))
 
-        x = self.net_norm(x)  # (B, S, hidden-dim)
+        x = self.net_norm(x)  # shape out: (B, S, hidden-dim)
+        x = self.project_to_head(x)  # shape out: (B, *spatial-dims, linear-input-dim)
         return x
 
     def forward(self, x):
-        x = self.forward_features(x)
-        x = self.head(x)
+        x = self.forward_features(x)  # shape out: (B, *spatial-dims, #output vars)
+        x = self.head(x)  # shape out: (B, *spatial-dims, #output vars)
         return x
 
 
@@ -207,11 +216,12 @@ class AFNO_Block(nn.Module):
 
         self.double_skip_connection = double_skip
 
-    def forward(self, x):
+    def forward(self, x, spatial_dim=None):
         # x has shape (batch-size, spatial/patch-dim, hidden/emb/channel-dim) throughout the forward step of AFNO
         residual = x
         x = self.norm1(x)
-        x = self.filter(x)  # FFT-> spatial/token mixing -> IFFT
+        # FFT-> spatial/token mixing -> IFFT
+        x = self.filter(x, spatial_size=spatial_dim)
 
         if self.double_skip_connection:
             x = x + residual
