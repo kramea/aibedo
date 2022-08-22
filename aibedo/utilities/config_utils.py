@@ -286,7 +286,7 @@ def save_hydra_config_to_wandb(config: DictConfig):
 
 
 def get_config_from_hydra_compose_overrides(overrides: List[str],
-                                            config_path: str = "../../configs",
+                                            config_path: str = "../configs",
                                             config_name: str = "main_config.yaml",
                                             ) -> DictConfig:
     """

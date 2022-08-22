@@ -98,7 +98,7 @@ class BaseModel(LightningModule):
         self._data_dir = datamodule_config.data_dir
         if 'order' in datamodule_config:
             self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
-            ico = "isosph5" if datamodule_config.order== 5 else "isosph"
+            ico = "isosph5" if datamodule_config.order == 5 else "isosph"
             self.data_files_id = f'compress.{ico}'
         else:
             self.spatial_dim = (192, 288)
@@ -137,8 +137,9 @@ class BaseModel(LightningModule):
 
         # Set the target/auxiliary variable statistics needed
         stats_kwargs = dict(data_dir=self.data_dir, files_id=self.data_files_id)
-        # Go through all output and auxiliary vars:
-        for output_var in self.output_var_names + self.AUX_VARS:
+        # Go through all output (and auxiliary) vars:
+        vars_with_stats = self.output_var_names + self.AUX_VARS if use_auxiliary_vars else self.output_var_names
+        for output_var in vars_with_stats:
             var_id = output_var.replace('_pre', '')
             var_mean, var_std = get_variable_stats(var_id=var_id, **stats_kwargs)
             self.register_buffer_dummy(f'{var_id}_mean', var_mean, persistent=False)
@@ -172,7 +173,7 @@ class BaseModel(LightningModule):
     def input_var_to_idx(self) -> Dict[str, int]:
         """ Returns the index of the month (the month being a scalar in {0, 1, .., 11}) in the input data """
         # if self._input_var_to_idx is None:
-        #if self._trainer is not None:
+        # if self._trainer is not None:
         #    self._input_var_to_idx = self.trainer.datamodule.input_var_to_idx
         return self._input_var_to_idx
 
@@ -182,7 +183,8 @@ class BaseModel(LightningModule):
 
     @property
     def prediction_set_name(self) -> str:
-        return self.trainer.datamodule.prediction_set_name if hasattr(self.trainer.datamodule, 'prediction_set_name') else 'predict'
+        return self.trainer.datamodule.prediction_set_name if hasattr(self.trainer.datamodule,
+                                                                      'prediction_set_name') else 'predict'
 
     @property
     def test_metrics(self):
@@ -206,14 +208,14 @@ class BaseModel(LightningModule):
         if self._predict_metrics is None:
             self._predict_metrics = nn.ModuleDict({
                 **{
-                      f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/mae": torchmetrics.MeanAbsoluteError()
-                      for output_var in self.output_var_names
-                  },
-                **{
-                f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/rmse":
-                    torchmetrics.MeanSquaredError(squared=False)
+                    f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/mae": torchmetrics.MeanAbsoluteError()
                     for output_var in self.output_var_names
-            }}).to(self.device)
+                },
+                **{
+                    f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/rmse":
+                        torchmetrics.MeanSquaredError(squared=False)
+                    for output_var in self.output_var_names
+                }}).to(self.device)
         return self._predict_metrics
 
     @property
@@ -321,7 +323,8 @@ class BaseModel(LightningModule):
                 E.g. 'pr_pre', 'tas_pre' will all be the keys to the respective predicted/target tensor.
         """
         if outputs_tensor.shape[-1] != len(self.output_var_names):
-            raise ValueError(f"outputs_tensor.shape[-1]={outputs_tensor.shape[-1]}, but #output-vars={len(self.output_var_names)}")
+            raise ValueError(
+                f"outputs_tensor.shape[-1]={outputs_tensor.shape[-1]}, but #output-vars={len(self.output_var_names)}")
         preds_per_target_variable = {
             var_name: outputs_tensor[..., i]  # index the tensor along the last dimension
             for i, var_name in enumerate(self.output_var_names)
@@ -519,7 +522,8 @@ class BaseModel(LightningModule):
         if not self.hparams.use_auxiliary_vars:
             psw = self.hparams.physics_loss_weights
             if psw[0] > 0 or psw[1] > 0 or psw[2] > 0 or psw[4] > 0:
-                raise ValueError("The model is configured to not use auxiliary variables, but the physics_loss_weights are > 0!")
+                raise ValueError(
+                    "The model is configured to not use auxiliary variables, but the physics_loss_weights are > 0!")
         self.log('Parameter count', float(self.n_params))
         self.log('Training set size', float(len(self.trainer.datamodule._data_train)))
         self.log('Validation set size', float(len(self.trainer.datamodule._data_val)))
@@ -731,7 +735,7 @@ class BaseModel(LightningModule):
         # directly predict full original-scale outputs (separated per output variable into a dictionary)
         preds: Dict[str, Tensor] = self.predict(X)
         # Only split the targets into per-output variable tensors + use the correct output var names (without '_pre')
-        Y = {k.replace('_pre', ''): v for k,v in self._split_raw_preds_per_target_variable(Y).items()}
+        Y = {k.replace('_pre', ''): v for k, v in self._split_raw_preds_per_target_variable(Y).items()}
         # evaluate the predictions vs the original-scale targets
         _ = self._evaluation_per_variable(preds, Y, self.predict_metrics, manually_call_update=True)
         # Not possible in predict:

@@ -24,7 +24,7 @@ def no_op(*args, **kwargs):
     pass
 
 
-def identity(X):
+def identity(X, *args, **kwargs):
     return X
 
 
@@ -167,6 +167,14 @@ def raise_error_if_invalid_value(value: Any, possible_values: Sequence[Any], nam
     if value not in possible_values:
         name = name or (value.__name__ if hasattr(value, '__name__') else 'value')
         raise ValueError(f"{name} must be one of {possible_values}, but was {value}")
+    return value
+
+
+def raise_error_if_invalid_type(value: Any, possible_types: Sequence[Any], name: str = None):
+    """ Raises an error if the given value (optionally named by `name`) is not one of the possible types. """
+    if all([not isinstance(value, t) for t in possible_types]):
+        name = name or (value.__name__ if hasattr(value, '__name__') else 'value')
+        raise ValueError(f"{name} must be an instance of either of {possible_types}, but was {type(value)}")
     return value
 
 
