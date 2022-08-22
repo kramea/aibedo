@@ -1,3 +1,4 @@
+import math
 from typing import Sequence, Optional, Dict, Union
 
 import torch
@@ -45,8 +46,12 @@ class AIBEDO_MLP(BaseModel):
 
         self.flatten_transform = FlattenTransform()
 
-        self.input_dim = self.num_input_features * self.spatial_dim
-        self.output_dim = self.num_output_features * self.spatial_dim
+        if isinstance(self.spatial_dim, int):
+            mlp_total_spatial_dims = self.spatial_dim
+        else:
+            mlp_total_spatial_dims = math.prod(self.spatial_dim)
+        self.input_dim = self.num_input_features * mlp_total_spatial_dims
+        self.output_dim = self.num_output_features * mlp_total_spatial_dims
 
         self.example_input_array = torch.randn(1, self.input_dim)
         self.num_layers = len(hidden_dims)
