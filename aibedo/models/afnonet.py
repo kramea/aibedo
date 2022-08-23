@@ -161,8 +161,8 @@ class PatchEmbed1D(nn.Module):
     def forward(self, x):
         B, C, S = x.shape  # C = input_hidden_dim/ num_channels
         x = self.proj(x)
-        # get channel dimension to the right end
-        x = x.reshape(B, S, self.hidden_dim)
+        # Reshape the tensor to channels-last
+        x = rearrange(x, 'b c s -> b s c')  # same as: x.reshape(B, S, C)
         return x
 
 
