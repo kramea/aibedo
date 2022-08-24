@@ -1,3 +1,5 @@
+import logging
+
 import torch
 from torch import nn
 
@@ -32,8 +34,9 @@ class UpSampler(nn.Module):
             self.up = nn.ConvTranspose2d(in_channels, h_channels, kernel_size=2, stride=2)
             self.conv = DoubleConv(h_channels, out_channels)
         else:
-            # if bilinear, use the normal convolutions to reduce the number of channels
-            self.up = nn.Upsample(scale_factor=scale_factor, mode=mode, align_corners=True)
+            # if {bilinear, nearest,..}, use the normal convolutions to reduce the number of channels
+            align_corners = None if mode == 'nearest' else True  # align_corners does not work for nearest neighbor
+            self.up = nn.Upsample(scale_factor=scale_factor, mode=mode, align_corners=align_corners)
             self.conv = DoubleConv(in_channels, out_channels, h_channels)
 
     def forward(self, x1, x2=None):
