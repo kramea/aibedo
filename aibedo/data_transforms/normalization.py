@@ -14,7 +14,8 @@ def get_mean_and_std_xarray(data_dir: str, files_id: str) -> Tuple[xr.Dataset, x
     #          = f'ymonmean.1980_2010.{files_id}.CMIP6.historical.ensmean.Output.nc'
     files_id = files_id.strip('.')
     if files_id == '':
-        mean_fname = 'grid_1deg.ymonmean.1980_2010.CMIP6.historical.ensmean.Output.nc'
+        # mean_fname = 'grid_1deg.ymonmean.1980_2010.CMIP6.historical.ensmean.Output.nc'
+        mean_fname = 'grid_CESM_f09.ymonmean.1980_2010.CMIP6.historical.ensmean.Output.nc'
     else:
         mean_fname = f'ymonmean.1980_2010.{files_id}.CMIP6.historical.ensmean.Output.PrecipCon.nc'
         mean_fname = mean_fname.replace('..', '.')  # fix if .. is in the filename
