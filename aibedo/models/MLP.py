@@ -48,8 +48,11 @@ class AIBEDO_MLP(BaseModel):
 
         if isinstance(self.spatial_dim, int):
             mlp_total_spatial_dims = self.spatial_dim
+            self.output_tensor_dim = (-1, self.spatial_dim, self.num_output_features)
         else:
             mlp_total_spatial_dims = math.prod(self.spatial_dim)
+            self.output_tensor_dim = tuple([-1] + list(self.spatial_dim) + [self.num_output_features])
+
         self.input_dim = self.num_input_features * mlp_total_spatial_dims
         self.output_dim = self.num_output_features * mlp_total_spatial_dims
 
@@ -78,7 +81,7 @@ class AIBEDO_MLP(BaseModel):
         flattened_X = self.flatten_transform.batched_transform(X)
         flattened_Y = self.mlp(flattened_X)
         # Reshape back into spatially structured outputs
-        Y = flattened_Y.view(X.shape[0], self.spatial_dim, self.num_output_features)
+        Y = flattened_Y.view(self.output_tensor_dim)
         return Y
 
     def train_step_initial_log_dict(self) -> Dict[str, float]:
