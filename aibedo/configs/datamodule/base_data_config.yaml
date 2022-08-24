@@ -1,10 +1,14 @@
 data_dir: "/work/data/"   # Make sure that it is an absolute path!
-input_filename: "compress.isosph.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
+esm_for_training: "CESM2"
 
 input_vars: [ 'crelSurf_pre', 'crel_pre', 'cresSurf_pre', 'cres_pre', 'netTOAcs_pre', 'lsMask', 'netSurfcs_pre']
 output_vars: ['tas_pre', 'ps_pre', 'pr_pre']
 
 partition: [0.8, 0.1, 0.1] # partition for training, validation, test
+
+time_lag: 0  # horizon of predictions (i.e. how many months ahead to predict)
+
+prediction_data: "same_as_test"
 
 batch_size: 10            # batch size for training
 eval_batch_size: 30       # batch size for validation, testing (larger might be faster, but uses more RAM)

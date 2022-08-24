@@ -31,7 +31,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         self.save_hyperparameters(ignore=[])
         self.n_pixels = icosahedron_nodes_calculator(self.hparams.order)
         self.spatial_dims = {'n_pixels': self.n_pixels}  # single dim for the spatial dimension
-        # compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc
+        self.esm_ensemble_id = get_any_ensemble_id(self.hparams.data_dir, self.hparams.esm_for_training, self.files_id)
         self._check_args()
 
     @property
@@ -39,10 +39,15 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         order_s = f"isosph{self.hparams.order}" if self.hparams.order <= 5 else "isosph"
         return f"compress.{order_s}."
 
+    @property
+    def input_filename(self) -> str:
+        # compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc
+        return f"{self.files_id}{self.hparams.esm_for_training}.historical.{self.esm_ensemble_id}.Input.Exp8_fixed.nc"
+
     def _check_args(self):
         """Check if the arguments are valid."""
         assert self.hparams.order in [5, 6], "Order of the icosahedron graph must be either 5 or 6."
-        assert (self.hparams.order == 5 and 'isosph5' in self.hparams.input_filename) or self.hparams.order == 6
+        assert (self.hparams.order == 5 and 'isosph5' in self.input_filename) or self.hparams.order == 6
         super()._check_args()
 
     def _log_at_setup_start(self, stage: Optional[str] = None):

@@ -51,9 +51,9 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                  input_vars: Sequence[str],
                  output_vars: Sequence[str],
                  data_dir: str,
-                 input_filename: str = "compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc",
-                 time_lag: int = 0,
+                 esm_for_training: str = "CESM2",
                  partition: Sequence[float] = (0.8, 0.1, 0.1),
+                 time_lag: int = 0,
                  prediction_data: str = "same_as_test",
                  model_config: DictConfig = None,
                  batch_size: int = 64,
@@ -62,16 +62,19 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                  pin_memory: bool = True,
                  verbose: bool = True,
                  seed: int = 43,
+                 input_filename: str = None, # todo: deprecate this
                  ):
         """
         Args:
             input_vars: list of input variables/predictors, e.g. ['crelSurf_pre', 'crel_pre', 'cresSurf_pre']
             output_vars: list of output/target variables, e.g. ['tas', 'pr', 'psl']
             data_dir (str):  A path to the data folder that contains the input and output files.
+            esm_for_training (str): The name of the ESM that is used for training (and validation).
             partition (tuple): partition of the data into train, validation and test fractions/sets.
                                 Train and validation (indices 0 and 1) must be floats.
                                 Test (index 2) can be a float or a string.
                                    -> If test is a string, it must be one of the following: 'merra2', 'era5'
+            time_lag (int): The time lag between the input and output variables (i.e. horizon of predictions).
             batch_size (int): Batch size for the training dataloader
             eval_batch_size (int): Batch size for the test and validation dataloader's
             num_workers (int): Dataloader arg for higher efficiency
@@ -97,6 +100,11 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self._var_names_to_clean_name = var_names_to_clean_name()
         # self._set_geographical_metadata()
         self._check_args()
+
+    @property
+    def input_filename(self) -> str:
+        """ Should be implemented by the child class """
+        raise NotImplementedError()
 
     @property
     def var_names_to_clean_name(self):
@@ -159,6 +167,11 @@ class AIBEDO_DataModule(pl.LightningDataModule):
 
     def _check_args(self):
         """Check if the arguments are valid."""
+
+        # check that the ESM is known to us
+        raise_error_if_invalid_value(self.hparams.esm_for_training, CLIMATE_MODELS_ALL, 'esm_for_training')
+
+        # check if the train, val, test split is valid
         partition = self.hparams.partition
         if len(partition) != 3:
             raise ValueError(f"partition must be a tuple of 3 values, but got {partition}, type: {type(partition)}")
@@ -174,9 +187,9 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 f"partition must sum to 1, but it sums to {partition[0] + partition[1] + partition[2]}")
 
     def _set_geographical_metadata(self):
-        self._esm_name = self.hparams.input_filename.split('.')[2]
+        self._esm_name = self.input_filename.split('.')[2]
 
-        input_file = os.path.join(self.hparams.data_dir, self.hparams.input_filename)
+        input_file = os.path.join(self.hparams.data_dir, self.input_filename)
         inDS = xr.open_dataset(input_file)
 
         self.lon_list: np.ndarray = inDS.lon.values
@@ -331,7 +344,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         """Load data. Set internal variables: self._data_train, self._data_val, self._data_test."""
         raise_error_if_invalid_value(stage, ['fit', 'validate', 'test', 'predict', None], 'stage')
         self._log_at_setup_start(stage)
-        input_filename = self.hparams.input_filename
+        input_filename = self.input_filename
         train_frac, val_frac, test_frac = self.hparams.partition
 
         if stage in ["fit", 'validate', None] or test_frac not in self._possible_test_sets:
@@ -342,14 +355,14 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         elif test_frac in self._possible_test_sets or (
                 stage == 'predict' and self.prediction_data in self._possible_test_sets
         ):
-            sphere = self.files_id
+            file_prefix_id = self.files_id
             if test_frac == 'merra2' or (stage == 'predict' and self.prediction_data == 'merra2'):
                 #                  f"compress.{sphere}MERRA2_Input_Exp8_fixed.nc"
-                test_input_fname = f"{sphere}MERRA2_Exp8_Input.2022Jul06.nc"
-                test_output_fname = f"{sphere}MERRA2_Output.2022Jul06.nc"
+                test_input_fname = f"{file_prefix_id}MERRA2_Exp8_Input.2022Jul06.nc"
+                test_output_fname = f"{file_prefix_id}MERRA2_Output.2022Jul06.nc"
             elif test_frac == 'era5' or (stage == 'predict' and self.prediction_data == 'era5'):
-                test_input_fname = f"{sphere}ERA5_Input_Exp8.nc"
-                test_output_fname = f"{sphere}ERA5_Output_PrecipCon.nc"
+                test_input_fname = f"{file_prefix_id}ERA5_Input_Exp8.nc"
+                test_output_fname = f"{file_prefix_id}ERA5_Output_PrecipCon.nc"
             else:
                 raise ValueError(f"Unknown test_frac: {test_frac}")
             if stage == "test" or stage == "predict":

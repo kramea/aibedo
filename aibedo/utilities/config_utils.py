@@ -157,15 +157,6 @@ def check_config_values(config: DictConfig):
                 config.model.net_normalization = "none"
             config.model.net_normalization = config.model.net_normalization.lower()
 
-        if config.datamodule.get('order'):
-            # Set icosahedron order based on input_filename
-            if 'compress.isosph5.' in config.datamodule.get('input_filename'):
-                config.datamodule.order = 5
-            elif 'compress.isosph.' in config.datamodule.get('input_filename'):
-                config.datamodule.order = 6
-            else:
-                raise ValueError(f"Unknown order for input_filename {config.datamodule.input_filename}")
-
         if config.logger.get("wandb"):
             if 'callbacks' in config and config.callbacks.get('model_checkpoint'):
                 wandb_model_run_id = config.logger.wandb.get('id')
@@ -240,7 +231,9 @@ def log_hyperparameters(
     # Add a clean name for the model, for easier reading (e.g. aibedo.model.MLP.AIBEDO_MLP -> MLP)
     model_class = config.model.get('_target_')
     mixer = config.model.mixer.get('_target_') if config.model.get('mixer') else None
-    params['model/name'] = clean_name(model_class, mixer=mixer)
+    dm_type = config.datamodule.get('_target_')
+    params['model/name'] = clean_name(model_class, mixer=mixer, dm_type=dm_type)
+    params['model/name_id'] = clean_name(model_class, mixer=mixer)
 
     if "callbacks" in config:
         if 'model_checkpoint' in config['callbacks']:

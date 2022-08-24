@@ -3,5 +3,5 @@ defaults:
   - base_data_config.yaml   # general, datamodule independent, parameters (e.g. data_dir, batch size, etc.)
   - _self_
 
-input_filename: "CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
+# input_filename: "CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
 

@@ -6,6 +6,7 @@ def _shared_prefix(config: DictConfig, init_prefix: str = "") -> str:
     """ This is a prefix for naming the runs for a more agreeable logging."""
     s = init_prefix if isinstance(init_prefix, str) else ""
     kwargs = dict(mixer=config.model.mixer._target_) if config.model.get('mixer') else dict()
+    kwargs['dm_type'] = config.datamodule.get('_target_')
     s += clean_name(config.model._target_, **kwargs)
     if config.get('normalizer') and config.normalizer.get('input_normalization'):
         s += f"_{config.normalizer.get('input_normalization').upper()}"
@@ -44,17 +45,15 @@ def get_detailed_name(config) -> str:
     return s.replace('None', '')
 
 
-def clean_name(class_name, **kwargs) -> str:
+def clean_name(class_name, mixer=None, dm_type=None) -> str:
     """ This names the model class paths with a more concise name."""
     if "AFNONet" in class_name:
-        if 'mixer' not in kwargs or "AFNO1D_Mixing" in kwargs['mixer']:
+        if mixer is None or "AFNO" in mixer:
             s = 'FNO'
-        elif  "AFNO2D_Mixing" in kwargs['mixer']:
-            s = 'FNO2D'
-        elif "SelfAttention" in kwargs['mixer']:
+        elif "SelfAttention" in mixer:
             s = 'self-attention'
         else:
-            raise ValueError(class_name, kwargs)
+            raise ValueError(class_name)
     elif "AIBEDO_MLP" in class_name:
         s = 'MLP'
     elif "graph_network" in class_name:
@@ -66,7 +65,17 @@ def clean_name(class_name, **kwargs) -> str:
     elif "SphericalUNet" in class_name:
         s = 'SUNet'
     else:
-        raise ValueError(class_name, kwargs)
+        raise ValueError(class_name)
+
+    if dm_type is not None:
+        if 'icosahedron' in dm_type.lower():
+            dm_id = ''
+        elif 'euclidean' in dm_type.lower():
+            dm_id = '2D'
+        else:
+            raise ValueError(dm_type)
+        s += f"{dm_id}"
+
     return s
 
 

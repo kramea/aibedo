@@ -28,13 +28,19 @@ class EuclideanDatamodule(AIBEDO_DataModule):
         # The following makes all args available as, e.g.: self.hparams.order, self.hparams.batch_size
         self.save_hyperparameters(ignore=[])
         self.spatial_dims = {'lat': 192, 'lon': 288}  # two dims for the spatial dimension
+        self.esm_ensemble_id = get_any_ensemble_id(self.hparams.data_dir, self.hparams.esm_for_training, self.files_id)
         self._check_args()
 
     @property
     def files_id(self) -> str:
-        # files are of the kind 'CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc'
-        # i.e. nothing precedes the ESM model name
+        # files are of the kind 'CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc',
+        #  i.e. nothing precedes the ESM model name
         return ""
+
+    @property
+    def input_filename(self) -> str:
+        # files are of the kind 'CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc'
+        return f"{self.hparams.esm_for_training}.historical.{self.esm_ensemble_id}.Input.Exp8_fixed.nc"
 
     def _check_args(self):
         """Check if the arguments are valid."""
