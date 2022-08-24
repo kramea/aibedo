@@ -13,13 +13,14 @@ entity, project = 'salv47', "AIBEDO"
 prefix = entity + '/' + project
 version = 0
 
-base_data_file = "compress.isosph.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
+base_data_file = "CESM2"  # compress.isosph.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
 filter_by_hparams = {
-  #  "model/name": "FNO",
-    'datamodule/input_filename': base_data_file,
+    # "model/name": "FNO2D",
+    # 'datamodule/input_filename': base_data_file,
+    'datamodule/esm_for_training': base_data_file
 }
 filters = [
-    'has_finished', hasnt_tags(['physics-constraints'])
+    'has_finished' #, hasnt_tags(['physics-constraints'])
 ]
 
 runs_df: pd.DataFrame = get_runs_df(
@@ -34,8 +35,9 @@ do_care_about_hparams = ['model', 'optim', 'scheduler']
 dont_care_vals = ['seed', 'name', 'tags', 'group',
                   'model/params_trainable', 'model/params_not_trainable', 'model/params_total',
                   'model/input_transform/output_normalization', 'model/input_transform/_target_',
-                  'model/monitor', 'model/_target_',
-                  'datamodule/time_length',
+                  'model/monitor', 'model/_target_', 'model/name_id',
+                  'datamodule/time_length', 'datamodule/prediction_data',
+                  'datamodule/input_filename', 'datamodule.esm_for_training',
                   'normalizer/data_dir', 'normalizer/verbose', "normalizer/_target_",
                   'datamodule/_target_', 'datamodule/data_dir',
                   'datamodule/eval_batch_size', 'datamodule/partition',  # dont care which test set / eval batch-size
@@ -106,6 +108,12 @@ for i, (name, group) in enumerate(grouped_df):
         # print(f"Group vs ref:", pd.merge(group.iloc[0], ref_run_series, left_index=True, right_index=True))
         # print(f'Diff to ref run group {model_name}: ------------------>\n', diff_to_ref_str)
 
+    # fix for one specific run
+    if '3dexzo0q' in group_IDs:
+        run_weird = api.run(f"{prefix}/3dexzo0q")
+        run_weird.config[f"group/v{version}"] = diff_to_ref_str
+        run_weird.update()
+
     any_group_run = api.run(f"{prefix}/{group.iloc[0]['id']}")
     # Get all runs with same hyperparams as this group (only for HP types in do_care_about_hparams)
     hparas = {k: v for k, v in any_group_run.config.items() if any([f'{hp}/' in k for hp in do_care_about_hparams])}
@@ -114,13 +122,13 @@ for i, (name, group) in enumerate(grouped_df):
 
     esm_runs_for_hparam_set = filter_wandb_runs(
         hyperparam_filter=hparas,
-       # filter_functions=[lambda r: r.config['datamodule/input_filename'] != base_data_file],
+        # filter_functions=[lambda r: r.config['datamodule/input_filename'] != base_data_file],
         wandb_api=api)
-    print(f'ESM runs: {len(esm_runs_for_hparam_set)} for hparams {hparas}')
+    # print(f'ESM runs: {len(esm_runs_for_hparam_set)} for hparams {hparas}')
     for run in esm_runs_for_hparam_set:
         if f"group/v{version}" in run.config:
             pass
-        print(model_name, run.id)
+        print(model_name, run.id, diff_to_ref_str)
         run.config[f"group/v{version}"] = diff_to_ref_str
         try:
             run.update()
