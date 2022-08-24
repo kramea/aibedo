@@ -49,7 +49,7 @@ class AFNO1D_Mixing(nn.Module):
 
     #          torch.einsum('...bi,bio->...bo', x[:, :kept_modes].real, self.w1[0]) - \
 
-    def forward(self, x):
+    def forward(self, x, spatial_size=None):
         bias = x
 
         dtype = x.dtype
