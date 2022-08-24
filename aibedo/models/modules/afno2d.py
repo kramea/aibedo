@@ -112,7 +112,8 @@ class AFNO2D_Upsampling(nn.Module):
             if mh != mw:
                 assert (mw % 3 == 0 and mh < mw) or (mh % 3 == 0 and mh > mw)
                 scale_factor = (2, 3) if mh < mw else (3, 2)
-                up = UpSampler(in_channels, in_channels//2, mode='bilinear', scale_factor=scale_factor)
+                mode_edge = 'bilinear' if 'conv' in mode else mode
+                up = UpSampler(in_channels, in_channels//2, mode=mode_edge, scale_factor=scale_factor)
             else:
                 scale_factor = (2, 2)
                 up = UpSampler(in_channels, in_channels//2, mode=mode, scale_factor=scale_factor)
