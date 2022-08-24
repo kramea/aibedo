@@ -3,7 +3,7 @@ import logging
 import os
 import pathlib
 from os.path import isdir, isfile
-from typing import Union, Callable, List, Optional, Sequence
+from typing import Union, Callable, List, Optional, Sequence, Any
 
 import numpy as np
 import wandb
@@ -482,9 +482,18 @@ def get_runs_df(
     return all_df
 
 
+def fill_nan_if_present(df: pd.DataFrame, column_key: str, fill_value: Any, inplace=True) -> pd.DataFrame:
+    if column_key in df.columns:
+        print('----------------------->', column_key, )
+        df[column_key] = df[column_key].fillna(fill_value) #, inplace=inplace)
+        # df = df[column_key].apply(lambda x: fill_value if x != x else x)
+    return df
+
 def clean_hparams(df: pd.DataFrame):
     # Replace string representation of nan with real nan
     df.replace('NaN', np.nan, inplace=True)
+    # df = df.where(pd.notnull(df), None).fillna(value=np.nan)
+
     # Combine/unify columns of optim/scheduler which might be present in stored params more than once
     combine_cols = [col for col in df.columns if col.startswith('model/optim') or col.startswith('model/scheduler')]
     for col in combine_cols:
@@ -494,13 +503,15 @@ def clean_hparams(df: pd.DataFrame):
         getattr(df, new_col).fillna(getattr(df, col), inplace=True)
         # E.g.: all_df.Temp_Rating.fillna(all_df.Farheit, inplace=True)
         del df[col]
-    if 'model/time_length' in df.columns:
-        getattr(df, 'model/time_length').fillna(4.0, inplace=True)
-    if 'model/loss_weights' in df.columns:
-        df['model/loss_weights'].apply(lambda x: (0.333, 0.333, 0.333) if (x != x or x is None) else x)
-    if 'model/physics_loss_weights' in df.columns:
-        df['model/physics_loss_weights'].apply(lambda x: (0.0, 0.0, 0.0, 0.0, 0.0) if x != x else x)
-    if 'model/month_as_feature' in df.columns:
-        getattr(df, 'model/month_as_feature').fillna(False, inplace=True)
 
+    if 'model/loss_weights' in df.columns:
+        df['model/loss_weights'] = df['model/loss_weights'].apply(lambda x: (0.333, 0.333, 0.333) if (x != x or x is None) else x)
+    if 'model/physics_loss_weights' in df.columns:
+       df['model/physics_loss_weights'] = df['model/physics_loss_weights'].apply(lambda x: (0.0, 0.0, 0.0, 0.0, 0.0) if x != x else x)
+
+    df = fill_nan_if_present(df, 'model/time_length', 4.0)
+    df = fill_nan_if_present(df, 'model/month_as_feature', False)
+    df = fill_nan_if_present(df, 'datamodule/time_lag', 0)
+    df = fill_nan_if_present(df, 'model/window', 1)
+    df = fill_nan_if_present(df, 'model/upsampling_mode', "conv")
     return df
