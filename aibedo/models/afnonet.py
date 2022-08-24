@@ -30,6 +30,7 @@ class AFNONet(BaseModel):
                  layer_norm_eps: float = 1e-6,
                  mlp_activation_function: str = "gelu",
                  linear_head: bool = True,
+                 upsampling_mode: str = 'conv',
                  *args, **kwargs):
         """
         Args:
@@ -48,7 +49,7 @@ class AFNONet(BaseModel):
             hidden_dim = self.input_dim
             self.embedder = nn.Identity()
 
-        self.project_to_head = identity
+        project_to_head = identity
         input_dim_head = hidden_dim
         if 'afno2d' in mixer._target_.lower():
             patch_size = (16, 24)
@@ -56,8 +57,8 @@ class AFNONet(BaseModel):
             num_patches = self.embedder.num_patches
             H, W = raise_error_if_invalid_type(self.spatial_dim, [tuple, list], name='spatial_dim')
             self.example_input_array = torch.randn((1, H, W, self.input_dim))
-            self.project_to_head = AFNO2D_Upsampling(hidden_dim, scale_by=patch_size, mode='conv')
-            input_dim_head = self.project_to_head.out_channels
+            project_to_head = AFNO2D_Upsampling(hidden_dim, scale_by=patch_size, mode=upsampling_mode)
+            input_dim_head = project_to_head.out_channels
         elif 'afno1d' in mixer._target_.lower():
             self.example_input_array = torch.randn((1, self.spatial_dim, self.input_dim))
             self.embedder = PatchEmbed1D(in_chans=self.input_dim, embed_dim=hidden_dim)
@@ -96,7 +97,7 @@ class AFNONet(BaseModel):
         ])
 
         self.net_norm = get_normalization_layer(net_normalization, hidden_dim, **net_norm_kwargs)
-
+        self.project_to_head = project_to_head
         # Classifier head
         if linear_head:
             self.head = nn.Linear(input_dim_head, self.num_output_features)
@@ -182,9 +183,9 @@ class PatchEmbed2D(nn.Module):
         # FIXME look at relaxing size constraints
         assert H == self.img_size[0] and W == self.img_size[1], \
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
-        x = self.proj(x).flatten(2).transpose(1, 2)
+        x = self.proj(x)  # [1, 768, 12, 12]
+        x = x.flatten(2).transpose(1, 2)  # [1, 144, 768]
         return x
-
 
 class AFNO_Block(nn.Module):
     def __init__(self,
@@ -234,3 +235,9 @@ class AFNO_Block(nn.Module):
         x = self.drop_path(x)
         x = x + residual
         return x
+
+
+if __name__ == '__main__':
+    emb = PatchEmbed2D()
+    x = torch.randn(1, 3, 192, 288)
+    print(emb(x).shape)
