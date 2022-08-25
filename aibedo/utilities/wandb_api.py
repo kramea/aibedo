@@ -131,8 +131,9 @@ def reload_checkpoint_from_wandb(run_id: str,
     from aibedo.interface import reload_model_from_config_and_ckpt
     run_path = f"{entity}/{project}/{run_id}"
     config = load_hydra_config_from_wandb(run_path, override_key_value, try_local_recovery=try_local_recovery)
-    OmegaConf.update(config, f'model.input_transform._target_',
-                     str(rgetattr(config, f'model.input_transform._target_')).replace('aibedo_salva', 'aibedo'))
+    if config.model.get('input_transform'):
+        OmegaConf.update(config, f'model.input_transform._target_',
+                         str(rgetattr(config, f'model.input_transform._target_')).replace('aibedo_salva', 'aibedo'))
     for k in ['model', 'datamodule', 'model.mixer', 'model.input_transform']:
         if config.get(k):
             OmegaConf.update(config, f'{k}._target_',

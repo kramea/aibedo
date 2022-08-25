@@ -31,6 +31,11 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         self.save_hyperparameters(ignore=[])
         self.n_pixels = icosahedron_nodes_calculator(self.hparams.order)
         self.spatial_dims = {'n_pixels': self.n_pixels}  # single dim for the spatial dimension
+        if self.hparams.input_filename is not None:
+            # For backward compatibility
+            log.warning(f"input_filename is set to {self.hparams.input_filename}")
+            assert self.hparams.esm_for_training == 'CESM2', f"Only CESM2 is supported for now., but not {self.hparams.esm_for_training}"
+            self.hparams.esm_for_training = self.hparams.input_filename.split('.')[2]
         self.esm_ensemble_id = get_any_ensemble_id(self.hparams.data_dir, self.hparams.esm_for_training, self.files_id)
         self._check_args()
 

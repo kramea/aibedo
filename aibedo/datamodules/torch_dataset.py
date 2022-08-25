@@ -15,10 +15,11 @@ class AIBEDOTensorDataset(Dataset[Tuple[Tensor, ...]]):
     """
     tensors: Tuple[Tensor, ...]
 
-    def __init__(self, *tensors: Tensor, dataset_id='') -> None:
+    def __init__(self, *tensors: Tensor, dataset_id='', name='') -> None:
         assert all(tensors[0].size(0) == tensor.size(0) for tensor in tensors), "Size mismatch between tensors"
         self.tensors = tensors
         self.dataset_id = dataset_id
+        self.name = name
 
     def __getitem__(self, index):
         return tuple(tensor[index] for tensor in self.tensors)

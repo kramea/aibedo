@@ -98,7 +98,6 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             in enumerate(self.input_var_names + ['month'] + self.hparams.auxiliary_vars)
         }
         self._var_names_to_clean_name = var_names_to_clean_name()
-        # self._set_geographical_metadata()
         self._check_args()
 
     @property
@@ -141,7 +140,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         elif test_frac == 'era5':
             return 'test/ERA5'
         elif isinstance(test_frac, float):
-            return f'test/{self._esm_name}'
+            return f'test/{self.hparams.esm_for_training}'
         else:
             raise ValueError(f"Unknown test_frac: {test_frac}")
 
@@ -159,7 +158,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         if self.prediction_data == 'same_as_test':
             return self.test_set_name.replace('test', 'predict')
         elif self.prediction_data == 'val':
-            return f'predict/{self._esm_name}'
+            return f'predict/{self.hparams.esm_for_training}'
         elif self.prediction_data in self._possible_test_sets or self.prediction_data in CLIMATE_MODELS_ALL:
             return f'predict/{self.prediction_data.upper()}'
         else:
@@ -187,15 +186,13 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 f"partition must sum to 1, but it sums to {partition[0] + partition[1] + partition[2]}")
 
     def _set_geographical_metadata(self):
-        self._esm_name = self.input_filename.split('.')[2]
-
         input_file = os.path.join(self.hparams.data_dir, self.input_filename)
         inDS = xr.open_dataset(input_file)
 
         self.lon_list: np.ndarray = inDS.lon.values
         self.lat_list: np.ndarray = inDS.lat.values
-        lsmask_round = [(round(x) if x == x else 0.5) for x in inDS.lsMask.values[0]]
-        self.ls_mask = np.array([0 if x < 0 else 1 if x > 1 else x for x in lsmask_round])
+        # lsmask_round = [(round(x) if x == x else 0.5) for x in inDS.lsMask.values[0]]
+        # self.ls_mask = np.array([0 if x < 0 else 1 if x > 1 else x for x in lsmask_round])
         # print(f'LS mask shape: {inDS.lsMask.data.shape}, \n{inDS.lsMask.data[0]} '
         #      f'\n******************\n{inDS.lsMask.data[1]}')
 
@@ -374,16 +371,20 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                                                             random_state=self.hparams.seed)
 
         if stage in ["predict"]:
+            esm = self.hparams.esm_for_training
             if self.prediction_data == 'same_as_test':
+                data_predict_id = f'{esm}_test' if isinstance(test_frac, float) else test_frac.upper()
                 X_predict, Y_predict = X_test, Y_test
             elif self.prediction_data == 'val':
                 _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict', input_filename=input_filename)
+                data_predict_id = f'{esm}_val'
             elif self.prediction_data in CLIMATE_MODELS_ALL:
-                in_file_esm = get_any_ensemble_id(self.hparams.data_dir, self.prediction_data, files_id=self.files_id)
+                in_file_esm = get_any_ensemble_id(self.hparams.data_dir, self.prediction_data, files_id=self.files_id, get_full_filename=True)
                 _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict', input_filename=in_file_esm)
+                data_predict_id = self.prediction_data
             else:
                 raise ValueError(f"Unknown prediction_data: {self.prediction_data}")
-            self._data_predict = get_tensor_dataset_from_numpy(X_predict, Y_predict, dataset_id='predict')
+            self._data_predict = get_tensor_dataset_from_numpy(X_predict, Y_predict, dataset_id='predict', name=data_predict_id)
         if stage == 'fit' or stage is None:
             self._data_train = get_tensor_dataset_from_numpy(X_train, Y_train, dataset_id='train')
         if stage in ["fit", 'validate', None]:
@@ -461,7 +462,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             data_in, data_out = batch
             # get targets/preds dict of output var name -> tensor (in denormalized scale!)
             MONTH_IDX = self.input_var_to_idx['month']
-            month_of_outputs = data_in[:, 0, MONTH_IDX]  # idx 0 is arbitrary; has shape (batch_size,)
+            # idx 0 is arbitrary; month_of_outputs has shape (batch_size,)
+            month_of_outputs = data_in[:, 0, MONTH_IDX] if data_in.dim() == 3 else data_in[:, 0, 0, MONTH_IDX]
 
             prediction_kwargs['month_of_outputs'] = month_of_outputs
             batch_preds = model.predict(data_in.to(device), **prediction_kwargs)
@@ -485,7 +487,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                     preds[out_var] = np.concatenate((preds[out_var], batch_preds_numpy), axis=0)
                     targets[out_var] = np.concatenate((targets[out_var], batch_gt_numpy), axis=0)
 
-        return {'preds': preds, 'targets': targets}
+        return {'preds': preds, 'targets': targets, 'dataset_name': predict_loader.dataset.name}
 
     def get_predictions_xarray(self, model: nn.Module,
                                variables='all',
@@ -494,6 +496,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                                return_normalized_outputs: bool = False,
                                **prediction_kwargs
                                ) -> xr.Dataset:
+        self._set_geographical_metadata()
         numpy_preds_targets = self.get_predictions(model, **prediction_kwargs, return_normalized_outputs=return_normalized_outputs)
         preds, targets = numpy_preds_targets['preds'], numpy_preds_targets['targets']
         var_shape = preds[list(preds.keys())[0]].shape[:-1]
@@ -533,6 +536,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 #  **self.masks(),
             ), attrs=dict(
                 description=f"ML emulated predictions.",
+                dataset_name=numpy_preds_targets['dataset_name'],
                 variable_names=";".join(out_vars),
             ))
         return xr_dset
@@ -540,6 +544,6 @@ class AIBEDO_DataModule(pl.LightningDataModule):
 
 
 
-def get_tensor_dataset_from_numpy(*ndarrays, dataset_id="") -> AIBEDOTensorDataset:
+def get_tensor_dataset_from_numpy(*ndarrays, dataset_id="", name='') -> AIBEDOTensorDataset:
     tensors = [torch.from_numpy(ndarray).float() for ndarray in ndarrays]
-    return AIBEDOTensorDataset(*tensors, dataset_id=dataset_id)
+    return AIBEDOTensorDataset(*tensors, dataset_id=dataset_id, name=name)

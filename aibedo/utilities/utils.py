@@ -232,7 +232,7 @@ def get_files_prefix(datamodule_config: DictConfig) -> str:
     return files_id
 
 
-def get_any_ensemble_id(data_dir, ESM_NAME: str, files_id: str = '') -> str:
+def get_any_ensemble_id(data_dir, ESM_NAME: str, files_id: str = '', get_full_filename: bool = False) -> str:
     """ Get ensemble id for any ensemble that is present in the data directory. """
     prefix = f"{files_id}{ESM_NAME}.historical"
     if os.path.isfile(os.path.join(data_dir, f"{prefix}.r1i1p1f1.Input.Exp8_fixed.nc")):
@@ -243,5 +243,8 @@ def get_any_ensemble_id(data_dir, ESM_NAME: str, files_id: str = '') -> str:
         files = glob.glob(f"{prefix}.*.Input.Exp8_fixed.nc")
         fname = files[0]
         os.chdir(curdir)
-    ensemble_id = fname.split('.')[-4]
-    return ensemble_id
+    if get_full_filename:
+        return fname
+    else:
+        ensemble_id = fname.split('.')[-4]
+        return ensemble_id
