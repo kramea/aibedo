@@ -15,7 +15,6 @@ if importlib.util.find_spec("wandb"):
     import wandb
 
 from aibedo.data_transforms.normalization import get_variable_stats, get_clim_err, destandardize, standardize
-from aibedo.data_transforms.transforms import AbstractTransform
 from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint, \
     mass_conservation_constraint, AUXILIARY_VARS, precipitation_energy_budget_constraint
 from aibedo.utilities.utils import get_logger, to_DictConfig, get_loss, raise_error_if_invalid_value
@@ -590,9 +589,11 @@ class BaseModel(LightningModule):
             surface_lw_net_radiation=aux_vars_denormed['netSurfRad'],
             PR_Err=batch_monthly_clim_errs['Precip_clim_err']
         )
-        train_log['train/physics/loss2'] = physics_loss2.item()
+        physics_loss2_abs = torch.abs(physics_loss2).mean()
+        train_log['train/physics/loss2'] = physics_loss2.mean().item()
+        train_log['train/physics/loss2_abs'] = physics_loss2_abs.item()
         if self.hparams.physics_loss_weights[1] > 0:
-            loss += self.hparams.physics_loss_weights[1] * torch.abs(physics_loss2) * 0.1
+            loss += self.hparams.physics_loss_weights[1] * 0.1 * physics_loss2_abs
 
         # -------------> Constraint 3 - Global moisture constraint
         # Compute the soft loss:
@@ -601,10 +602,12 @@ class BaseModel(LightningModule):
             evaporation=aux_vars_denormed['evspsbl'],
             PE_err=batch_monthly_clim_errs['PE_clim_err']
         )
-        train_log['train/physics/loss3'] = physics_loss3.item()
+        physics_loss3_abs = torch.abs(physics_loss3).mean()
+        train_log['train/physics/loss3'] = physics_loss3.mean().item()
+        train_log['train/physics/loss3_abs'] = physics_loss3_abs.item()
         if self.hparams.physics_loss_weights[2] > 0:
             # add the (weighted) loss to the main loss
-            loss += self.hparams.physics_loss_weights[2] * torch.abs(physics_loss3)
+            loss += self.hparams.physics_loss_weights[2] * physics_loss3_abs
 
         # -------------> Constraint 5 - Mass conservation constraint
         # Compute the soft loss
@@ -612,10 +615,12 @@ class BaseModel(LightningModule):
             surface_pressure=ps_denormed,
             PS_err=batch_monthly_clim_errs['PS_clim_err']
         )
-        train_log['train/physics/loss5'] = physics_loss5.item()
+        physics_loss5_abs = torch.abs(physics_loss5).mean()
+        train_log['train/physics/loss5'] = physics_loss5.mean().item()
+        train_log['train/physics/loss5_abs'] = physics_loss5_abs.item()
         if self.hparams.physics_loss_weights[4] > 0:
             # add the (weighted) loss to the main loss (divide by 100_000 to allow loss weight to be around 1)
-            loss += self.hparams.physics_loss_weights[4] * torch.abs(physics_loss5) / 100_000
+            loss += self.hparams.physics_loss_weights[4] * physics_loss5_abs / 100_000
 
         # Logging of train loss and other diagnostics
         train_log["train/loss"] = loss.item()
