@@ -57,7 +57,7 @@ _ = data_snapshots_plotting(
 ##### Animate the predicted and targeted values for multiple snapshots in a video or GIF 
 
 Please see the code-block below, and 
-[this script](../analysis/animate_predictions_era5_2022-07-21.py) for a full-fledged example.
+[this script](../aibedo/analysis/animate_predictions_era5_2022-07-21.py) for a full-fledged example.
 
 ```python
 from matplotlib import animation
