@@ -11,7 +11,7 @@ name: ???
 
 hydra:
   run:
-    dir: ${log_dir}/experiments/${name}/runs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: ${log_dir}/experiments/${name}/runs/${now:%Y-%m-%d}/${now:%Hh-%Mmin-%Ss}
   sweep:
-    dir: ${log_dir}/experiments/${name}/multiruns/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: ${log_dir}/experiments/${name}/multiruns/${now:%Y-%m-%d}/${now:%Hh-%Mmin-%Ss}
     subdir: ${hydra.job.num}
