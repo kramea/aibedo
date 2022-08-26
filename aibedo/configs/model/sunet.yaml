@@ -2,7 +2,7 @@ _target_: aibedo.models.unet.SphericalUNet
 
 defaults:
   - _self_
-  - base_model_config.yaml   # general, model independent, parameters
+  - _base_model_config.yaml   # general, model independent, parameters
   - /optimizer: adamw.yaml
 
 pooling_class: "icosahedron"

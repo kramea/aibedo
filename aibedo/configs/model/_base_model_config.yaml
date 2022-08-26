@@ -10,3 +10,10 @@ use_auxiliary_vars: True
 scheduler:
   _target_: torch.optim.lr_scheduler.ExponentialLR
   gamma: 0.98
+
+# The following parameters are just a different way of specifying ´´physics_loss_weights´´ (only one can be set)
+lambda_physics2: null
+lambda_physics3: null
+lambda_physics4: null
+lambda_physics5: null
+########################################################################################################################

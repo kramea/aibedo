@@ -1,6 +1,6 @@
 defaults:
   - _self_
-  - base_model_config.yaml  # general model params (i.e. they can/may apply to all ML models)
+  - _base_model_config.yaml  # general model params (i.e. they can/may apply to all ML models)
   - /optimizer: adamw.yaml
   - mixer: afno1d.yaml
 
