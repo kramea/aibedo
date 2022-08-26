@@ -157,7 +157,21 @@ def check_config_values(config: DictConfig):
                 config.model.net_normalization = "none"
             config.model.net_normalization = config.model.net_normalization.lower()
 
-        if config.logger.get("wandb"):
+        physics_lams1 = tuple(config.model.get('physics_loss_weights'))
+        physics_lams2 = [config.model.get(f'lambda_physics{i}') for i in range(1, 6)]
+        if any([(p is not None) for p in physics_lams2]):
+            # Only one of the two should be specified, check that (physics_lams1 is by default all zero):
+            if any(p > 0 for p in physics_lams1):
+                raise ValueError(f'Only one of the two physics loss weights args should be specified: '
+                                 f'``model.physics_loss_weights={physics_lams1}`` or'
+                                 f'``model.lambda_physics={physics_lams2}´´ (lambda_physics1, ..., lambda_physics5)')
+            else:
+                nonneg_precip = physics_lams2[3]
+                assert nonneg_precip in [None, True, False], f'lambda_physics4 should be either None, True, or False'
+                physics_lams2[3] = 1.0 if nonneg_precip else 0.0
+                config.model.physics_loss_weights = tuple([p or 0.0 for p in physics_lams2])
+
+        if config.get('logger') and config.logger.get("wandb"):
             if 'callbacks' in config and config.callbacks.get('model_checkpoint'):
                 wandb_model_run_id = config.logger.wandb.get('id')
                 d = config.callbacks.model_checkpoint.dirpath
@@ -223,7 +237,6 @@ def log_hyperparameters(
     # Remove redundant keys or those that are not important to know after training -- feel free to edit this!
     params["datamodule"] = copy_and_ignore_keys(config["datamodule"], 'pin_memory', 'num_workers')
     params['model'] = copy_and_ignore_keys(config['model'], 'optimizer', 'scheduler')
-    params['normalizer'] = config['normalizer']
     params["trainer"] = copy_and_ignore_keys(config["trainer"])
     # encoder, optims, and scheduler as separate top-level key
     params['optim'] = config['model']['optimizer']
