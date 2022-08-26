@@ -2,6 +2,7 @@
 
 # specify here default training configuration
 # Each value yaml file will be searched in the key config folder, e.g. configs/model/mlp.yaml (the yaml ending is optional)
+# NOTE: Configs can only override stuff that appears *before it* in the defaults list.
 defaults:
   - _self_
   - trainer: default.yaml
@@ -14,20 +15,20 @@ defaults:
   # modes are special collections of config options for different purposes, e.g. debugging
   - mode: default.yaml
 
-  # experiment configs allow for version control of specific configurations
-  # for example, use them to store best hyperparameters for each combination of model and datamodule
-  - experiment: null
-
   # optional local config for machine/user specific settings (e.g. data dir)
   - optional local: default.yaml
+
+  # experiment configs allow for version control of specific configurations
+  # for example, use the# hyperparameter optimization (null means no optimization)m to store best hyperparameters for each combination of model and datamodule
+  - experiment: null
+  # Hyperparameter optimization (null means no optimization)
+  - optuna: null
 
   # default optimizer is AdamW (better than Adam with weight decay)
   - override optimizer@model.optimizer: adamw.yaml
 
 
 # Note: hydra.runtime.cwd points to the original working dir.
-
-normalizer: null
 
 # ${hydra:runtime.cwd} is the path to original working directory
 # hydra hijacks working directory by changing it to the new log directory so it's useful to have this path as a special variable
