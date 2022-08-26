@@ -1,0 +1,15 @@
+defaults:
+  - base_hparams_search_space.yaml
+  - _self_
+
+model.hidden_dim: choice(64, 128, 256, 384, 512)
+model.num_layers: choice(1, 2, 3, 4, 5, 6)
+model.mlp_ratio: choice(0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0)
+model.drop_path_rate: choice(0.0, 0.1, 0.2)
+model.uniform_drop: choice(True, False)
+model.dropout: choice(0.0, 0.15, 0.3, 0.4)
+model.net_normalization: choice("layer_norm", "rms_layer_norm")
+
+model.mixer.activation_function: choice("gelu", "relu")
+model.mixer.num_blocks: choice(1, 2, 4, 8, 16)
+model.mixer.sparsity_threshold: choice(0.0, 0.01, 0.02, 0.05)

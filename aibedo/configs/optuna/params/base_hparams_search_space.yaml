@@ -1,0 +1,13 @@
+# ML model independen/agnostic hyperparameters (e.g. learning rate, batch size, etc.)
+
+model.optimizer.lr: tag(log, interval(1e-5, 1e-2))   # log scale of learning rate
+model.optimizer.weight_decay: tag(log, interval(1e-9, 0.1))   # log scale of weight decay
+model.scheduler.gamma: choice(0.9, 0.96, 0.98, 0.99, 1.0)
+# model.lambda_physics1:
+model.lambda_physics2: tag(log, interval(1e-8, 0.5))
+model.lambda_physics3: tag(log, interval(1e-8, 10000))
+model.lambda_physics4: choice(True, False)
+model.lambda_physics5: tag(log, interval(1e-8, 100))
+# model.window: choice(1, 4)
+model.month_as_feature: choice(True, False, "one_hot")
+model.nonnegativity_at_train_time: choice(True, False)

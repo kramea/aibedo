@@ -1,0 +1,13 @@
+# @package _global_
+
+defaults:
+  - _base.yaml
+  - _self_
+  - params@hydra.sweeper.params: afno1d.yaml
+  - override /datamodule: icosahedron.yaml
+  - override /model: afno_spherical.yaml
+
+name: "optuna-afno1d"
+hydra:
+  sweeper:
+    study_name: "FNO1D"

@@ -1,0 +1,8 @@
+defaults:
+  - base_hparams_search_space.yaml
+  - _self_
+
+model.activation_function: choice("gelu", "relu")
+model.net_normalization: choice("batch_norm", "layer_norm", "none", "rms_layer_norm")
+model.residual: choice(True, False)
+model.hidden_dims: choice([128], [128, 128], [256, 256], [384, 384], [512, 512], [1024, 1024], [256, 256, 256], [512, 256, 256], [512, 512, 512], [1024, 512, 512], [1024, 1024, 1024], [1024, 1024, 1024, 1024],  [256, 256, 256, 256],[512, 512, 512, 512])

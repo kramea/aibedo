@@ -1,0 +1,6 @@
+
+defaults:
+  - afno1d.yaml
+  - _self_
+
+model.upsampling_mode: choice(bilinear, nearest, conv)
