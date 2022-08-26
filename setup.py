@@ -79,7 +79,10 @@ install_requires = [
 extra_deps = dict()
 
 extra_deps['base'] = []
-
+extra_deps['optuna'] = [
+    'optuna',
+    'plotly',
+]
 extra_deps['dev'] = [
     # Imports for docs builds and running tests
     # Pinning versions strictly to avoid random test failures.
