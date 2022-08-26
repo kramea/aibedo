@@ -16,6 +16,24 @@
    2) Create a config file called [configs/local/](configs/local)default.yaml adapted 
   from e.g. this example local config [configs/local/example_local_config.yaml](configs/local/example_local_config.yaml).
   Its values will be automatically used whenever you run ``train.py``.
+
+### Hyperparameter optimization
+Please install the hydra-optuna-wandb integration with
+    
+    cd aibedo/hydra_optuna_sweeper
+    python setup.py install --user  # or pip install -e . --user
+
+To tune the hyperparameters with, e.g., Optuna for any of the provided ML models please run the following command:
+``python train.py --multirun optuna=<ml-model-name>``, where <ml-model-name> is the name of the ML model (e.g. ´´mlp´´).
+
+To extend this example with your own ML model, please create a config file in [configs/optuna/](configs/optuna).
+Note that the config files defining the swept hyperparameters (and their possible values/ranges) for each model
+are located in [configs/optuna/params](configs/optuna/params).
+
+**Note:** Wandb has a known bug when logging too much - 
+something along the lines of ``OSError: [Errno 24] Too many open files``. If that happens (or to prevent it), 
+you can increase the limit with the following command: ``ulimit -n 65536``.
+
 ### Wandb support
 <details>
   <summary><b> Requirement </b></summary>
