@@ -871,7 +871,7 @@ def _get_pickle(run, filename):
 
 def reload_study_from_wandb(run_path):
     with tempfile.TemporaryDirectory() as d:
-        wandb.restore('optuna_study.pkl', run_path=run_path, replace=True, root=os.getcwd())
+        wandb.restore('optuna_study.pkl', run_path=run_path, replace=True, root=d)
         filepath = os.listdir(d)[0]
         full_path = os.path.join(d, filepath)
         study = joblib.load(full_path)

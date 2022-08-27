@@ -1,25 +1,32 @@
 # @package _global_
 
-# to execute this experiment run:
-# python run.py experiment=optuna
-
 defaults:
   - _self_
+  - override /logger: wandb
   - override /hydra/sweeper: optuna
   - override /hydra/sweeper/sampler: tpe
 
-name: "optuna"
 optuna:
   wandb_study_id: null   # optionally set to the run id of the study to be continued
+
+name: "optuna"
+seed: 7
+test_after_training: False
+
+trainer:
+  max_epochs: 35
+
+datamodule:
+  num_workers: 4
 
 hydra:
   sweeper:
     sampler:
-      seed: 123
+      seed: ${seed}
     direction: minimize
     study_name: xyz
     storage: null
-    n_trials: 300         # number of experiments that will be executed
+    n_trials: 400         # number of experiments that will be executed
     n_jobs: 1
     # params: null
     # max_failure_rate: 0.0
