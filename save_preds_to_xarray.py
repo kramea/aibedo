@@ -28,7 +28,7 @@ def get_predictions_xarray(
 
 
 if __name__ == "__main__":
-    DATA_DIR = "/network/scratch/s/salva.ruhling-cachay/TMP_climart/aibedo/data"
+    DATA_DIR = "../data"
     overrides = [f'datamodule.num_workers={6}',
                  'datamodule.eval_batch_size=4',
                  'verbose=False',
