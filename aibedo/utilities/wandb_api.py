@@ -193,7 +193,6 @@ def get_predictions_xarray(
     predictions_xarray.attrs['id'] = run_id
     # todo: predictions_xarray.attrs['model_name'] = cfg.model.name
     old_runs_esm = cfg.datamodule.get('input_filename').split('.')[2] if cfg.datamodule.get('input_filename') else '?'
-    predictions_xarray.attrs['old_runs_esm'] = old_runs_esm
     esm_for_training = cfg.datamodule.get("esm_for_training", old_runs_esm)
     predictions_xarray.attrs['ESM_for_training'] = esm_for_training
     predictions_xarray.attrs['physics_loss_weights'] = tuple(cfg.model.physics_loss_weights)
