@@ -192,9 +192,13 @@ def get_predictions_xarray(
                                                    **kwargs)
     predictions_xarray.attrs['id'] = run_id
     # todo: predictions_xarray.attrs['model_name'] = cfg.model.name
-    predictions_xarray.attrs['physics_loss_weights'] = cfg.model.physics_loss_weights
     esm_for_training = cfg.datamodule.get("esm_for_training", cfg.datamodule.get('input_filename').split('.')[2])
-    predictions_xarray.attrs['esm_for_training'] = esm_for_training
+    predictions_xarray.attrs['ESM_for_training'] = esm_for_training
+    predictions_xarray.attrs['physics_loss_weights'] = tuple(cfg.model.physics_loss_weights)
+    predictions_xarray.attrs['time_lag'] = cfg.datamodule.get('time_lag', 0)
+    if cfg.datamodule.get('order'):
+        predictions_xarray.attrs['icosahedron_order'] = cfg.datamodule.get('order')
+
     del model, dm, cfg
     return predictions_xarray
 
