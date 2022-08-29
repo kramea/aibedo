@@ -2,10 +2,10 @@ import json
 import logging
 import os
 import pathlib
-from os.path import isdir, isfile
 from typing import Union, Callable, List, Optional, Sequence, Any
 
 import numpy as np
+import xarray as xr
 import wandb
 import pandas as pd
 from omegaconf import OmegaConf, DictConfig
@@ -159,6 +159,44 @@ def reload_checkpoint_from_wandb(run_id: str,
                            f"versions. Tried to reload the model ckpt for run.id={run_id} from {best_model_path}.\n"
                            f"config.model={config.model}\n{e}")
     return {'model': model[0], 'datamodule': model[1], 'config': config}
+
+
+def get_predictions_xarray(
+        run_id, overrides: List[str], split: str = 'predict', variables='all', reload_kwargs=None, **kwargs
+) -> xr.Dataset:
+    """
+    Get postprocessed predictions from a wandb run (using its run ID only).
+
+    Args:
+        run_id: the wandb run ID
+        overrides (List[str]): the overrides to use when reloading the checkpoint
+        split (str): the split to use when reloading the checkpoint. Default: 'predict'
+        variables: Which variables to return predictions for. Default: 'all'
+        reload_kwargs (dict): Any extra wandb keyword arguments to use when running wandb.init(.)
+        **kwargs: Extra keyword arguments to pass to datamodule.get_predictions_xarray
+
+    Returns:
+        xr.Dataset: The postprocessed predictions (optionally: targets and/or errors) in denormalized scale.
+            The xarray will have keys '<var>_preds' for each output variable (e.g. ``pr_preds``).
+    """
+    reload_kwargs = reload_kwargs or {}
+    values = reload_checkpoint_from_wandb(run_id=run_id,
+                                          override_key_value=overrides,
+                                          try_local_recovery=False, **reload_kwargs
+                                          )
+    model, dm, cfg = values['model'], values['datamodule'], values['config']
+    dm.setup(stage=split)
+    dataloader = dm.predict_dataloader()
+    predictions_xarray = dm.get_predictions_xarray(model, dataloader=dataloader,
+                                                   variables=variables,
+                                                   **kwargs)
+    predictions_xarray.attrs['id'] = run_id
+    # todo: predictions_xarray.attrs['model_name'] = cfg.model.name
+    predictions_xarray.attrs['physics_loss_weights'] = cfg.model.physics_loss_weights
+    esm_for_training = cfg.datamodule.get("esm_for_training", cfg.datamodule.get('input_filename').split('.')[2])
+    predictions_xarray.attrs['esm_for_training'] = esm_for_training
+    del model, dm, cfg
+    return predictions_xarray
 
 
 def reupload_run_history(run):
@@ -386,8 +424,12 @@ def filter_wandb_runs(hyperparam_filter: dict = None,
         filter_functions: A set of callable functions that take a wandb run and return a boolean (True/False) so that
                             any run with one or more return values being False is discarded/filtered out
     """
-    hyperparam_filter = hyperparam_filter or dict()
     filter_functions = filter_functions or []
+    if isinstance(filter_functions, str):
+        filter_functions = [filter_functions]
+    filter_functions = [(f if callable(f) else str_to_run_pre_filter[f.lower()]) for f in filter_functions]
+
+    hyperparam_filter = hyperparam_filter or dict()
     api = wandb_api or wandb.Api(timeout=100)
     filter_wandb_api, filters_post = dict(), dict()
     for k, v in hyperparam_filter.items():
@@ -422,10 +464,6 @@ def get_runs_df(
         run_post_filters:
         verbose: 0, 1, or 2, where 0 = no output at all, 1 is a bit verbose
     """
-    if isinstance(run_pre_filters, str):
-        run_pre_filters = [run_pre_filters]
-    run_pre_filters = [(f if callable(f) else str_to_run_pre_filter[f.lower()]) for f in run_pre_filters]
-
     if run_post_filters is None:
         run_post_filters = []
     elif not isinstance(run_post_filters, list):

@@ -1,31 +1,5 @@
 import xarray as xr
-from aibedo.utilities.wandb_api import reload_checkpoint_from_wandb
-
-cur_run_id = None
-
-
-def get_model_and_dm_from_run_id(run_id, overrides):
-    global cur_run_id
-    cur_run_id = run_id
-    values = reload_checkpoint_from_wandb(run_id=run_id, project='AIBEDO', override_key_value=overrides,
-                                          try_local_recovery=False)
-    return values['model'], values['datamodule'], values['config']
-
-
-def get_predictions_xarray(
-        run_id, overrides, split='predict', also_errors=False, variables='all', **kwargs
-) -> xr.Dataset:
-    model, dm, cfg = get_model_and_dm_from_run_id(run_id, overrides)
-    print('physics_loss_weights:', cfg.model.physics_loss_weights)
-    dm.setup(stage=split)
-    dataloader = dm.predict_dataloader()
-    predictions_xarray = dm.get_predictions_xarray(model, dataloader=dataloader,
-                                                   also_errors=also_errors,
-                                                   variables=variables,
-                                                   **kwargs)
-    del model, dm, cfg
-    return predictions_xarray
-
+from aibedo.utilities.wandb_api import reload_checkpoint_from_wandb, get_predictions_xarray
 
 if __name__ == "__main__":
     DATA_DIR = "../data"
