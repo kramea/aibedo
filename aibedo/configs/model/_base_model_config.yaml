@@ -6,6 +6,7 @@ physics_loss_weights: [0.0, 0.0, 0.0, 0.0, 0.0]
 month_as_feature: False
 nonnegativity_at_train_time: True
 use_auxiliary_vars: True
+name: ""
 
 scheduler:
   _target_: torch.optim.lr_scheduler.ExponentialLR
@@ -17,3 +18,4 @@ lambda_physics3: null
 lambda_physics4: null
 lambda_physics5: null
 ########################################################################################################################
+

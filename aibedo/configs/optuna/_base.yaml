@@ -28,6 +28,7 @@ hydra:
     storage: null
     n_trials: 400         # number of experiments that will be executed
     n_jobs: 1
+    max_failure_rate: 0.1
     # params: null
     # max_failure_rate: 0.0
 

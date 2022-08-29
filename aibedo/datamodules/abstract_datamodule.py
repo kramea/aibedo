@@ -97,6 +97,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             var: i for i, var
             in enumerate(self.input_var_names + ['month'] + self.hparams.auxiliary_vars)
         }
+        self._get_normalized_targets_for_predict_too = False
         self._var_names_to_clean_name = var_names_to_clean_name()
         self._check_args()
 
@@ -271,8 +272,14 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         # Output data
         out_vars = self.hparams.output_vars
         if stage == 'predict':
-            out_vars = [x.replace('_pre', '') for x in out_vars]
-            log.info(f" Using raw output data from {os.path.basename(output_file)} -- Prediction targets: {out_vars}.")
+            ofn = os.path.basename(output_file)
+            denormalized_out_vars = [x.replace('_pre', '') for x in out_vars]
+            if self._get_normalized_targets_for_predict_too:
+                out_vars = out_vars + denormalized_out_vars
+                log.info(f" Using both raw and normalized output data from {ofn} -- Prediction targets: {out_vars}.")
+            else:
+                out_vars = denormalized_out_vars
+                log.info(f" Using raw output data from {ofn} -- Prediction targets: {out_vars}.")
 
         out_ds = xr.open_dataset(output_file)
         dataset_out = self._concat_variables_into_channel_dim(out_ds, out_vars, output_file)
@@ -371,13 +378,13 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                                                             random_state=self.hparams.seed)
 
         if stage in ["predict"]:
-            esm = self.hparams.esm_for_training
+            train_esm = self.hparams.esm_for_training
             if self.prediction_data == 'same_as_test':
-                data_predict_id = f'{esm}_test' if isinstance(test_frac, float) else test_frac.upper()
+                data_predict_id = f'{train_esm}_test' if isinstance(test_frac, float) else test_frac.upper()
                 X_predict, Y_predict = X_test, Y_test
             elif self.prediction_data == 'val':
                 _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict', input_filename=input_filename)
-                data_predict_id = f'{esm}_val'
+                data_predict_id = f'{train_esm}_val'
             elif self.prediction_data in CLIMATE_MODELS_ALL:
                 in_file_esm = get_any_ensemble_id(self.hparams.data_dir, self.prediction_data, files_id=self.files_id, get_full_filename=True)
                 _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict', input_filename=in_file_esm)
@@ -497,6 +504,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                                **prediction_kwargs
                                ) -> xr.Dataset:
         self._set_geographical_metadata()
+        self._get_normalized_targets_for_predict_too = return_normalized_outputs
         numpy_preds_targets = self.get_predictions(model, **prediction_kwargs, return_normalized_outputs=return_normalized_outputs)
         preds, targets = numpy_preds_targets['preds'], numpy_preds_targets['targets']
         var_shape = preds[list(preds.keys())[0]].shape[:-1]

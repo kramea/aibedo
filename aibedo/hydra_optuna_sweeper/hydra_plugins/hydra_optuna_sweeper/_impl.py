@@ -706,19 +706,6 @@ def log_study_metadata(study: optuna.Study,
         _log_study(run, study)
 
 
-def load_study_from_run(run):
-    """A function that loads Optuna Study from an existing Neptune Run.
-
-    Loading mechanics depends on the study storage type used during the Neptune Run:
-    * if the study used 'InMemoryStorage', it will be loaded from the logged pickled Study object
-    * if the study used database storage, it will be loaded from the logged database URL
-    """
-    if run['study/storage_type'].fetch() == 'InMemoryStorage':
-        return _get_pickle(path='study/study', run=run)
-    else:
-        return optuna.load_study(study_name=run['study/study_name'].fetch(), storage=run['study/storage_url'].fetch())
-
-
 def _log_study_details(run, study: optuna.Study):
     log_dict = dict()
     log_dict['study/study_name'] = study.study_name
