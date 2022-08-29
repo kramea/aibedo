@@ -390,7 +390,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict', input_filename=in_file_esm)
                 data_predict_id = self.prediction_data
             else:
-                raise ValueError(f"Unknown prediction_data: {self.prediction_data}")
+                options = ['same_as_test', 'val'] + CLIMATE_MODELS_ALL
+                raise ValueError(f"Unknown ``prediction_data``: {self.prediction_data}. Should be one of {options}")
             self._data_predict = get_tensor_dataset_from_numpy(X_predict, Y_predict, dataset_id='predict', name=data_predict_id)
         if stage == 'fit' or stage is None:
             self._data_train = get_tensor_dataset_from_numpy(X_train, Y_train, dataset_id='train')
