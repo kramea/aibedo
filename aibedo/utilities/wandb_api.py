@@ -162,7 +162,10 @@ def reload_checkpoint_from_wandb(run_id: str,
 
 
 def get_predictions_xarray(
-        run_id, overrides: List[str], split: str = 'predict', variables='all', reload_kwargs=None, **kwargs
+        run_id, overrides: List[str], split: str = 'predict', variables='all',
+        return_model: bool = False,
+        reload_kwargs=None,
+        **kwargs
 ) -> xr.Dataset:
     """
     Get postprocessed predictions from a wandb run (using its run ID only).
@@ -199,7 +202,8 @@ def get_predictions_xarray(
     predictions_xarray.attrs['time_lag'] = cfg.datamodule.get('time_lag', 0)
     if cfg.datamodule.get('order'):
         predictions_xarray.attrs['icosahedron_order'] = cfg.datamodule.get('order')
-
+    if return_model:
+        return predictions_xarray, model
     del model, dm, cfg
     return predictions_xarray
 
