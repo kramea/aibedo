@@ -1,0 +1,30 @@
+# @package _global_
+
+# to execute this experiment run:
+# python run.py experiment=denorm_nonorm
+
+defaults:
+  - override /mode: exp.yaml
+  - override /datamodule: icosahedron.yaml
+  - override /model: mlp.yaml
+  - override /callbacks: wandb.yaml
+  - override /logger: wandb.yaml
+  - _self_
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+# can also be accessed by loggers
+name: "denorm_nonorm_${datamodule.time_lag}h"
+
+seed: 7
+
+datamodule:
+  batch_size: 5
+  denorm_nonorm: True
+  time_lag: 1
+
+logger:
+  wandb:
+    tags: ["denorm-nonorm"]
