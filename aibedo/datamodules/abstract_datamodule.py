@@ -62,7 +62,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                  pin_memory: bool = True,
                  verbose: bool = True,
                  seed: int = 43,
-                 input_filename: str = None, # todo: deprecate this
+                 input_filename: str = None,  # todo: deprecate this
                  ):
         """
         Args:
@@ -97,14 +97,45 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             var: i for i, var
             in enumerate(self.input_var_names + ['month'] + self.hparams.auxiliary_vars)
         }
+        self._esm_ensemble_id = None
         self._get_normalized_targets_for_predict_too = False
         self._var_names_to_clean_name = var_names_to_clean_name()
         self._check_args()
 
     @property
-    def input_filename(self) -> str:
-        """ Should be implemented by the child class """
+    def masked_ensemble_input_filename(self) -> str:
+        r""" Should be implemented by the child class.
+        Make this function ensemble-agnostic by masking out the ensemble id (e.g. 'r1i1p1f1') from the filename with a *
+
+        Returns:
+            str: The filename of the input data that masks out the ensemble id with a "*".
+
+        """
         raise NotImplementedError()
+
+    @property
+    def _input_filename(self) -> str:
+        return self.masked_ensemble_input_filename.replace('.*.', f'.{self.esm_ensemble_id}.')
+
+    @property
+    def esm_ensemble_id(self) -> str:
+        """ Returns the ensemble id (e.g.'r1i1p1f1') for the ESM to use for training (and validation)."""
+        if self._esm_ensemble_id is None:
+            self._esm_ensemble_id = get_any_ensemble_id(self.hparams.data_dir, self.masked_ensemble_input_filename)
+        return self._esm_ensemble_id
+
+    def input_filename_to_output_filename(self, input_filename: str) -> str:
+        """
+        Convert an input filename to the corresponding output filename.
+
+        Args:
+            input_filename (str): input filename.
+
+        Returns:
+            str : output filename.
+        """
+        output_filename = input_filename.replace("Input.Exp8_fixed.nc", "Output.PrecipCon.nc")
+        return output_filename
 
     @property
     def var_names_to_clean_name(self):
@@ -165,6 +196,14 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         else:
             raise ValueError(f"Unknown prediction data being used: {self.prediction_data}")
 
+    @property
+    def prediction_output_variables(self) -> List[str]:
+        denormalized_out_vars = [x.replace('_pre', '') for x in self.hparams.output_vars]
+        if self._get_normalized_targets_for_predict_too:
+            return self.hparams.output_vars + denormalized_out_vars
+        else:
+            return denormalized_out_vars
+
     def _check_args(self):
         """Check if the arguments are valid."""
 
@@ -187,7 +226,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 f"partition must sum to 1, but it sums to {partition[0] + partition[1] + partition[2]}")
 
     def _set_geographical_metadata(self):
-        input_file = os.path.join(self.hparams.data_dir, self.input_filename)
+        input_file = os.path.join(self.hparams.data_dir, self._input_filename)
         inDS = xr.open_dataset(input_file)
 
         self.lon_list: np.ndarray = inDS.lon.values
@@ -252,7 +291,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         # same as: np.repeat(month_of_snapshot, self.n_pixels).reshape([-1, self.n_pixels, 1])
         if len(self.hparams.auxiliary_vars) > 0:
             dataset_aux = self._concat_variables_into_channel_dim(dataset_out, self.hparams.auxiliary_vars)
-            dataset_aux = np.concatenate([dataset_month, dataset_aux], axis=-1)  # shape (1980, spatial-dims, 1 + #aux-vars)
+            dataset_aux = np.concatenate([dataset_month, dataset_aux],
+                                         axis=-1)  # shape (1980, spatial-dims, 1 + #aux-vars)
         else:
             dataset_aux = dataset_month
 
@@ -270,16 +310,15 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         dataset_in = self._concat_variables_into_channel_dim(in_ds, self.hparams.input_vars, input_file)
 
         # Output data
-        out_vars = self.hparams.output_vars
         if stage == 'predict':
+            out_vars = self.prediction_output_variables
             ofn = os.path.basename(output_file)
-            denormalized_out_vars = [x.replace('_pre', '') for x in out_vars]
             if self._get_normalized_targets_for_predict_too:
-                out_vars = out_vars + denormalized_out_vars
                 log.info(f" Using both raw and normalized output data from {ofn} -- Prediction targets: {out_vars}.")
             else:
-                out_vars = denormalized_out_vars
                 log.info(f" Using raw output data from {ofn} -- Prediction targets: {out_vars}.")
+        else:
+            out_vars = self.hparams.output_vars
 
         out_ds = xr.open_dataset(output_file)
         dataset_out = self._concat_variables_into_channel_dim(out_ds, out_vars, output_file)
@@ -330,7 +369,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
         #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
         train_frac, val_frac, _ = self.hparams.partition
-        fname_out = input_filename.replace("Input.Exp8_fixed.nc", "Output.PrecipCon.nc")
+        fname_out = self.input_filename_to_output_filename(input_filename)
         train_data_in, train_data_out = self._process_nc_dataset(input_filename, fname_out, shuffle=True, stage=stage)
         X_train, X_val, Y_train, Y_val = train_test_split(train_data_in, train_data_out, train_size=train_frac,
                                                           random_state=self.hparams.seed)
@@ -348,7 +387,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         """Load data. Set internal variables: self._data_train, self._data_val, self._data_test."""
         raise_error_if_invalid_value(stage, ['fit', 'validate', 'test', 'predict', None], 'stage')
         self._log_at_setup_start(stage)
-        input_filename = self.input_filename
+        input_filename = self._input_filename
+
         train_frac, val_frac, test_frac = self.hparams.partition
 
         if stage in ["fit", 'validate', None] or test_frac not in self._possible_test_sets:
@@ -383,16 +423,23 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 data_predict_id = f'{train_esm}_test' if isinstance(test_frac, float) else test_frac.upper()
                 X_predict, Y_predict = X_test, Y_test
             elif self.prediction_data == 'val':
-                _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict', input_filename=input_filename)
+                _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict',
+                                                                          input_filename=input_filename)
                 data_predict_id = f'{train_esm}_val'
             elif self.prediction_data in CLIMATE_MODELS_ALL:
-                in_file_esm = get_any_ensemble_id(self.hparams.data_dir, self.prediction_data, files_id=self.files_id, get_full_filename=True)
-                _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict', input_filename=in_file_esm)
+                predict_esm = self.prediction_data
+                # E.g.: 'CESM2.historical.r1i1p1f1.Input.Exp8.nc' -> 'GFDL-4.historical.r1i1p1f1.Input.Exp8.nc'
+                masked_predict_esm_infile = self.masked_ensemble_input_filename.replace(train_esm, predict_esm)
+                predict_esm_in_fname = get_any_ensemble_id(self.hparams.data_dir, masked_predict_esm_infile,
+                                                           get_full_filename=True)
+                _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict',
+                                                                          input_filename=predict_esm_in_fname)
                 data_predict_id = self.prediction_data
             else:
                 options = ['same_as_test', 'val'] + CLIMATE_MODELS_ALL
                 raise ValueError(f"Unknown ``prediction_data``: {self.prediction_data}. Should be one of {options}")
-            self._data_predict = get_tensor_dataset_from_numpy(X_predict, Y_predict, dataset_id='predict', name=data_predict_id)
+            self._data_predict = get_tensor_dataset_from_numpy(X_predict, Y_predict, dataset_id='predict',
+                                                               name=data_predict_id)
         if stage == 'fit' or stage is None:
             self._data_train = get_tensor_dataset_from_numpy(X_train, Y_train, dataset_id='train')
         if stage in ["fit", 'validate', None]:
@@ -449,6 +496,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         Returns:
             A dictionary {'preds': predictions, 'targets': ground_truth}
         """
+        from tqdm import tqdm
         if device is None:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model: BaseModel = model.to(device)
@@ -466,7 +514,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             RAW_TARGETS = False
 
         preds, targets = dict(), dict()
-        for i, batch in enumerate(predict_loader):
+        for i, batch in tqdm(enumerate(predict_loader), total=len(predict_loader)):
             data_in, data_out = batch
             # get targets/preds dict of output var name -> tensor (in denormalized scale!)
             MONTH_IDX = self.input_var_to_idx['month']
@@ -477,9 +525,10 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             batch_preds = model.predict(data_in.to(device), **prediction_kwargs)
             if RAW_TARGETS:
                 # only split the targets by output variable
-                batch_targets = model._split_raw_preds_per_target_variable(data_out)
-                # but, need to use the correct output var keys/names (without '_pre'):
-                batch_targets = {k.replace('_pre', ''): v for k, v in batch_targets.items()}
+                batch_targets = {
+                    var_name: data_out[..., i]  # index the tensor along the last dimension
+                    for i, var_name in enumerate(self.prediction_output_variables)
+                }
             else:
                 # also denormalize the targets
                 batch_targets = model.raw_outputs_to_denormalized_per_variable_dict(data_out, **prediction_kwargs)
@@ -506,7 +555,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                                ) -> xr.Dataset:
         self._set_geographical_metadata()
         self._get_normalized_targets_for_predict_too = return_normalized_outputs
-        numpy_preds_targets = self.get_predictions(model, **prediction_kwargs, return_normalized_outputs=return_normalized_outputs)
+        numpy_preds_targets = self.get_predictions(model, **prediction_kwargs,
+                                                   return_normalized_outputs=return_normalized_outputs)
         preds, targets = numpy_preds_targets['preds'], numpy_preds_targets['targets']
         var_shape = preds[list(preds.keys())[0]].shape[:-1]
         dim_names = ['snapshot', 'latitude', 'longitude'] if len(var_shape) == 3 else ['snapshot', 'spatial_dim']
@@ -544,15 +594,13 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 snapshot=range(var_shape[0]),
                 #  **self.masks(),
             ), attrs=dict(
-                description=f"ML emulated predictions.",
+                description=f"AiBEDO predictions.",
                 dataset_name=numpy_preds_targets['dataset_name'],
                 variable_names=";".join(out_vars),
             ))
         return xr_dset
 
 
-
-
-def get_tensor_dataset_from_numpy(*ndarrays, dataset_id="", name='') -> AIBEDOTensorDataset:
+def get_tensor_dataset_from_numpy(*ndarrays, dataset_id="", name='', **kwargs) -> AIBEDOTensorDataset:
     tensors = [torch.from_numpy(ndarray).float() for ndarray in ndarrays]
-    return AIBEDOTensorDataset(*tensors, dataset_id=dataset_id, name=name)
+    return AIBEDOTensorDataset(*tensors, dataset_id=dataset_id, name=name, **kwargs)

@@ -1,17 +1,5 @@
-import os.path
-from typing import Optional, List, Sequence, Tuple
-
-import torch
-import xarray as xr
-import numpy as np
-from einops import rearrange, repeat
-from torch import Tensor
-
-from aibedo.constants import CLIMATE_MODELS_ALL
 from aibedo.datamodules.abstract_datamodule import AIBEDO_DataModule
-from aibedo.datamodules.torch_dataset import AIBEDOTensorDataset
-from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value, get_any_ensemble_id
-from aibedo.skeleton_framework.spherical_unet.utils.samplings import icosahedron_nodes_calculator
+from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value
 
 log = get_logger(__name__)
 
@@ -28,7 +16,6 @@ class EuclideanDatamodule(AIBEDO_DataModule):
         # The following makes all args available as, e.g.: self.hparams.order, self.hparams.batch_size
         self.save_hyperparameters(ignore=[])
         self.spatial_dims = {'lat': 192, 'lon': 288}  # two dims for the spatial dimension
-        self.esm_ensemble_id = get_any_ensemble_id(self.hparams.data_dir, self.hparams.esm_for_training, self.files_id)
         self._check_args()
 
     @property
@@ -38,9 +25,9 @@ class EuclideanDatamodule(AIBEDO_DataModule):
         return ""
 
     @property
-    def input_filename(self) -> str:
+    def masked_ensemble_input_filename(self) -> str:
         # files are of the kind 'CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc'
-        return f"{self.hparams.esm_for_training}.historical.{self.esm_ensemble_id}.Input.Exp8_fixed.nc"
+        return f"{self.hparams.esm_for_training}.historical.*.Input.Exp8_fixed.nc"
 
     def _check_args(self):
         """Check if the arguments are valid."""
