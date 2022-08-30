@@ -328,7 +328,8 @@ class BaseModel(LightningModule):
         """
         if outputs_tensor.shape[-1] != len(self.output_var_names):
             raise ValueError(
-                f"outputs_tensor.shape[-1]={outputs_tensor.shape[-1]}, but #output-vars={len(self.output_var_names)}")
+                f"outputs_tensor.shape[-1] = {outputs_tensor.shape[-1]},"
+                f" but #output-vars = {len(self.output_var_names)}")
         preds_per_target_variable = {
             var_name: outputs_tensor[..., i]  # index the tensor along the last dimension
             for i, var_name in enumerate(self.output_var_names)
@@ -482,15 +483,15 @@ class BaseModel(LightningModule):
             where :math:`B` is the batch size, :math:`*` is the spatial dimension(s) of the data,
             and :math:`C_{out}` is the number of output features.
         """
-        Y: Dict[str, Tensor] = self.raw_outputs_to_denormalized_per_variable_dict(preds_tensor, **kwargs)
+        preds_dict: Dict[str, Tensor] = self.raw_outputs_to_denormalized_per_variable_dict(preds_tensor, **kwargs)
         # Enforce non-negative output variables (constraint 4)
         if self.hparams.physics_loss_weights[3] > 0:
-            ps_or_psl = 'psl' if 'psl' in Y.keys() else 'ps'
-            Y['pr'] = nonnegative_precipitation(Y['pr'])
-            Y[ps_or_psl] = nonnegative_precipitation(Y[ps_or_psl])
-            Y['tas'] = nonnegative_precipitation(Y['tas'])
+            ps_or_psl = 'psl' if 'psl' in preds_dict.keys() else 'ps'
+            preds_dict['pr'] = nonnegative_precipitation(preds_dict['pr'])
+            preds_dict[ps_or_psl] = nonnegative_precipitation(preds_dict[ps_or_psl])
+            preds_dict['tas'] = nonnegative_precipitation(preds_dict['tas'])
 
-        return Y
+        return preds_dict
 
     def predict(self, X: Tensor, **kwargs) -> Dict[str, Tensor]:
         """
@@ -515,10 +516,9 @@ class BaseModel(LightningModule):
             where :math:`B` is the batch size, :math:`*` is the spatial dimension(s) of the data,
             and :math:`C_{out}` is the number of output features.
         """
-        Y_normed: Tensor = self.raw_predict(X)
-        Y: Dict[str, Tensor] = self.postprocess_raw_predictions(Y_normed, input_tensor=X, **kwargs)
-        #         It predicts the de-normalized (!) output/predicted/target variables for the given input X.
-        return Y
+        raw_preds: Tensor = self.raw_predict(X)
+        preds: Dict[str, Tensor] = self.postprocess_raw_predictions(raw_preds, input_tensor=X, **kwargs)
+        return preds
 
     # --------------------- training with PyTorch Lightning
     def on_train_start(self) -> None:
@@ -574,59 +574,16 @@ class BaseModel(LightningModule):
             loss += self.loss_weights[output_name] * loss_var
         train_log['train/loss_mse'] = loss.item()  # log the main MSE loss (without physics losses)
 
-        # Soft loss constraints:
-        # First, some auxiliary variable loading (e.g. climatologies, evaporation, ...)
-        batch_monthly_clim_errs = {
-            clim_err: self._get_monthly_data_for_batch(getattr(self, clim_err), month_of_batch, dim=0)
-            for clim_err in ['PE_clim_err', 'PS_clim_err', 'Precip_clim_err']
-        }
-        aux_vars_denormed: Dict[str, Tensor] = dict()
-        for aux_var in self.AUX_VARS:
-            aux_var_idx = self.input_var_to_idx[aux_var]  # e.g. index of evspsbl_pre in the X tensor
-            aux_vars_denormed[aux_var.replace('_pre', '')] = self._denormalize_variable(
-                X[..., aux_var_idx], month_of_batch, output_var_name=aux_var
-            )
-        # -------------> Constraint 2 - Precipitation energy budget
-        physics_loss2 = precipitation_energy_budget_constraint(
-            precipitation=pr_denormed,
-            sea_surface_heat_flux=aux_vars_denormed['hfss'],
-            toa_sw_net_radiation=aux_vars_denormed['netTOARad'],
-            surface_lw_net_radiation=aux_vars_denormed['netSurfRad'],
-            PR_Err=batch_monthly_clim_errs['Precip_clim_err']
+        # Compute physics loss (if any)
+        physics_loss, train_log = self._physics_constraints_loss(
+            input_tensor=X,
+            month_of_batch=month_of_batch,
+            precip_denormed=pr_denormed,
+            pressure_denormed=ps_denormed,
+            logging_dict=train_log
         )
-        physics_loss2_abs = torch.abs(physics_loss2).mean()
-        train_log['train/physics/loss2'] = physics_loss2.mean().item()
-        train_log['train/physics/loss2_abs'] = physics_loss2_abs.item()
-        if self.hparams.physics_loss_weights[1] > 0:
-            loss += self.hparams.physics_loss_weights[1] * 0.1 * physics_loss2_abs
-
-        # -------------> Constraint 3 - Global moisture constraint
-        # Compute the soft loss:
-        physics_loss3 = global_moisture_constraint(
-            precipitation=pr_denormed,
-            evaporation=aux_vars_denormed['evspsbl'],
-            PE_err=batch_monthly_clim_errs['PE_clim_err']
-        )
-        physics_loss3_abs = torch.abs(physics_loss3).mean()
-        train_log['train/physics/loss3'] = physics_loss3.mean().item()
-        train_log['train/physics/loss3_abs'] = physics_loss3_abs.item()
-        if self.hparams.physics_loss_weights[2] > 0:
-            # add the (weighted) loss to the main loss
-            loss += self.hparams.physics_loss_weights[2] * physics_loss3_abs
-
-        # -------------> Constraint 5 - Mass conservation constraint
-        # Compute the soft loss
-        physics_loss5 = mass_conservation_constraint(
-            surface_pressure=ps_denormed,
-            PS_err=batch_monthly_clim_errs['PS_clim_err']
-        )
-        physics_loss5_abs = torch.abs(physics_loss5).mean()
-        train_log['train/physics/loss5'] = physics_loss5.mean().item()
-        train_log['train/physics/loss5_abs'] = physics_loss5_abs.item()
-        if self.hparams.physics_loss_weights[4] > 0:
-            # add the (weighted) loss to the main loss (divide by 100_000 to allow loss weight to be around 1)
-            loss += self.hparams.physics_loss_weights[4] * physics_loss5_abs / 100_000
-
+        # Add physics loss to the main loss
+        loss += physics_loss
         # Logging of train loss and other diagnostics
         train_log["train/loss"] = loss.item()
 
@@ -638,6 +595,69 @@ class BaseModel(LightningModule):
 
         self.log_dict(train_log, prog_bar=False)
         return {"loss": loss}  # , "targets": Y, "preds": preds)}   # detach preds if they are returned!
+
+    def _physics_constraints_loss(self,
+                                  input_tensor: Tensor,
+                                  month_of_batch: Tensor,
+                                  precip_denormed: Tensor,
+                                  pressure_denormed: Tensor,
+                                  logging_dict: dict = None
+                                  ) -> (float, Dict[str, float]):
+        physics_loss = 0.0
+        logging_dict = logging_dict or dict()
+        # Soft loss constraints:
+        # First, some auxiliary variable loading (e.g. climatologies, evaporation, ...)
+        batch_monthly_clim_errs = {
+            clim_err: self._get_monthly_data_for_batch(getattr(self, clim_err), month_of_batch, dim=0)
+            for clim_err in ['PE_clim_err', 'PS_clim_err', 'Precip_clim_err']
+        }
+        aux_vars_denormed: Dict[str, Tensor] = dict()
+        for aux_var in self.AUX_VARS:
+            aux_var_idx = self.input_var_to_idx[aux_var]  # e.g. index of evspsbl_pre in the X tensor
+            aux_vars_denormed[aux_var.replace('_pre', '')] = self._denormalize_variable(
+                input_tensor[..., aux_var_idx], month_of_batch, output_var_name=aux_var
+            )
+        # -------------> Constraint 2 - Precipitation energy budget
+        physics_loss2 = precipitation_energy_budget_constraint(
+            precipitation=precip_denormed,
+            sea_surface_heat_flux=aux_vars_denormed['hfss'],
+            toa_sw_net_radiation=aux_vars_denormed['netTOARad'],
+            surface_lw_net_radiation=aux_vars_denormed['netSurfRad'],
+            PR_Err=batch_monthly_clim_errs['Precip_clim_err']
+        )
+        physics_loss2_abs = torch.abs(physics_loss2).mean()
+        logging_dict['train/physics/loss2'] = physics_loss2.mean().item()
+        logging_dict['train/physics/loss2_abs'] = physics_loss2_abs.item()
+        if self.hparams.physics_loss_weights[1] > 0:
+            physics_loss += self.hparams.physics_loss_weights[1] * 0.1 * physics_loss2_abs
+
+        # -------------> Constraint 3 - Global moisture constraint
+        # Compute the soft loss:
+        physics_loss3 = global_moisture_constraint(
+            precipitation=precip_denormed,
+            evaporation=aux_vars_denormed['evspsbl'],
+            PE_err=batch_monthly_clim_errs['PE_clim_err']
+        )
+        physics_loss3_abs = torch.abs(physics_loss3).mean()
+        logging_dict['train/physics/loss3'] = physics_loss3.mean().item()
+        logging_dict['train/physics/loss3_abs'] = physics_loss3_abs.item()
+        if self.hparams.physics_loss_weights[2] > 0:
+            # add the (weighted) loss to the main loss
+            physics_loss += self.hparams.physics_loss_weights[2] * physics_loss3_abs
+
+        # -------------> Constraint 5 - Mass conservation constraint
+        # Compute the soft loss
+        physics_loss5 = mass_conservation_constraint(
+            surface_pressure=pressure_denormed,
+            PS_err=batch_monthly_clim_errs['PS_clim_err']
+        )
+        physics_loss5_abs = torch.abs(physics_loss5).mean()
+        logging_dict['train/physics/loss5'] = physics_loss5.mean().item()
+        logging_dict['train/physics/loss5_abs'] = physics_loss5_abs.item()
+        if self.hparams.physics_loss_weights[4] > 0:
+            # add the (weighted) loss to the main loss (divide by 100_000 to allow loss weight to be around 1)
+            physics_loss += self.hparams.physics_loss_weights[4] * physics_loss5_abs / 100_000
+        return physics_loss, logging_dict
 
     def training_epoch_end(self, outputs: List[Any]):
         train_time = time.time() - self._start_epoch_time
