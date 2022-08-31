@@ -432,11 +432,11 @@ def zonal_plotting(postprocessed_xarrays: xr.Dataset,
                    ):
     postprocessed_xarrays, labels, linestyles = get_labels_and_styles_for_lines(postprocessed_xarrays, labels, linestyles)
     output_vars = get_vars_to_plot(vars_to_plot, postprocessed_xarrays[0])
-    nrows = 1
-    ncols = len(output_vars)
+    nrows, ncols = (1, 3) if len(output_vars) <= 3 else (2, 3) if len(output_vars) <= 6 else (3, 3)
     fig, axs = plt.subplots(nrows, ncols) if axes is None else (None, axes)
     axs = axs.flatten() if nrows > 1 else axs
-    assert all([pds.attrs['dataset_name'] == postprocessed_xarrays[0].attrs['dataset_name'] for pds in postprocessed_xarrays]), "All datasets must be from the same dataset!"
+    dset_name = postprocessed_xarrays[0].attrs['dataset_name']
+    assert all([pds.attrs['dataset_name'] == dset_name for pds in postprocessed_xarrays]), "All datasets must be from the same dataset!"
 
     for i, (pds, label, ls) in enumerate(zip(postprocessed_xarrays, labels, linestyles)):
         if latitude_dim == 'latitude_grouped':
@@ -449,7 +449,8 @@ def zonal_plotting(postprocessed_xarrays: xr.Dataset,
             if i == 0:
                 # Plot the targets/groundtruth if this is the first plot
                 zonal_var_targets = getattr(zonal_mean, f"{var}_targets")
-                zonal_var_targets.plot(x=latitude_dim, ax=axs[j], label='Targets', **kwargs)
+                ls = '-' if axes is None else ':'  # if plotting on top of another plot, use different linestyle
+                zonal_var_targets.plot(x=latitude_dim, ax=axs[j], label=f'Targets {dset_name}', color='k', linestyle=ls, **kwargs)
 
             axs[j].set_ylabel(f"{var.upper()}", fontsize=fontsize)
 
@@ -458,7 +459,7 @@ def zonal_plotting(postprocessed_xarrays: xr.Dataset,
         ax.grid()
         ax.set_xlabel('Latitude', fontsize=fontsize)
     # set title for all axes
-    plt.suptitle(f"{pds.attrs['dataset_name']}", fontsize=fontsize)
+    plt.suptitle(f"{dset_name}", fontsize=fontsize)
 
     return fig, axs
 
