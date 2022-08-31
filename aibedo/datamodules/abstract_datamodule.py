@@ -2,7 +2,7 @@ import itertools
 import logging
 import os
 from os.path import join
-from typing import Optional, List, Callable, Sequence, Dict
+from typing import Optional, List, Callable, Sequence, Dict, Union, Tuple
 
 from einops import rearrange, repeat
 from omegaconf import DictConfig
@@ -51,7 +51,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                  input_vars: Sequence[str],
                  output_vars: Sequence[str],
                  data_dir: str,
-                 esm_for_training: str = "CESM2",
+                 esm_for_training: Union[str, Sequence[str]] = "CESM2",
                  partition: Sequence[float] = (0.8, 0.1, 0.1),
                  time_lag: int = 0,
                  prediction_data: str = "same_as_test",
@@ -69,7 +69,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             input_vars: list of input variables/predictors, e.g. ['crelSurf_pre', 'crel_pre', 'cresSurf_pre']
             output_vars: list of output/target variables, e.g. ['tas', 'pr', 'psl']
             data_dir (str):  A path to the data folder that contains the input and output files.
-            esm_for_training (str): The name of the ESM that is used for training (and validation).
+            esm_for_training (str | List[str]): The name(s) of the ESM to be used for training (and validation).
             partition (tuple): partition of the data into train, validation and test fractions/sets.
                                 Train and validation (indices 0 and 1) must be floats.
                                 Test (index 2) can be a float or a string.
@@ -89,6 +89,10 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self._possible_test_sets = ['merra2', 'era5']
         self._possible_prediction_sets = self._possible_test_sets + ['val', 'same_as_test'] + CLIMATE_MODELS_ALL
         self.prediction_data = prediction_data
+        if isinstance(esm_for_training, str):
+            self._esm_for_training = tuple(CLIMATE_MODELS_ALL) if esm_for_training == 'all' else [esm_for_training]
+        else:
+            self._esm_for_training = tuple(esm_for_training)
         self.hparams.auxiliary_vars = AUXILIARY_VARS if model_config.use_auxiliary_vars else []
         self.window = model_config.window if hasattr(model_config, 'window') else 1
         input_var_names = [[f'{v}_mon{i}' for i in range(self.window)] for v in input_vars]
@@ -102,8 +106,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self._var_names_to_clean_name = var_names_to_clean_name()
         self._check_args()
 
-    @property
-    def masked_ensemble_input_filename(self) -> str:
+    def masked_ensemble_input_filename(self, ESM: str) -> str:
         r""" Should be implemented by the child class.
         Make this function ensemble-agnostic by masking out the ensemble id (e.g. 'r1i1p1f1') from the filename with a *
 
@@ -113,16 +116,23 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         """
         raise NotImplementedError()
 
-    @property
-    def _input_filename(self) -> str:
-        return self.masked_ensemble_input_filename.replace('.*.', f'.{self.esm_ensemble_id}.')
+    def input_filename_for_esm(self, ESM: str) -> str:
+        # Get the ensemble id (e.g.'r1i1p1f1')
+        masked_file = self.masked_ensemble_input_filename(ESM)
+        esm_ensemble_id = get_any_ensemble_id(self.hparams.data_dir, masked_file)
+        return masked_file.replace('.*.', f'.{esm_ensemble_id}.')
 
     @property
-    def esm_ensemble_id(self) -> str:
-        """ Returns the ensemble id (e.g.'r1i1p1f1') for the ESM to use for training (and validation)."""
-        if self._esm_ensemble_id is None:
-            self._esm_ensemble_id = get_any_ensemble_id(self.hparams.data_dir, self.masked_ensemble_input_filename)
-        return self._esm_ensemble_id
+    def esm_for_training(self) -> Tuple[str]:
+        return self._esm_for_training
+
+    @property
+    def esm_training_data_name(self) -> str:
+        if len(self.esm_for_training) == 1:
+            return self.esm_for_training[0]
+        elif len(self.esm_for_training) == len(CLIMATE_MODELS_ALL):
+            return 'all'
+        return ','.join(self.esm_for_training)
 
     def input_filename_to_output_filename(self, input_filename: str) -> str:
         """
@@ -172,7 +182,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         elif test_frac == 'era5':
             return 'test/ERA5'
         elif isinstance(test_frac, float):
-            return f'test/{self.hparams.esm_for_training}'
+            return f'test/{self.esm_training_data_name}'
         else:
             raise ValueError(f"Unknown test_frac: {test_frac}")
 
@@ -190,7 +200,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         if self.prediction_data == 'same_as_test':
             return self.test_set_name.replace('test', 'predict')
         elif self.prediction_data == 'val':
-            return f'predict/{self.hparams.esm_for_training}'
+            return f'predict/{self.esm_training_data_name}'
         elif self.prediction_data in self._possible_test_sets or self.prediction_data in CLIMATE_MODELS_ALL:
             return f'predict/{self.prediction_data.upper()}'
         else:
@@ -208,7 +218,9 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         """Check if the arguments are valid."""
 
         # check that the ESM is known to us
-        raise_error_if_invalid_value(self.hparams.esm_for_training, CLIMATE_MODELS_ALL, 'esm_for_training')
+        assert len(self.esm_for_training) > 0, "esm_for_training must be a non-empty list"
+        for i, esm in enumerate(self.esm_for_training):
+            raise_error_if_invalid_value(esm, CLIMATE_MODELS_ALL, 'esm_for_training[i]')
 
         # check if the train, val, test split is valid
         partition = self.hparams.partition
@@ -226,7 +238,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 f"partition must sum to 1, but it sums to {partition[0] + partition[1] + partition[2]}")
 
     def _set_geographical_metadata(self):
-        input_file = os.path.join(self.hparams.data_dir, self._input_filename)
+        input_file = os.path.join(self.hparams.data_dir, self.input_filename_for_esm(self.esm_for_training[0]))
         inDS = xr.open_dataset(input_file)
 
         self.lon_list: np.ndarray = inDS.lon.values
@@ -301,7 +313,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
     def _process_nc_dataset(self,
                             input_filename: str,
                             output_filename: str,
-                            shuffle: bool = False, stage=None):
+                            shuffle: bool = False, stage=None) -> (np.ndarray, np.ndarray):
         input_file = os.path.join(self.hparams.data_dir, input_filename)
         output_file = os.path.join(self.hparams.data_dir, output_filename)
 
@@ -363,20 +375,47 @@ class AIBEDO_DataModule(pl.LightningDataModule):
     def _model_specific_transform(self, input_data: np.ndarray, output_data: np.ndarray):
         return input_data, output_data
 
-    def _get_train_and_val_data(self, stage: str, input_filename: str) -> (Tensor, Tensor, Tensor, Tensor):
+    def _get_train_and_val_data_single_ESM(self,
+                                           stage: str,
+                                           ESM: str
+                                           ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+        """ Get the data corresponding to a single ESM run"""
         from sklearn.model_selection import train_test_split
         # compress.isosph5.SAM0-UNICON.historical.r1i1p1f1.Input.Exp8_fixed
         # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
         #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
         train_frac, val_frac, _ = self.hparams.partition
-        fname_out = self.input_filename_to_output_filename(input_filename)
-        train_data_in, train_data_out = self._process_nc_dataset(input_filename, fname_out, shuffle=True, stage=stage)
+        input_filename = self.input_filename_for_esm(ESM=ESM)
+        output_filename = self.input_filename_to_output_filename(input_filename)
+        train_data_in, train_data_out = self._process_nc_dataset(input_filename, output_filename, shuffle=True,
+                                                                 stage=stage)
         X_train, X_val, Y_train, Y_val = train_test_split(train_data_in, train_data_out, train_size=train_frac,
                                                           random_state=self.hparams.seed)
         if stage == 'predict':
-            del X_train, Y_train, train_data_in, train_data_out  # save some storage space
+            del train_data_in, train_data_out  # save some storage space
             X_train = Y_train = None
 
+        return X_train, X_val, Y_train, Y_val
+
+    def _get_train_and_val_data(self,
+                                stage: str,
+                                ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+        """ Get the full data corresponding to all ESMs used for training/validating """
+        if len(self.esm_for_training) > 1:
+            log.info(f" Concatenating {len(self.esm_for_training)} ESM datasets for training/validation.")
+        for i, esm in enumerate(self.esm_for_training):
+            X_train_esm, X_val_esm, Y_train_esm, Y_val_esm = self._get_train_and_val_data_single_ESM(stage, ESM=esm)
+            if stage == 'predict':
+                X_train_esm = Y_train_esm = None
+            if i == 0:
+                X_train, X_val, Y_train, Y_val = X_train_esm, X_val_esm, Y_train_esm, Y_val_esm
+            else:
+                # concatenate the data from the ESMs along the batch dimension
+                X_val = np.concatenate([X_val, X_val_esm], axis=0)
+                Y_val = np.concatenate([Y_val, Y_val_esm], axis=0)
+                if stage != 'predict':  # for predict data we don't care about the training data
+                    X_train = np.concatenate([X_train, X_train_esm], axis=0)
+                    Y_train = np.concatenate([Y_train, Y_train_esm], axis=0)
         return X_train, X_val, Y_train, Y_val
 
     def _log_at_setup_start(self, stage: Optional[str] = None):
@@ -387,12 +426,11 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         """Load data. Set internal variables: self._data_train, self._data_val, self._data_test."""
         raise_error_if_invalid_value(stage, ['fit', 'validate', 'test', 'predict', None], 'stage')
         self._log_at_setup_start(stage)
-        input_filename = self._input_filename
 
         train_frac, val_frac, test_frac = self.hparams.partition
 
         if stage in ["fit", 'validate', None] or test_frac not in self._possible_test_sets:
-            X_train, X_val, Y_train, Y_val = self._get_train_and_val_data(stage, input_filename)
+            X_train, X_val, Y_train, Y_val = self._get_train_and_val_data(stage)
 
         if stage == 'predict' and self.prediction_data in ['val'] + CLIMATE_MODELS_ALL:
             pass
@@ -418,22 +456,17 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                                                             random_state=self.hparams.seed)
 
         if stage in ["predict"]:
-            train_esm = self.hparams.esm_for_training
+            train_val_esm = self.esm_training_data_name
             if self.prediction_data == 'same_as_test':
-                data_predict_id = f'{train_esm}_test' if isinstance(test_frac, float) else test_frac.upper()
+                data_predict_id = f'{train_val_esm}_test' if isinstance(test_frac, float) else test_frac.upper()
                 X_predict, Y_predict = X_test, Y_test
             elif self.prediction_data == 'val':
-                _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict',
-                                                                          input_filename=input_filename)
-                data_predict_id = f'{train_esm}_val'
+                _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict')
+                data_predict_id = f'{train_val_esm}_val'
             elif self.prediction_data in CLIMATE_MODELS_ALL:
-                predict_esm = self.prediction_data
                 # E.g.: 'CESM2.historical.r1i1p1f1.Input.Exp8.nc' -> 'GFDL-4.historical.r1i1p1f1.Input.Exp8.nc'
-                masked_predict_esm_infile = self.masked_ensemble_input_filename.replace(train_esm, predict_esm)
-                predict_esm_in_fname = get_any_ensemble_id(self.hparams.data_dir, masked_predict_esm_infile,
-                                                           get_full_filename=True)
-                _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict',
-                                                                          input_filename=predict_esm_in_fname)
+                predict_esm = self.prediction_data
+                _, X_predict, _, Y_predict = self._get_train_and_val_data_single_ESM(stage='predict', ESM=predict_esm)
                 data_predict_id = self.prediction_data
             else:
                 options = ['same_as_test', 'val'] + CLIMATE_MODELS_ALL
@@ -507,7 +540,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             self.setup(stage='predict')
             predict_loader = self.predict_dataloader()
 
-        if predict_loader.dataset.dataset_id == 'predict':
+        predict_dataset: AIBEDOTensorDataset = predict_loader.dataset
+        if predict_dataset.dataset_id == 'predict':
             log.info(' Assuming that the used dataloader has raw/non-normalized targets.')
             RAW_TARGETS = True
         else:
@@ -544,9 +578,10 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                     preds[out_var] = np.concatenate((preds[out_var], batch_preds_numpy), axis=0)
                     targets[out_var] = np.concatenate((targets[out_var], batch_gt_numpy), axis=0)
 
-        return {'preds': preds, 'targets': targets, 'dataset_name': predict_loader.dataset.name}
+        return {'preds': preds, 'targets': targets, 'dataset_name': predict_dataset.name}
 
-    def get_predictions_xarray(self, model: nn.Module,
+    def get_predictions_xarray(self,
+                               model: BaseModel,
                                variables='all',
                                also_targets: bool = True,
                                also_errors: bool = False,

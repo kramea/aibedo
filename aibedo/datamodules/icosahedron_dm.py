@@ -25,9 +25,9 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         self.spatial_dims = {'n_pixels': self.n_pixels}  # single dim for the spatial dimension
         if self.hparams.input_filename is not None:
             # For backward compatibility
-            log.warning(f"input_filename is set to {self.hparams.input_filename}")
+            log.warning(f" This is using an older model: input_filename is set to {self.hparams.input_filename}")
             assert self.hparams.esm_for_training == 'CESM2', f"Only CESM2 is supported for now., but not {self.hparams.esm_for_training}"
-            self.hparams.esm_for_training = self.hparams.input_filename.split('.')[2]
+            self._esm_for_training = [self.hparams.input_filename.split('.')[2]]
         self._check_args()
 
     @property
@@ -38,12 +38,11 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         else:
             return f"compress.{order_s}."
 
-    @property
-    def masked_ensemble_input_filename(self) -> str:
+    def masked_ensemble_input_filename(self, ESM: str) -> str:
         # compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc
         # isosph.denorm_nonorm.CESM2.historical.r1i1p1f1.Input.Exp8.nc
         suffix = 'Exp8' if self.hparams.denorm_nonorm else 'Exp8_fixed'
-        return f"{self.files_id}{self.hparams.esm_for_training}.historical.*.Input.{suffix}.nc"
+        return f"{self.files_id}{ESM}.historical.*.Input.{suffix}.nc"
 
 
     def input_filename_to_output_filename(self, input_filename: str) -> str:
@@ -55,7 +54,8 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
     def _check_args(self):
         """Check if the arguments are valid."""
         assert self.hparams.order in [5, 6], "Order of the icosahedron graph must be either 5 or 6."
-        assert (self.hparams.order == 5 and 'isosph5' in self._input_filename) or self.hparams.order == 6
+        if self.hparams.denorm_nonorm:
+            assert self.hparams.order == 5, "Denorm_nonorm is only supported for isosph5 currently"
         super()._check_args()
 
     def _log_at_setup_start(self, stage: Optional[str] = None):

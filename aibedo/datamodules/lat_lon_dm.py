@@ -24,10 +24,9 @@ class EuclideanDatamodule(AIBEDO_DataModule):
         #  i.e. nothing precedes the ESM model name
         return ""
 
-    @property
-    def masked_ensemble_input_filename(self) -> str:
+    def masked_ensemble_input_filename(self, ESM: str) -> str:
         # files are of the kind 'CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc'
-        return f"{self.hparams.esm_for_training}.historical.*.Input.Exp8_fixed.nc"
+        return f"{ESM}.historical.*.Input.Exp8_fixed.nc"
 
     def _check_args(self):
         """Check if the arguments are valid."""
