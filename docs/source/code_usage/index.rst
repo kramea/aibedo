@@ -44,6 +44,14 @@ Hybrid AI Model Architectures
 
 MLP
 ----
+
+A Multi-Layer Perceptron (MLP), also known as feedforward or fully connected network, is a simple neural network model.
+It operates on one-dimensional inputs and produces one-dimensional outputs.
+As in our case we have spatial data, it has to be flattened to a vector.
+That is, for spherical data of shape :math:`(S, C_{in})`
+we flatten it to a vector of size :math:`S * C_{in}`, where S is the number of spherical-pixels.
+Similarly, for 2D/euclidean data of shape :math:`(H, W, C_{in})` we flatten it to a vector of size :math:`H * W * C_{in}`, where H, W are the number of latitudes and longitudes.
+
 .. automodule:: aibedo.models.MLP
     :members:
     :show-inheritance: False

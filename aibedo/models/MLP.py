@@ -15,7 +15,6 @@ class AIBEDO_MLP(BaseModel):
         This model is agnostic to any spatial structure in the data, since it operates on 1D data vectors
         (spatial dimensions are flattened to 1D).
 
-
     Args:
         hidden_dims (List[int]): The hidden dimensions of the MLP (e.g. [100, 100, 100])
         datamodule_config (DictConfig): The config of the datamodule (e.g. produced by hydra <config>.yaml file parsing)
@@ -69,6 +68,7 @@ class AIBEDO_MLP(BaseModel):
 
             where :math:`B` is the batch size, :math:`*` is the spatial dimension(s) of the data,
             and :math:`C_{in}` (:math:`C_{out}`) is the number of input (output) features.
+            Internally are spatial dimensions are flattened together with :math:`C_{in}` into a single dimension.
         """
         flattened_X = self.flatten_transform.batched_transform(X)
         flattened_Y = self.mlp(flattened_X)

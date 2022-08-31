@@ -41,4 +41,4 @@ Climate intervention techniques—like marine cloud brightening—that need to b
    :maxdepth: 3
    :caption: Code usage
 
-   code_salva/index
+   code_usage/index
