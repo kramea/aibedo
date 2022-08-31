@@ -24,7 +24,7 @@ def no_op(*args, **kwargs):
     pass
 
 
-def identity(X):
+def identity(X, *args, **kwargs):
     return X
 
 
@@ -170,6 +170,14 @@ def raise_error_if_invalid_value(value: Any, possible_values: Sequence[Any], nam
     return value
 
 
+def raise_error_if_invalid_type(value: Any, possible_types: Sequence[Any], name: str = None):
+    """ Raises an error if the given value (optionally named by `name`) is not one of the possible types. """
+    if all([not isinstance(value, t) for t in possible_types]):
+        name = name or (value.__name__ if hasattr(value, '__name__') else 'value')
+        raise ValueError(f"{name} must be an instance of either of {possible_types}, but was {type(value)}")
+    return value
+
+
 # Random seed (if not using pytorch-lightning)
 def set_seed(seed, device='cuda'):
     """
@@ -214,30 +222,40 @@ def get_local_ckpt_path(config: DictConfig, **kwargs):
     return os.path.join(ckpt_direc, filename)
 
 
-def get_any_ensemble_id(data_dir, ESM_NAME: str) -> str:
-    sphere = "isosph"  # change here to isosph5 for level 5 runs
-    prefix = f"compress.{sphere}.{ESM_NAME}.historical"
-    if os.path.isfile(os.path.join(data_dir, f"{prefix}.r1i1p1f1.Input.Exp8_fixed.nc")):
-        fname = f"{prefix}.r1i1p1f1.Input.Exp8_fixed.nc"
+def get_files_prefix(datamodule_config: DictConfig) -> str:
+    """ Get prefix for files based on the datamodule config. """
+    if 'icosahedron' in datamodule_config._target_:
+        order_s = f"isosph{datamodule_config.order}" if datamodule_config.order <= 5 else "isosph"
+        files_id = f"compress.{order_s}."
+    else:
+        files_id = ''
+    return files_id
+
+
+def get_any_ensemble_id(data_dir, masked_input_filename: str, get_full_filename: bool = False) -> str:
+    """ Get ensemble id for any ensemble that is present in the data directory. """
+    mask = '.*.'
+    if mask not in masked_input_filename:
+        raise ValueError(f"``masked_input_filename`` {masked_input_filename} does not mask the ensemble id with a '*'!")
+    default = masked_input_filename.replace(mask, 'r1i1p1f1')
+    if os.path.isfile(os.path.join(data_dir, default)):
+        fname = default
     else:
         curdir = os.getcwd()
         os.chdir(data_dir)
-        files = glob.glob(f"{prefix}.*.Input.Exp8_fixed.nc")
+        files = glob.glob(masked_input_filename)
+        if len(files) == 0:
+            raise ValueError(f"No input files found in {data_dir} for mask: {masked_input_filename}!")
         fname = files[0]
         os.chdir(curdir)
-    return fname
+    if get_full_filename:
+        return fname
+    else:
+        ensemble_id = fname.split('.')[-4]
+        return ensemble_id
 
-def shuffle_data(d1, d2):
-    n = len(d1)
-    m = len(d2)
-    assert (n == m)
-    idx = [i for i in range(m)]
-    random.shuffle(idx)
-    d1_out = []
-    d2_out = []
-    for i in idx:
-        d1_out.append(d1[i:i + 1])
-        d2_out.append(d2[i:i + 1])
-    d1_out2 = np.concatenate(d1_out, axis=0)
-    d2_out2 = np.concatenate(d2_out, axis=0)
-    return d1_out2, d2_out2
+
+def stem_var_id(var_name: str) -> str:
+    """ Get variable id from transformed variable name. """
+    var_id = var_name.replace('_pre', '').replace('_denorm', '').replace('_nonorm', '')
+    return var_id

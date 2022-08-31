@@ -15,11 +15,13 @@ import importlib
 if importlib.util.find_spec("wandb"):
     import wandb
 
-from aibedo.data_transforms.normalization import get_variable_stats, get_clim_err, destandardize, standardize
+from aibedo.data_transforms.normalization import get_variable_stats, get_clim_err, destandardize, standardize, \
+    rescale_nonorm_vars
 from aibedo.utilities.samplings import icosahedron_nodes_calculator
 from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint, \
     mass_conservation_constraint, AUXILIARY_VARS, precipitation_energy_budget_constraint
-from aibedo.utilities.utils import get_logger, to_DictConfig, get_loss, raise_error_if_invalid_value
+from aibedo.utilities.utils import get_logger, to_DictConfig, get_loss, raise_error_if_invalid_value, \
+    stem_var_id
 
 
 class BaseModel(LightningModule):
@@ -67,6 +69,11 @@ class BaseModel(LightningModule):
                  window: int = 1,
                  loss_weights: Union[Sequence[float], Dict[str, float]] = (0.33, 0.33, 0.33),
                  physics_loss_weights: Sequence[float] = (0.0, 0.0, 0.0, 0.0, 0.0),
+                 lambda_physics1: float = None,
+                 lambda_physics2: float = None,
+                 lambda_physics3: float = None,
+                 lambda_physics4: bool = None,
+                 lambda_physics5: float = None,
                  nonnegativity_at_train_time: bool = True,
                  month_as_feature: Union[bool, str] = False,
                  use_auxiliary_vars: bool = True,
@@ -92,14 +99,22 @@ class BaseModel(LightningModule):
             in enumerate(
                 list(datamodule_config.input_vars) + ['month'] + self.AUX_VARS
             )}
-        self._output_vars = None
 
         # Infer the data dimensions
         self._data_dir = datamodule_config.data_dir
-        self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
+        if 'order' in datamodule_config:
+            self.spatial_dim = n_pixels = icosahedron_nodes_calculator(datamodule_config.order)
+            ico = "isosph5" if datamodule_config.order == 5 else "isosph"
+            self.data_files_id = f'compress.{ico}'
+        else:
+            self.spatial_dim = (192, 288)
+            self.data_files_id = ''
         self._num_input_features = in_channels = len(datamodule_config.input_vars)
         self._num_output_features = out_channels = len(datamodule_config.output_vars)
         self._output_vars = datamodule_config.output_vars
+        for var in self._output_vars:
+            var_id = stem_var_id(var)
+            setattr(self, f'_{var_id}_name', var)
         # edit actual #features when using month information
         if self.hparams.month_as_feature == 'one_hot':
             self._num_input_features += 12
@@ -108,33 +123,29 @@ class BaseModel(LightningModule):
 
         # loss function (one per target variable)
         self.loss_weights = loss_weights
-        self.criterion = {v: get_loss(loss_function, reduction='mean') for v in self.output_var_names}
+        self.criterion = {v: get_loss(loss_function, reduction='mean') for v in self.output_vars}
 
         # Timing variables to track the training/epoch/validation time
         self._start_validation_epoch_time = self._start_test_epoch_time = self._start_epoch_time = None
         self._month_index = in_channels
         # Metrics
-        self.val_metrics = nn.ModuleDict({
-            'val/mse': torchmetrics.MeanSquaredError(squared=True),
-            **{
-                f'{output_var}/val/mse': torchmetrics.MeanSquaredError(squared=True)
-                for output_var in self.output_var_names
-            },
-            **{
-                f"val/{output_var.replace('_pre', '')}/rmse": torchmetrics.MeanSquaredError(squared=False)
-                for output_var in self.output_var_names
-            }
-        })
+        val_metrics = {'val/mse': torchmetrics.MeanSquaredError(squared=True)}
+        for output_var in self.output_vars:
+            var_id = stem_var_id(output_var)
+            val_metrics[f'val/{output_var}/rmse'] = torchmetrics.MeanSquaredError(squared=False)
+            val_metrics[f'val/{var_id}/rmse'] = torchmetrics.MeanSquaredError(squared=False)
+
+        self.val_metrics = nn.ModuleDict(val_metrics)
         self._test_metrics = self._predict_metrics = None
         # Check that the args/hparams are valid
         self._check_args()
 
         # Set the target/auxiliary variable statistics needed
-        self.sphere = "isosph5" if 'isosph5.' in datamodule_config.input_filename else "isosph"
-        stats_kwargs = dict(data_dir=self.data_dir, files_id=self.sphere)
-        # Go through all output and auxiliary vars:
-        for output_var in self.output_var_names + self.AUX_VARS:
-            var_id = output_var.replace('_pre', '')
+        stats_kwargs = dict(data_dir=self.data_dir, files_id=self.data_files_id)
+        # Go through all output (and auxiliary) vars:
+        vars_with_stats = self.output_vars + self.AUX_VARS if use_auxiliary_vars else self.output_vars
+        for output_var in vars_with_stats:
+            var_id = stem_var_id(output_var)
             var_mean, var_std = get_variable_stats(var_id=var_id, **stats_kwargs)
             self.register_buffer_dummy(f'{var_id}_mean', var_mean, persistent=False)
             self.register_buffer_dummy(f'{var_id}_std', var_std, persistent=False)
@@ -167,8 +178,8 @@ class BaseModel(LightningModule):
     def input_var_to_idx(self) -> Dict[str, int]:
         """ Returns the index of the month (the month being a scalar in {0, 1, .., 11}) in the input data """
         # if self._input_var_to_idx is None:
-        if self._trainer is not None:
-            self._input_var_to_idx = self.trainer.datamodule.input_var_to_idx
+        # if self._trainer is not None:
+        #    self._input_var_to_idx = self.trainer.datamodule.input_var_to_idx
         return self._input_var_to_idx
 
     @property
@@ -183,33 +194,26 @@ class BaseModel(LightningModule):
     @property
     def test_metrics(self):
         if self._test_metrics is None:
-            self._test_metrics = nn.ModuleDict({
-                f'{self.test_set_name}/mse': torchmetrics.MeanSquaredError(squared=True),
-                **{
-                    f'{output_var}/{self.test_set_name}/mse': torchmetrics.MeanSquaredError(squared=True)
-                    for output_var in self.output_var_names
-                },
-                **{
-                    f"{self.test_set_name}/{output_var.replace('_pre', '')}/rmse": torchmetrics.MeanSquaredError(
-                        squared=False)
-                    for output_var in self.output_var_names
-                }
-            }).to(self.device)
+            metrics = {f'{self.test_set_name}/mse': torchmetrics.MeanSquaredError(squared=True)}
+            for output_var in self.output_vars:
+                var_id = stem_var_id(output_var)
+                metrics[f'{self.test_set_name}/{output_var}/rmse'] = torchmetrics.MeanSquaredError(squared=False)
+                metrics[f'{self.test_set_name}/{var_id}/rmse'] = torchmetrics.MeanSquaredError(squared=False)
+                metrics[f'{self.test_set_name}/{var_id}/mae'] = torchmetrics.MeanAbsoluteError()
+
+            self._test_metrics = nn.ModuleDict(metrics).to(self.device)
         return self._test_metrics
 
     @property
     def predict_metrics(self):
         if self._predict_metrics is None:
-            self._predict_metrics = nn.ModuleDict({
-                **{
-                    f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/mae": torchmetrics.MeanAbsoluteError()
-                    for output_var in self.output_var_names
-                },
-                **{
-                    f"{self.prediction_set_name}/{output_var.replace('_pre', '')}/rmse":
-                        torchmetrics.MeanSquaredError(squared=False)
-                    for output_var in self.output_var_names
-                }}).to(self.device)
+            metrics = dict()
+            for output_var in self.output_vars:
+                var_id = stem_var_id(output_var)
+                metrics[f'{self.prediction_set_name}/{var_id}/rmse'] = torchmetrics.MeanSquaredError(squared=False)
+                metrics[f'{self.prediction_set_name}/{var_id}/mae'] = torchmetrics.MeanAbsoluteError()
+
+            self._predict_metrics = nn.ModuleDict(metrics).to(self.device)
         return self._predict_metrics
 
     @property
@@ -224,14 +228,14 @@ class BaseModel(LightningModule):
         return self._data_dir
 
     @property
-    def output_var_names(self) -> List[str]:
+    def output_vars(self) -> List[str]:
         if self._output_vars is None:
             self._output_vars = self.trainer.datamodule.hparams.output_vars
         return self._output_vars
 
     @property
     def logging_output_var_names(self) -> List[str]:
-        return self.output_var_names + [x.replace('_pre', '') for x in self.output_var_names]
+        return self.output_vars + [stem_var_id(x) for x in self.output_vars]
 
     def _check_args(self):
         """Check if the arguments are valid."""
@@ -243,12 +247,12 @@ class BaseModel(LightningModule):
             self.log_text.info(f'The fourth physics loss weight must be 0 or 1, but got {plw[3]}. Setting it to 1.')
             self.hparams.physics_loss_weights[3] = 1
         lw = self.loss_weights
-        if isinstance(lw, dict) and len(lw.keys()) != len(self.output_var_names) or \
-                isinstance(lw, Sequence) and len(lw) != len(self.output_var_names):
-            raise ValueError(f'The number of loss weights must be same as #output-vars={len(self.output_var_names)}'
+        if isinstance(lw, dict) and len(lw.keys()) != len(self.output_vars) or \
+                isinstance(lw, Sequence) and len(lw) != len(self.output_vars):
+            raise ValueError(f'The number of loss weights must be same as #output-vars={len(self.output_vars)}'
                              f', but got {lw}')
         if isinstance(lw, Sequence) or isinstance(lw, list) or isinstance(lw, tuple):
-            self.loss_weights = {v: lw[i] for i, v in enumerate(self.output_var_names)}
+            self.loss_weights = {v: lw[i] for i, v in enumerate(self.output_vars)}
         if not any(w > 0 for w in self.loss_weights.values()):
             raise ValueError(f'At least one loss weight must be > 0, but got {self.loss_weights}')
 
@@ -267,12 +271,13 @@ class BaseModel(LightningModule):
         """
         raise NotImplementedError('Base model is an abstract class!')
 
-    def raw_predict(self, X: Tensor) -> Tensor:
+    def _raw_predict_single_tensor(self, X: Tensor) -> Tensor:
         r"""
         Predict the raw (normalized) output of the model.
         To get the predictions with post-processing
-        (e.g. non-negativity, denormalization, splitting predictions by output variable),
+        (e.g. non-negativity, denormalization, split predictions by output variable),
         please use :func:`predict` instead.
+        To only get the predictions by output variable, please use :func:`raw_predict` instead.
 
         Args:
             X (Tensor): Input data tensor of shape :math:`(B, *, C_{in})`, where * refers to the spatial dimension(s) of the data.
@@ -316,13 +321,43 @@ class BaseModel(LightningModule):
             Dict[str, Tensor]: A dictionary of tensors of shape :math:`(B, *)` for each output variable in the model.
                 E.g. 'pr_pre', 'tas_pre' will all be the keys to the respective predicted/target tensor.
         """
-        if outputs_tensor.shape[-1] != len(self.output_var_names):
+        if outputs_tensor.shape[-1] != len(self.output_vars):
             raise ValueError(
-                f"outputs_tensor.shape[-1]={outputs_tensor.shape[-1]}, but #output-vars={len(self.output_var_names)}")
+                f"outputs_tensor.shape[-1] = {outputs_tensor.shape[-1]},"
+                f" but #output-vars = {len(self.output_vars)}")
         preds_per_target_variable = {
             var_name: outputs_tensor[..., i]  # index the tensor along the last dimension
-            for i, var_name in enumerate(self.output_var_names)
+            for i, var_name in enumerate(self.output_vars)
         }
+        return preds_per_target_variable
+
+    def raw_predict(self, X: Tensor) -> Dict[str, Tensor]:
+        r"""
+        Predict the raw (normalized) output of the model, splitted into a dict by output variable.
+        To get the predictions with post-processing
+        (e.g. non-negativity, denormalization),
+        please use :func:`predict` instead.
+
+        Args:
+            X (Tensor): Input data tensor of shape :math:`(B, *, C_{in})`, where * refers to the spatial dimension(s) of the data.
+                This is the same tensor one would use in :func:`forward`,
+                except for (potentially) auxiliary inputs (e.g. the month of the outputs) that will be transformed or
+                removed before passing to the model through :func:`forward`.
+
+        Returns:
+            Dict[str, Tensor]: A dictionary with :math:`C_{out}` entries of tensors of shape :math:`(B, *)`.
+                E.g. 'pr_pre', 'tas_pre' (or 'pre_nonorm', 'tas_nonorm') will all be the keys to the respective predicted tensor.
+                Note that these predictions are in normalized scale.
+
+        Shapes:
+            - Input: :math:`(B, *, C_{in})`
+            - Output: Dict k_i -> v_i, and each v_i has shape :math:`(B, *)` for :math:`i=1,..,C_{out}`,
+
+            where :math:`B` is the batch size, :math:`*` is the spatial dimension(s) of the data,
+            and :math:`C_{out}` is the number of output features,
+        """
+        outputs_tensor = self._raw_predict_single_tensor(X)
+        preds_per_target_variable = self._split_raw_preds_per_target_variable(outputs_tensor)
         return preds_per_target_variable
 
     def _get_monthly_data_for_batch(self, month_to_data: Tensor, months_of_batch: Tensor, dim: int = 0, **kwargs):
@@ -362,36 +397,28 @@ class BaseModel(LightningModule):
         Returns:
 
         """
-        var_id = output_var_name.replace('_pre', '')
+        var_id = stem_var_id(output_var_name)
         if hasattr(self, f'{var_id}_mean'):
             mean, std = getattr(self, f'{var_id}_mean'), getattr(self, f'{var_id}_std')
         else:
             # try to get the mean and std from the data directory
-            mean, std = get_variable_stats(var_id=var_id, data_dir=self.data_dir, files_id=self.sphere)
+            mean, std = get_variable_stats(var_id=var_id, data_dir=self.data_dir, files_id=self.data_files_id)
         mean, std = mean.type_as(normalized_var), std.type_as(normalized_var)
 
         batch_monthly_mean = self._get_monthly_data_for_batch(mean, months_of_batch=month_of_var, dim=0)
         batch_monthly_std = self._get_monthly_data_for_batch(std, months_of_batch=month_of_var, dim=0)
-        denormed_var = destandardize(normalized_var, batch_monthly_mean, batch_monthly_std)
+
+        if '_nonorm' in output_var_name:
+            # Rescale _nonorm outputs to the original units
+            normalized_var = rescale_nonorm_vars({output_var_name: normalized_var})[output_var_name]
+            denormed_var = normalized_var + batch_monthly_mean
+        elif '_pre' in output_var_name:
+            denormed_var = destandardize(normalized_var, batch_monthly_mean, batch_monthly_std)
+        else:
+            raise ValueError(f"output_var_name must be suffixed with '_pre' or '_nonorm'")
         if return_monthly_stats:
             return denormed_var, batch_monthly_mean, batch_monthly_std
         return denormed_var
-
-    def _enforce_nonnegative_denormalized_variable(self, *args, **kwargs) -> (Tensor, Tensor):
-        """
-        Enforce that the denormalized-scale variable is nonnegative
-
-        Returns:
-            A tuple of (normalized-scale variable, denormalized-scale variable), where both tensors will not have
-            nonnegative values (the denormalized-scale tensor as-is, the normalized-scale one when denormalized).
-        """
-        # First, bring the variable to its original scale (i.e. denormalize it)
-        denormed_var, monthly_mean, monthly_std = self._denormalize_variable(*args, **kwargs, return_monthly_stats=True)
-        # enforce nonnegative values in the original/raw-scale
-        nonnegative_var = nonnegative_precipitation(denormed_var)
-        # bring back variable to the normalized scale
-        normed_nonnegative_var = standardize(nonnegative_var, monthly_mean, monthly_std)
-        return normed_nonnegative_var, nonnegative_var
 
     def raw_outputs_to_denormalized_per_variable_dict(self,
                                                       outputs_tensor: Tensor,
@@ -427,16 +454,21 @@ class BaseModel(LightningModule):
         assert month_of_outputs is not None or outputs_tensor is not None, "Either month_of_outputs or outputs_tensor must be provided!"
         # Get the splitted {var: out_var_tensor} dictionary, with var, e.g., \in {'pr', 'tas', ...}
         preds_per_target_variable = self._split_raw_preds_per_target_variable(outputs_tensor)
+        # Retrieve the months of the batch if not provided
         if month_of_outputs is None:
-            # Retrieve the months of the batch if not provided
             MONTH_IDX = self.input_var_to_idx['month']  # index (in the channel dim) of the month in the input tensor
-            month_of_outputs = input_tensor[:, 0, MONTH_IDX]  # idx 0 is arbitrary; has shape (batch_size,)
+            # idx 0 is arbitrary
+            if len(input_tensor.shape) == 4:
+                month_of_outputs = input_tensor[:, 0, 0, MONTH_IDX]
+            else:
+                month_of_outputs = input_tensor[:, 0, MONTH_IDX]
+            # month_of_outputs has shape (batch_size,)
         # Convert the months of the batch tensor to a LongTensor (needed for index_select indexing with it)
         month_of_outputs = month_of_outputs.type_as(outputs_tensor).long()
         # Denormalize the outputs (using the per-variable means and standard deviations)
         denormed_Y_per_target_variable = dict()
         for var_name, var_tensor in preds_per_target_variable.items():
-            var_id = var_name.replace('_pre', '')  # use, e.g. 'pr' instead of 'pr_pre' for the original-scale variable
+            var_id = stem_var_id(var_name)  # use, e.g. 'pr' instead of 'pr_pre' for the original-scale variable
             denormed_Y_per_target_variable[var_id] = self._denormalize_variable(var_tensor, month_of_outputs, var_name)
         if return_normalized_outputs:
             # Return the raw outputs (vars with '_pre') as well
@@ -467,15 +499,15 @@ class BaseModel(LightningModule):
             where :math:`B` is the batch size, :math:`*` is the spatial dimension(s) of the data,
             and :math:`C_{out}` is the number of output features.
         """
-        Y: Dict[str, Tensor] = self.raw_outputs_to_denormalized_per_variable_dict(preds_tensor, **kwargs)
+        preds_dict: Dict[str, Tensor] = self.raw_outputs_to_denormalized_per_variable_dict(preds_tensor, **kwargs)
         # Enforce non-negative output variables (constraint 4)
         if self.hparams.physics_loss_weights[3] > 0:
-            ps_or_psl = 'psl' if 'psl' in Y.keys() else 'ps'
-            Y['pr'] = nonnegative_precipitation(Y['pr'])
-            Y[ps_or_psl] = nonnegative_precipitation(Y[ps_or_psl])
-            Y['tas'] = nonnegative_precipitation(Y['tas'])
+            ps_or_psl = 'psl' if 'psl' in preds_dict.keys() else 'ps'
+            preds_dict['pr'] = nonnegative_precipitation(preds_dict['pr'])
+            preds_dict[ps_or_psl] = nonnegative_precipitation(preds_dict[ps_or_psl])
+            preds_dict['tas'] = nonnegative_precipitation(preds_dict['tas'])
 
-        return Y
+        return preds_dict
 
     def predict(self, X: Tensor, **kwargs) -> Dict[str, Tensor]:
         """
@@ -500,10 +532,9 @@ class BaseModel(LightningModule):
             where :math:`B` is the batch size, :math:`*` is the spatial dimension(s) of the data,
             and :math:`C_{out}` is the number of output features.
         """
-        Y_normed: Tensor = self.raw_predict(X)
-        Y: Dict[str, Tensor] = self.postprocess_raw_predictions(Y_normed, input_tensor=X, **kwargs)
-        #         It predicts the de-normalized (!) output/predicted/target variables for the given input X.
-        return Y
+        raw_preds: Tensor = self._raw_predict_single_tensor(X)
+        preds: Dict[str, Tensor] = self.postprocess_raw_predictions(raw_preds, input_tensor=X, **kwargs)
+        return preds
 
     # --------------------- training with PyTorch Lightning
     def on_train_start(self) -> None:
@@ -529,23 +560,27 @@ class BaseModel(LightningModule):
         train_log = self.train_step_initial_log_dict()
 
         # Predict normalized outputs and split them into output_var: Tensor preds/targets of that var
-        preds = self._split_raw_preds_per_target_variable(self.raw_predict(X))
+        preds = self.raw_predict(X)
         Y = self._split_raw_preds_per_target_variable(Y)
 
         # Get the month of each example (the month is the same for all grid cells in an example)
-        month_of_batch = X[:, 0, self.input_var_to_idx['month']].long()  # idx 0 is arbitrary; has shape (batch_size,)
+        # idx 0 is arbitrary
+        if len(X.shape) == 4:  # 2D spatial data
+            month_of_batch = X[:, 0, 0, self.input_var_to_idx['month']].long()  # has shape (batch_size,)
+        else:  # Spherical data
+            month_of_batch = X[:, 0, self.input_var_to_idx['month']].long()  # has shape (batch_size,)
 
         if self.hparams.physics_loss_weights[3] > 0:
             # Enforce non-negative precipitation (constraint 4); needs to be done before the main loss is computed
             tmp_pr_normed, pr_denormed = self._enforce_nonnegative_denormalized_variable(
-                preds['pr_pre'], month_of_batch, 'pr_pre'
+                preds[self._pr_name], month_of_batch, self._pr_name
             )
             if self.hparams.nonnegativity_at_train_time:
-                preds['pr_pre'] = tmp_pr_normed
+                preds[self._pr_name] = tmp_pr_normed
         else:
             # Only get the denormalized scale variables (but do not enforce non-negativity)
-            pr_denormed = self._denormalize_variable(preds['pr_pre'], month_of_batch, 'pr_pre')
-        ps_denormed = self._denormalize_variable(preds['ps_pre'], month_of_batch, 'ps_pre')
+            pr_denormed = self._denormalize_variable(preds[self._pr_name], month_of_batch, self._pr_name)
+        ps_denormed = self._denormalize_variable(preds[self._ps_name], month_of_batch, self._ps_name)
 
         # Compute main loss by output variable e.g. output_name = 'pr_pre', 'tas_pre', etc.
         loss = 0.0
@@ -555,53 +590,16 @@ class BaseModel(LightningModule):
             loss += self.loss_weights[output_name] * loss_var
         train_log['train/loss_mse'] = loss.item()  # log the main MSE loss (without physics losses)
 
-        # Soft loss constraints:
-        # First, some auxiliary variable loading (e.g. climatologies, evaporation, ...)
-        batch_monthly_clim_errs = {
-            clim_err: self._get_monthly_data_for_batch(getattr(self, clim_err), month_of_batch, dim=0)
-            for clim_err in ['PE_clim_err', 'PS_clim_err', 'Precip_clim_err']
-        }
-        aux_vars_denormed: Dict[str, Tensor] = dict()
-        for aux_var in self.AUX_VARS:
-            aux_var_idx = self.input_var_to_idx[aux_var]  # e.g. index of evspsbl_pre in the X tensor
-            aux_vars_denormed[aux_var.replace('_pre', '')] = self._denormalize_variable(
-                X[..., aux_var_idx], month_of_batch, output_var_name=aux_var
-            )
-        # -------------> Constraint 2 - Precipitation energy budget
-        physics_loss2 = precipitation_energy_budget_constraint(
-            precipitation=pr_denormed,
-            sea_surface_heat_flux=aux_vars_denormed['hfss'],
-            toa_sw_net_radiation=aux_vars_denormed['netTOARad'],
-            surface_lw_net_radiation=aux_vars_denormed['netSurfRad'],
-            PR_Err=batch_monthly_clim_errs['Precip_clim_err']
+        # Compute physics loss (if any)
+        physics_loss, train_log = self._physics_constraints_loss(
+            input_tensor=X,
+            month_of_batch=month_of_batch,
+            precip_denormed=pr_denormed,
+            pressure_denormed=ps_denormed,
+            logging_dict=train_log
         )
-        train_log['train/physics/loss2'] = physics_loss2.item()
-        if self.hparams.physics_loss_weights[1] > 0:
-            loss += self.hparams.physics_loss_weights[1] * torch.abs(physics_loss2) * 0.1
-
-        # -------------> Constraint 3 - Global moisture constraint
-        # Compute the soft loss:
-        physics_loss3 = global_moisture_constraint(
-            precipitation=pr_denormed,
-            evaporation=aux_vars_denormed['evspsbl'],
-            PE_err=batch_monthly_clim_errs['PE_clim_err']
-        )
-        train_log['train/physics/loss3'] = physics_loss3.item()
-        if self.hparams.physics_loss_weights[2] > 0:
-            # add the (weighted) loss to the main loss
-            loss += self.hparams.physics_loss_weights[2] * torch.abs(physics_loss3)
-
-        # -------------> Constraint 5 - Mass conservation constraint
-        # Compute the soft loss
-        physics_loss5 = mass_conservation_constraint(
-            surface_pressure=ps_denormed,
-            PS_err=batch_monthly_clim_errs['PS_clim_err']
-        )
-        train_log['train/physics/loss5'] = physics_loss5.item()
-        if self.hparams.physics_loss_weights[4] > 0:
-            # add the (weighted) loss to the main loss (divide by 100_000 to allow loss weight to be around 1)
-            loss += self.hparams.physics_loss_weights[4] * torch.abs(physics_loss5) / 100_000
-
+        # Add physics loss to the main loss
+        loss += physics_loss
         # Logging of train loss and other diagnostics
         train_log["train/loss"] = loss.item()
 
@@ -613,6 +611,85 @@ class BaseModel(LightningModule):
 
         self.log_dict(train_log, prog_bar=False)
         return {"loss": loss}  # , "targets": Y, "preds": preds)}   # detach preds if they are returned!
+
+    def _physics_constraints_loss(self,
+                                  input_tensor: Tensor,
+                                  month_of_batch: Tensor,
+                                  precip_denormed: Tensor,
+                                  pressure_denormed: Tensor,
+                                  logging_dict: dict = None
+                                  ) -> (float, Dict[str, float]):
+        physics_loss = 0.0
+        logging_dict = logging_dict or dict()
+        # Soft loss constraints:
+        # First, some auxiliary variable loading (e.g. climatologies, evaporation, ...)
+        batch_monthly_clim_errs = {
+            clim_err: self._get_monthly_data_for_batch(getattr(self, clim_err), month_of_batch, dim=0)
+            for clim_err in ['PE_clim_err', 'PS_clim_err', 'Precip_clim_err']
+        }
+        aux_vars_denormed: Dict[str, Tensor] = dict()
+        for aux_var in self.AUX_VARS:
+            aux_var_idx = self.input_var_to_idx[aux_var]  # e.g. index of evspsbl_pre in the X tensor
+            aux_vars_denormed[stem_var_id(aux_var)] = self._denormalize_variable(
+                input_tensor[..., aux_var_idx], month_of_batch, output_var_name=aux_var
+            )
+        # -------------> Constraint 2 - Precipitation energy budget
+        physics_loss2 = precipitation_energy_budget_constraint(
+            precipitation=precip_denormed,
+            sea_surface_heat_flux=aux_vars_denormed['hfss'],
+            toa_sw_net_radiation=aux_vars_denormed['netTOARad'],
+            surface_lw_net_radiation=aux_vars_denormed['netSurfRad'],
+            PR_Err=batch_monthly_clim_errs['Precip_clim_err']
+        )
+        physics_loss2_abs = torch.abs(physics_loss2).mean()
+        logging_dict['train/physics/loss2'] = physics_loss2.mean().item()
+        logging_dict['train/physics/loss2_abs'] = physics_loss2_abs.item()
+        if self.hparams.physics_loss_weights[1] > 0:
+            physics_loss += self.hparams.physics_loss_weights[1] * 0.1 * physics_loss2_abs
+
+        # -------------> Constraint 3 - Global moisture constraint
+        # Compute the soft loss:
+        physics_loss3 = global_moisture_constraint(
+            precipitation=precip_denormed,
+            evaporation=aux_vars_denormed['evspsbl'],
+            PE_err=batch_monthly_clim_errs['PE_clim_err']
+        )
+        physics_loss3_abs = torch.abs(physics_loss3).mean()
+        logging_dict['train/physics/loss3'] = physics_loss3.mean().item()
+        logging_dict['train/physics/loss3_abs'] = physics_loss3_abs.item()
+        if self.hparams.physics_loss_weights[2] > 0:
+            # add the (weighted) loss to the main loss
+            physics_loss += self.hparams.physics_loss_weights[2] * physics_loss3_abs
+
+        # -------------> Constraint 5 - Mass conservation constraint
+        # Compute the soft loss
+        physics_loss5 = mass_conservation_constraint(
+            surface_pressure=pressure_denormed,
+            PS_err=batch_monthly_clim_errs['PS_clim_err']
+        )
+        physics_loss5_abs = torch.abs(physics_loss5).mean()
+        logging_dict['train/physics/loss5'] = physics_loss5.mean().item()
+        logging_dict['train/physics/loss5_abs'] = physics_loss5_abs.item()
+        if self.hparams.physics_loss_weights[4] > 0:
+            # add the (weighted) loss to the main loss (divide by 100_000 to allow loss weight to be around 1)
+            physics_loss += self.hparams.physics_loss_weights[4] * physics_loss5_abs / 100_000
+        return physics_loss, logging_dict
+
+    def _enforce_nonnegative_denormalized_variable(self, *args, **kwargs) -> (Tensor, Tensor):
+        """
+        Enforce that the denormalized-scale variable is nonnegative
+
+        Returns:
+            A tuple of (normalized-scale variable, denormalized-scale variable), where both tensors will not have
+            nonnegative values (the denormalized-scale tensor as-is, the normalized-scale one when denormalized).
+        """
+        # First, bring the variable to its original scale (i.e. denormalize it)
+        denormed_var, monthly_mean, monthly_std = self._denormalize_variable(*args, **kwargs, return_monthly_stats=True)
+        # enforce nonnegative values in the original/raw-scale
+        nonnegative_var = nonnegative_precipitation(denormed_var)
+        # bring back variable to the normalized scale
+        normed_nonnegative_var = standardize(nonnegative_var, monthly_mean, monthly_std)
+        return normed_nonnegative_var, nonnegative_var
 
     def training_epoch_end(self, outputs: List[Any]):
         train_time = time.time() - self._start_epoch_time
@@ -652,7 +729,7 @@ class BaseModel(LightningModule):
                          torch_metrics: Optional[nn.ModuleDict] = None,
                          **kwargs):
         X, Y = batch
-        preds = self.raw_predict(X)
+        preds = self._raw_predict_single_tensor(X)
         log_dict = dict()
         kwargs['sync_dist'] = True  # for DDP training
         # First compute the bulk error metrics (averaging out over all target variables)
@@ -720,7 +797,7 @@ class BaseModel(LightningModule):
         # directly predict full original-scale outputs (separated per output variable into a dictionary)
         preds: Dict[str, Tensor] = self.predict(X)
         # Only split the targets into per-output variable tensors + use the correct output var names (without '_pre')
-        Y = {k.replace('_pre', ''): v for k, v in self._split_raw_preds_per_target_variable(Y).items()}
+        Y = {stem_var_id(k): v for k, v in self._split_raw_preds_per_target_variable(Y).items()}
         # evaluate the predictions vs the original-scale targets
         _ = self._evaluation_per_variable(preds, Y, self.predict_metrics, manually_call_update=True)
         # Not possible in predict:
