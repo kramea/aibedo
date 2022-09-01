@@ -12,6 +12,5 @@ done
 
 for err in "PS" "PE" "Precip";
 do
-  echo $esm
   aws s3 cp s3://darpa-aibedo/CMIP6_${err}_clim_err.isoph5.npy $data_dir
 done
