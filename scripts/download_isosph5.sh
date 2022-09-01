@@ -14,3 +14,6 @@ for err in "PS" "PE" "Precip";
 do
   aws s3 cp s3://darpa-aibedo/CMIP6_${err}_clim_err.isoph5.npy $data_dir
 done
+
+aws s3 cp s3://darpa-aibedo/ymonmean.1980_2010.isosph5.CMIP6.historical.ensmean.Output.nc $data_dir
+aws s3 cp s3://darpa-aibedo/ymonstd.1980_2010.isosph5.CMIP6.historical.ensmean.Output.nc $data_dir
