@@ -165,6 +165,7 @@ def get_predictions_xarray(
         run_id, overrides: List[str], split: str = 'predict', variables='all',
         return_model: bool = False,
         reload_kwargs=None,
+        dataloader = None,
         **kwargs
 ) -> xr.Dataset:
     """
@@ -188,8 +189,11 @@ def get_predictions_xarray(
                                           try_local_recovery=False, **reload_kwargs
                                           )
     model, dm, cfg = values['model'], values['datamodule'], values['config']
-    dm.setup(stage=split)
-    dataloader = dm.predict_dataloader()
+    # dm.setup(stage=split)
+    # dataloader = dm.predict_dataloader()
+    assert split == 'predict', f"Only 'predict' split is supported at the moment"
+    if dataloader is not None:
+        log.warning("Using a custom dataloader, this might not be the intended behavior!")
     predictions_xarray = dm.get_predictions_xarray(model, dataloader=dataloader,
                                                    variables=variables,
                                                    **kwargs)

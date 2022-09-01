@@ -1,6 +1,6 @@
 import os.path
 import random
-from typing import List, Union, Sequence
+from typing import List, Union, Sequence, Any
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -408,28 +408,74 @@ def add_grouped_latitude(ds, resolution: float = 1.0):
     return ds
 
 
+def get_labels_and_styles_for_lines(objects_to_plot: List[Any], labels: List[str] = None, linestyles: List[str] = None):
+    if not isinstance(objects_to_plot, list):
+        objects_to_plot = [objects_to_plot]
+    assert len(objects_to_plot) > 0, "No postprocessed xarrays provided to plot!"
+    if labels is None:
+        labels = [""] * len(objects_to_plot)
+    if linestyles is None:
+        linestyles = ["-"] if len(objects_to_plot) < 2 else ['--', ':', '-.'] * len(objects_to_plot)
+    assert len(labels) == len(objects_to_plot), "Number of labels must match number of objects_to_plot!"
+    return objects_to_plot, labels, linestyles
+
+
+def zonal_plotting(postprocessed_xarrays: xr.Dataset,
+                   labels: List[str] = None,
+                   linestyles=None,
+                   vars_to_plot: List[str] = 'all',
+                   data_dim: str = 'snapshot',
+                   latitude_dim: str = 'latitude_grouped',
+                   axes: List[plt.Axes] = None,
+                   fontsize=20,
+                   **kwargs
+                   ):
+    postprocessed_xarrays, labels, linestyles = get_labels_and_styles_for_lines(postprocessed_xarrays, labels, linestyles)
+    output_vars = get_vars_to_plot(vars_to_plot, postprocessed_xarrays[0])
+    nrows, ncols = (1, 3) if len(output_vars) <= 3 else (2, 3) if len(output_vars) <= 6 else (3, 3)
+    fig, axs = plt.subplots(nrows, ncols) if axes is None else (None, axes)
+    axs = axs.flatten() if nrows > 1 else axs
+    dset_name = postprocessed_xarrays[0].attrs['dataset_name']
+    assert all([pds.attrs['dataset_name'] == dset_name for pds in postprocessed_xarrays]), "All datasets must be from the same dataset!"
+
+    for i, (pds, label, ls) in enumerate(zip(postprocessed_xarrays, labels, linestyles)):
+        if latitude_dim == 'latitude_grouped':
+            pds = add_grouped_latitude(pds)
+        zonal_mean = pds.groupby(latitude_dim).mean().mean(dim=data_dim)
+
+        for j, var in enumerate(output_vars):
+            zonal_var_preds = getattr(zonal_mean, f"{var}_preds")
+            zonal_var_preds.plot(x=latitude_dim, ax=axs[j], label=f'Preds {label}', linestyle=ls, **kwargs)
+            if i == 0:
+                # Plot the targets/groundtruth if this is the first plot
+                zonal_var_targets = getattr(zonal_mean, f"{var}_targets")
+                ls = '-' if axes is None else ':'  # if plotting on top of another plot, use different linestyle
+                zonal_var_targets.plot(x=latitude_dim, ax=axs[j], label=f'Targets {dset_name}', color='k', linestyle=ls, **kwargs)
+
+            axs[j].set_ylabel(f"{var.upper()}", fontsize=fontsize)
+
+    for ax in axs:
+        ax.legend(prop=dict(size=fontsize + 3))
+        ax.grid()
+        ax.set_xlabel('Latitude', fontsize=fontsize)
+    # set title for all axes
+    plt.suptitle(f"{dset_name}", fontsize=fontsize)
+
+    return fig, axs
+
+
 def zonal_error_plotting(postprocessed_xarrays: List[xr.Dataset],
                          labels: List[str] = None,
                          linestyles=None,
                          error_to_plot: str = "bias",
                          vars_to_plot: List[str] = 'all',
-                         snapshots_to_plot: List[int] = None,
-                         num_snapshots_to_plot: int = 5,
                          data_dim: str = 'snapshot',
                          longitude_dim: str = 'longitude',
                          latitude_dim: str = 'latitude_grouped',
                          fontsize=20,
                          **kwargs
                          ):
-    if isinstance(postprocessed_xarrays, xr.Dataset):
-        postprocessed_xarrays = [postprocessed_xarrays]
-    assert len(postprocessed_xarrays) > 0, "No postprocessed xarrays provided to plot!"
-    if labels is None:
-        labels = [""] * len(postprocessed_xarrays)
-    if linestyles is None:
-        linestyles = ["-"] if len(postprocessed_xarrays) < 2 else ['--', ':', '-.'] * len(postprocessed_xarrays)
-
-    assert len(labels) == len(postprocessed_xarrays), "Number of labels must match number of postprocessed xarrays!"
+    postprocessed_xarrays, labels, linestyles = get_labels_and_styles_for_lines(postprocessed_xarrays, labels, linestyles)
     output_vars = get_vars_to_plot(vars_to_plot, postprocessed_xarrays[0])
     nrows = 1  # if plot_only_errors else 3
     ncols = len(output_vars)
