@@ -99,6 +99,7 @@ class BaseModel(LightningModule):
             in enumerate(
                 list(datamodule_config.input_vars) + ['month'] + self.AUX_VARS
             )}
+        self.main_input_vars = datamodule_config.input_vars
 
         # Infer the data dimensions
         self._data_dir = datamodule_config.data_dir
