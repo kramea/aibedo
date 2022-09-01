@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="aa46e4e0-515c-4655-af3b-53baa24c4cb8" name="Changes" comment="" />
+    <list default="true" id="aa46e4e0-515c-4655-af3b-53baa24c4cb8" name="Changes" comment="support nonorm and/or 2d data in base_model.py">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -10,20 +12,39 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GithubDefaultAccount">
+    <option name="defaultAccountId" value="0d813102-abb3-421d-a831-dea406fdb232" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/aibedo/data_transforms/normalization.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/aibedo/datamodules/abstract_datamodule.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/aibedo/interface.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/aibedo/models/MLP.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/aibedo/models/base_model.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/aibedo/train.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/aibedo/utilities/utils.py" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
   <component name="ProjectId" id="26iycWU1LtQKG614RTLnimZDazZ" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">
-    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/skeleton_framework" />
-  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/salva/PycharmProjects/aibedo-PUBLIC/aibedo/utilities&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;
+  }
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\salva\PycharmProjects\aibedo-PUBLIC\aibedo\utilities" />
+      <recent name="C:\Users\salva\PycharmProjects\aibedo-PUBLIC\aibedo\data_transforms" />
       <recent name="$PROJECT_DIR$/skeleton_framework" />
     </key>
   </component>
@@ -49,10 +70,44 @@
       <workItem from="1649458813960" duration="1007000" />
       <workItem from="1649726990575" duration="6894000" />
       <workItem from="1649788316228" duration="1095000" />
+      <workItem from="1661957210353" duration="1226000" />
+      <workItem from="1661980122987" duration="1287000" />
+      <workItem from="1661985250005" duration="1195000" />
     </task>
+    <task id="LOCAL-00001" summary="add some more info about MLP">
+      <created>1661957838119</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1661957838119</updated>
+    </task>
+    <task id="LOCAL-00002" summary="support nonorm and/or 2d data in base_model.py">
+      <created>1661980815480</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1661980815480</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="add some more info about MLP" />
+    <MESSAGE value="support nonorm and/or 2d data in base_model.py" />
+    <option name="LAST_COMMIT_MESSAGE" value="support nonorm and/or 2d data in base_model.py" />
   </component>
 </project>
