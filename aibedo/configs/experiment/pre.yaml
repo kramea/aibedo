@@ -1,7 +1,7 @@
 # @package _global_
 
 # to execute this experiment run:
-# python run.py experiment=nonorm
+# python run.py experiment=pre
 
 defaults:
   - override /mode: exp.yaml
