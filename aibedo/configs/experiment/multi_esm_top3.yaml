@@ -16,18 +16,18 @@ defaults:
 
 # name of the run determines folder name in logs
 # can also be accessed by loggers
-name: "multi_esm_top5_v0"
+name: "multi_esm_topM3_v0"
 
 seed: 7
 
 datamodule:
-  batch_size: 4
-  eval_batch_size: 4
+  batch_size: 5
+  eval_batch_size: 5
   time_lag: 0
-  esm_for_training: ["MRI-ESM2-0", "CESM2-WACCM", "MPI-ESM-1-2-HAM", "CESM2", "GFDL-ESM4"]
+  esm_for_training: ["MRI-ESM2-0", "CESM2", "GFDL-ESM4"]
 
 logger:
   wandb:
     tags:
       - "multi-esm"
-      - "multi-esm-top5"
+      - "multi-esm-topM3"
