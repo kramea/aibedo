@@ -10,7 +10,6 @@ log = get_logger(__name__)
 class IcosahedronDatamodule(AIBEDO_DataModule):
     def __init__(self,
                  order: int = 5,
-                 denorm_nonorm: bool = False,
                  **kwargs
                  ):
         """
@@ -33,20 +32,25 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
     @property
     def files_id(self) -> str:
         order_s = f"isosph{self.hparams.order}" if self.hparams.order <= 5 else "isosph"
-        if self.hparams.denorm_nonorm:
+        if self._is_denorm_nonorm:
             return f"{order_s}.denorm_nonorm."
         else:
             return f"compress.{order_s}."
 
+    @property
+    def _is_denorm_nonorm(self):
+        return any(
+            [('denorm' in v or 'nonorm' in v) for v in self.hparams.input_vars + self.hparams.output_vars]
+        )
+
     def masked_ensemble_input_filename(self, ESM: str) -> str:
         # compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc
         # isosph.denorm_nonorm.CESM2.historical.r1i1p1f1.Input.Exp8.nc
-        suffix = 'Exp8' if self.hparams.denorm_nonorm else 'Exp8_fixed'
+        suffix = 'Exp8' if self._is_denorm_nonorm else 'Exp8_fixed'
         return f"{self.files_id}{ESM}.historical.*.Input.{suffix}.nc"
 
-
     def input_filename_to_output_filename(self, input_filename: str) -> str:
-        if self.hparams.denorm_nonorm:
+        if self._is_denorm_nonorm:
             return input_filename.replace('Input.Exp8.nc', 'Output.nc')
         else:
             return input_filename.replace('Input.Exp8_fixed.nc', "Output.PrecipCon.nc")
@@ -54,14 +58,13 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
     def _check_args(self):
         """Check if the arguments are valid."""
         assert self.hparams.order in [5, 6], "Order of the icosahedron graph must be either 5 or 6."
-        if self.hparams.denorm_nonorm:
+        if self._is_denorm_nonorm:
             assert self.hparams.order == 5, "Denorm_nonorm is only supported for isosph5 currently"
         super()._check_args()
 
     def _log_at_setup_start(self, stage: Optional[str] = None):
         """Log some arguments at setup."""
         log.info(f" Order of the icosahedron graph: {self.hparams.order}, # of pixels: {self.n_pixels}")
-        if self.hparams.denorm_nonorm:
+        if self._is_denorm_nonorm:
             log.info(" Running on denorm_nonorm data!")
         super()._log_at_setup_start()
-

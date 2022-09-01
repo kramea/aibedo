@@ -6,8 +6,8 @@ defaults:
 
 _target_: aibedo.models.afnonet.AFNONet
 hidden_dim: 384  # null to keep projected dim from input_transform  # 768
-num_layers: 3    # 6, 12
-mlp_ratio: 1.0
+num_layers: 4    # 6, 12
+mlp_ratio: 4.0
 uniform_drop: False
 dropout: 0.0
 drop_path_rate: 0.0  # 0.1

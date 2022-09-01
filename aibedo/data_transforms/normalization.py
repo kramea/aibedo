@@ -6,7 +6,7 @@ import numpy as np
 import xarray as xr
 import torch
 from torch import Tensor
-from aibedo.utilities.utils import get_logger
+from aibedo.utilities.utils import get_logger, stem_var_id
 
 
 def get_mean_and_std_xarray(data_dir: str, files_id: str) -> Tuple[xr.Dataset, xr.Dataset]:
@@ -35,7 +35,7 @@ def get_variable_stats(var_id: str, data_dir: str, files_id: str) -> (Tensor, Te
         The monthly mean (climatology) and std of the variable var_id
     """
     mean_ds, std_ds = get_mean_and_std_xarray(data_dir, files_id)
-    var_id = var_id.replace('_pre', '')  # pr_pre -> pr, etc.
+    var_id = stem_var_id(var_id)  # e.g. 'pr' instead of 'pr_pre'
     monthly_means = torch.from_numpy(getattr(mean_ds, var_id).values)  # (12, #pixels)
     monthly_stds = torch.from_numpy(getattr(std_ds, var_id).values)  # e.g std_ds.pr.values
     # mean_dict = {m: torch.from_numpy(p) for m, p in zip(np.arange(12), monthly_means)}
@@ -61,8 +61,24 @@ def standardize(x: Tensor, mean: Tensor, std: Tensor) -> Tensor:
     return (x - mean) / std
 
 
+def deanomalize(x: Tensor, mean: Tensor) -> Tensor:
+    """
+    De-anomalize the input x by adding the (monthly/climatology) mean.
+    """
+    return x + mean
+
 def destandardize(x: Tensor, mean: Tensor, std: Tensor) -> Tensor:
     """
     Destandardize the input x
     """
     return x * std + mean
+
+
+def rescale_nonorm_vars(nonorm_data: Dict[str, Tensor]):
+    if 'pr_nonorm' in nonorm_data:
+        nonorm_data['pr_nonorm'] = nonorm_data['pr_nonorm'] / 8.64e4  # convert from mm/day to kg/m2/s
+    if 'ps_nonorm' in nonorm_data:
+        nonorm_data['ps_nonorm'] = nonorm_data['ps_nonorm'] * 100  # convert from hPa to Pa
+    if 'psl_nonorm' in nonorm_data:
+        nonorm_data['psl_nonorm'] = nonorm_data['psl_nonorm'] * 100  # convert from hPa to Pa
+    return nonorm_data

@@ -346,7 +346,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             for i in range(0, len(dataset_in) - window):
                 # concatenate time axis into feature axis (... can stand for 1 or 2 spatial dims)
                 in_tmp += [rearrange(dataset_in[i:i + window, :, :], 't ... d -> ... (d t)')]
-                # reselect the corresponding output/aux data (at the same time as latest time step of inputs)
+                # reselect the corresponding output/aux data (at the same time as the latest time-step of inputs)
                 out_tmp += [dataset_out[i + window - 1, :, :]]
                 # similarly, the auxiliary data should be aligned to the last month too!
                 aux_tmp += [dataset_aux[i + window - 1, :, :]]

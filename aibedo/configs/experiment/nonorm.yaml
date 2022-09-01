@@ -1,7 +1,7 @@
 # @package _global_
 
 # to execute this experiment run:
-# python run.py experiment=denorm_nonorm
+# python run.py experiment=nonorm
 
 defaults:
   - override /mode: exp.yaml
@@ -16,15 +16,23 @@ defaults:
 
 # name of the run determines folder name in logs
 # can also be accessed by loggers
-name: "denorm_nonorm_${datamodule.time_lag}h"
+name: "nonorm_${datamodule.time_lag}h"
 
 seed: 7
 
 datamodule:
   batch_size: 5
-  denorm_nonorm: True
   time_lag: 1
+  input_vars: ['crelSurf_nonorm', 'crel_nonorm', 'cresSurf_nonorm', 'cres_nonorm', 'netTOAcs_nonorm', 'lsMask', 'netSurfcs_nonorm' ]
+  output_vars: ['tas_nonorm', 'ps_nonorm', 'pr_nonorm']
+  order: 5
 
 logger:
   wandb:
-    tags: ["denorm-nonorm"]
+    tags:
+      - "nonorm"
+      - "nonorm-inputs"
+      - "nonorm-outputs"
+      - "h=${datamodule.time_lag}"
+      - "order=${datamodule.order}"
+      - "w=${model.window}"

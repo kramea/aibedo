@@ -4,4 +4,3 @@ defaults:
   - base_data_config.yaml   # general, datamodule independent, parameters (e.g. data_dir, batch size, etc.)
 
 order: 6
-denorm_nonorm: False

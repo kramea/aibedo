@@ -253,3 +253,9 @@ def get_any_ensemble_id(data_dir, masked_input_filename: str, get_full_filename:
     else:
         ensemble_id = fname.split('.')[-4]
         return ensemble_id
+
+
+def stem_var_id(var_name: str) -> str:
+    """ Get variable id from transformed variable name. """
+    var_id = var_name.replace('_pre', '').replace('_denorm', '').replace('_nonorm', '')
+    return var_id
