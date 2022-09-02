@@ -182,6 +182,11 @@ def check_config_values(config: DictConfig):
                 physics_lams2[3] = 1.0 if nonneg_precip else 0.0
                 config.model.physics_loss_weights = tuple([p or 0.0 for p in physics_lams2])
 
+        if not config.datamodule.get('use_crel', default_value=True):
+            config.datamodule.input_vars = [v for v in config.datamodule.input_vars if not str(v).startswith('crel_')]
+        if not config.datamodule.get('use_crelSurf', default_value=True):
+            config.datamodule.input_vars = [v for v in config.datamodule.input_vars if not v.startswith('crelSurf_')]
+
         if config.get('logger') and config.logger.get("wandb"):
             if 'callbacks' in config and config.callbacks.get('model_checkpoint'):
                 wandb_model_run_id = config.logger.wandb.get('id')

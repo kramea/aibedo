@@ -21,7 +21,7 @@ from aibedo.utilities.samplings import icosahedron_nodes_calculator
 from aibedo.utilities.constraints import nonnegative_precipitation, global_moisture_constraint, \
     mass_conservation_constraint, AUXILIARY_VARS, precipitation_energy_budget_constraint
 from aibedo.utilities.utils import get_logger, to_DictConfig, get_loss, raise_error_if_invalid_value, \
-    stem_var_id
+    stem_var_id, get_input_var_to_idx
 
 
 class BaseModel(LightningModule):
@@ -94,12 +94,9 @@ class BaseModel(LightningModule):
             self.log_text.setLevel(logging.WARN)
 
         self.AUX_VARS = AUXILIARY_VARS if use_auxiliary_vars else []
-        self._input_var_to_idx = {
-            var: i for i, var
-            in enumerate(
-                list(datamodule_config.input_vars) + ['month'] + self.AUX_VARS
-            )}
-        self.main_input_vars = datamodule_config.input_vars
+        self._input_var_to_idx, self.main_input_vars = get_input_var_to_idx(
+            datamodule_config.input_vars, self.AUX_VARS, window=self.hparams.window
+        )
 
         # Infer the data dimensions
         self._data_dir = datamodule_config.data_dir
@@ -128,7 +125,7 @@ class BaseModel(LightningModule):
 
         # Timing variables to track the training/epoch/validation time
         self._start_validation_epoch_time = self._start_test_epoch_time = self._start_epoch_time = None
-        self._month_index = in_channels
+
         # Metrics
         val_metrics = {'val/mse': torchmetrics.MeanSquaredError(squared=True)}
         for output_var in self.output_vars:

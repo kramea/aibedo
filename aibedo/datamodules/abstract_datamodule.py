@@ -1,5 +1,3 @@
-import itertools
-import logging
 import os
 from os.path import join
 from typing import Optional, List, Callable, Sequence, Dict, Union, Tuple
@@ -21,7 +19,7 @@ from aibedo.models.base_model import BaseModel
 from aibedo.skeleton_framework.data_loader import shuffle_data
 from aibedo.utilities.constraints import AUXILIARY_VARS
 from aibedo.utilities.naming import var_names_to_clean_name
-from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value, get_any_ensemble_id
+from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value, get_any_ensemble_id, get_input_var_to_idx
 
 log = get_logger(__name__)
 
@@ -55,6 +53,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                  partition: Sequence[float] = (0.8, 0.1, 0.1),
                  time_lag: int = 0,
                  prediction_data: str = "same_as_test",
+                 use_crelSurf: bool = True,
+                 use_crel: bool = True,
                  model_config: DictConfig = None,
                  batch_size: int = 64,
                  eval_batch_size: int = 512,
@@ -77,7 +77,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             time_lag (int): The time lag between the input and output variables (i.e. horizon of predictions).
             batch_size (int): Batch size for the training dataloader
             eval_batch_size (int): Batch size for the test and validation dataloader's
-            num_workers (int): Dataloader arg for higher efficiency
+            num_workers (int): Dataloader arg for higher efficiency (usually set to # of CPU cores)
             pin_memory (bool): Dataloader arg for higher efficiency
         """
         super().__init__()
@@ -94,13 +94,10 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         else:
             self._esm_for_training = tuple(esm_for_training)
         self.hparams.auxiliary_vars = AUXILIARY_VARS if model_config.use_auxiliary_vars else []
-        self.window = model_config.window if hasattr(model_config, 'window') else 1
-        input_var_names = [[f'{v}_mon{i}' for i in range(self.window)] for v in input_vars]
-        self.input_var_names = list(itertools.chain(*input_var_names))  # flatten list of lists
-        self.input_var_to_idx = {
-            var: i for i, var
-            in enumerate(self.input_var_names + ['month'] + self.hparams.auxiliary_vars)
-        }
+        self.window = model_config.get("window", default_value=1)
+        self.input_var_to_idx, self.input_var_names = get_input_var_to_idx(
+            input_vars, self.hparams.auxiliary_vars, window=self.window
+        )
         self._esm_ensemble_id = None
         self._get_normalized_targets_for_predict_too = False
         self._var_names_to_clean_name = var_names_to_clean_name()
@@ -169,12 +166,6 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         self._spatial_dims = value
 
     @property
-    def month_index(self) -> int:
-        # By default the month index is concatenated to the D input vars,
-        # so that indices 0...D-1 are the input vars and D is the month
-        return len(self.hparams.input_vars)
-
-    @property
     def test_set_name(self) -> str:
         train_frac, val_frac, test_frac = self.hparams.partition
         if test_frac == 'merra2':
@@ -221,6 +212,20 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         assert len(self.esm_for_training) > 0, "esm_for_training must be a non-empty list"
         for i, esm in enumerate(self.esm_for_training):
             raise_error_if_invalid_value(esm, CLIMATE_MODELS_ALL, 'esm_for_training[i]')
+
+        # check that remove_vars are indeed not present in the input_vars
+        input_vars = self.hparams.input_vars
+        crel_in_input_vars = ['crel' in v for v in input_vars + self.input_var_names]
+        crelSurf_in_input_vars = ['crelSurf' in v for v in input_vars + self.input_var_names]
+
+        if self.hparams.use_crel:
+            assert any(crel_in_input_vars), "crel must be in input_vars if use_crel is True"
+        else:
+            assert not any(crel_in_input_vars), "crel cannot be in input_vars if use_crel is False"
+        if self.hparams.use_crelSurf:
+            assert any(crelSurf_in_input_vars), "crelSurf must be in input_vars if use_crelSurf is True"
+        else:
+            assert not any(crelSurf_in_input_vars), "crelSurf cannot be in input_vars if use_crelSurf is False"
 
         # check if the train, val, test split is valid
         partition = self.hparams.partition
@@ -357,8 +362,6 @@ class AIBEDO_DataModule(pl.LightningDataModule):
 
         if self.hparams.time_lag > 0:
             horizon = self.hparams.time_lag
-            # raise NotImplementedError("Time lag not implemented yet, need month for both inputs and outputs!")
-            log.info(f" Model will be forecasting {self.hparams.time_lag} time steps ahead.")
             dataset_in = dataset_in[:-horizon, ...]
             dataset_out = dataset_out[horizon:, ...]
             dataset_aux = dataset_aux[horizon:, ...]
@@ -420,7 +423,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
 
     def _log_at_setup_start(self, stage: Optional[str] = None):
         """Log some arguments at setup."""
-        pass
+        if self.hparams.time_lag > 0:
+            log.info(f" Model will be forecasting {self.hparams.time_lag} time steps ahead.")
 
     def setup(self, stage: Optional[str] = None):
         """Load data. Set internal variables: self._data_train, self._data_val, self._data_test."""
