@@ -24,7 +24,7 @@ datamodule:
   batch_size: 4
   eval_batch_size: 4
   time_lag: 0
-  esm_for_training: ["MRI-ESM2-0", "CESM2", "GFDL-ESM4", "MPI-ESM1-2-LR", "CESM2-WACCM"]  #"MPI-ESM-1-2-HAM"
+  esm_for_training: ["MRI-ESM2-0", "CESM2", "GFDL-ESM4", "CMCC-CM2-SR5", "CESM2-WACCM"]  #"MPI-ESM-1-2-HAM", "MPI-ESM1-2-LR"
 
 logger:
   wandb:

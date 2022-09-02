@@ -29,6 +29,7 @@ class AIBEDO_MLP(BaseModel):
             If a string is passed, is must be the name of the desired output activation (e.g. 'softmax')
             If True, the same activation function is used as defined by the arg `activation_function`.
     """
+
     def __init__(self,
                  hidden_dims: Sequence[int],
                  datamodule_config: DictConfig = None,
@@ -48,10 +49,10 @@ class AIBEDO_MLP(BaseModel):
 
         if isinstance(self.spatial_dim, int):
             mlp_total_spatial_dims = self.spatial_dim
-            self.output_tensor_dim = (-1, self.spatial_dim, self.num_output_features)
+            self.output_tensor_shape = (-1, self.spatial_dim, self.num_output_features)
         else:
             mlp_total_spatial_dims = math.prod(self.spatial_dim)
-            self.output_tensor_dim = tuple([-1] + list(self.spatial_dim) + [self.num_output_features])
+            self.output_tensor_shape = tuple([-1] + list(self.spatial_dim) + [self.num_output_features])
 
         self.input_dim = self.num_input_features * mlp_total_spatial_dims
         self.output_dim = self.num_output_features * mlp_total_spatial_dims
@@ -81,7 +82,7 @@ class AIBEDO_MLP(BaseModel):
         flattened_X = self.flatten_transform.batched_transform(X)
         flattened_Y = self.mlp(flattened_X)
         # Reshape back into spatially structured outputs
-        Y = flattened_Y.view(self.output_tensor_dim)
+        Y = flattened_Y.view(self.output_tensor_shape)
         return Y
 
     def train_step_initial_log_dict(self) -> Dict[str, float]:
@@ -94,3 +95,47 @@ class AIBEDO_MLP(BaseModel):
             #    if lay.residual:
             #        log_dict[f'mlp/ResLam_{i}'] = lay.rlam
         return log_dict
+
+
+class SimpleChannelOnlyMLP(BaseModel):
+    r""" This simple MLP applies on the channel dimension only.
+    I.e. it predicts for each grid cell/pixel separately.
+    """
+    def __init__(self,
+                 hidden_dims: Sequence[int],
+                 net_normalization: Optional[str] = None,
+                 activation_function: str = 'gelu',
+                 dropout: float = 0.0,
+                 residual: bool = False,
+                 residual_learnable_lam: bool = False,
+                 output_activation_function: Optional[Union[str, bool]] = None,
+                 *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The following saves all the args that are passed to the constructor to self.hparams
+        #   e.g. access them with self.hparams.hidden_dims
+        self.save_hyperparameters()
+
+        self.example_input_array = torch.randn(1, self.num_input_features)
+        self.num_layers = len(hidden_dims)
+
+        self.mlp = MLP(
+            self.num_input_features, hidden_dims, self.num_output_features,
+            net_normalization=net_normalization,
+            activation_function=activation_function, dropout=dropout,
+            residual=residual, residual_learnable_lam=residual_learnable_lam,
+            output_normalization=False,
+            output_activation_function=output_activation_function
+        )
+
+    def forward(self, X: Tensor) -> Tensor:
+        r"""Forward the input through the channel-only-MLP.
+
+        Shapes:
+            - Input: :math:`(B, *, C_{in})`
+            - Output: :math:`(B, *, C_{out})`,
+
+            where :math:`B` is the batch size, :math:`*` is the spatial dimension(s) of the data,
+            and :math:`C_{in}` (:math:`C_{out}`) is the number of input (output) features.
+        """
+        Y = self.mlp(X)
+        return Y
