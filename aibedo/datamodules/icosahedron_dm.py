@@ -64,7 +64,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
 
     def _log_at_setup_start(self, stage: Optional[str] = None):
         """Log some arguments at setup."""
+        super()._log_at_setup_start()
         log.info(f" Order of the icosahedron graph: {self.hparams.order}, # of pixels: {self.n_pixels}")
         if self._is_denorm_nonorm:
             log.info(" Running on denorm_nonorm data!")
-        super()._log_at_setup_start()

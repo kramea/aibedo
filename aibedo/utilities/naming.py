@@ -56,6 +56,8 @@ def clean_name(class_name, mixer=None, dm_type=None) -> str:
             raise ValueError(class_name)
     elif "AIBEDO_MLP" in class_name:
         s = 'MLP'
+    elif 'SimpleChannelOnlyMLP' in class_name:
+        s = 'SiMLP'
     elif "graph_network" in class_name:
         s = 'GraphNet'
     elif "CNN_Net" in class_name:
@@ -65,7 +67,7 @@ def clean_name(class_name, mixer=None, dm_type=None) -> str:
     elif "SphericalUNet" in class_name:
         s = 'SUNet'
     else:
-        raise ValueError(class_name)
+        raise ValueError(f'Unknown class name: {class_name}, did you forget to add it to the clean_name function?')
 
     if dm_type is not None:
         if 'icosahedron' in dm_type.lower():
@@ -73,7 +75,7 @@ def clean_name(class_name, mixer=None, dm_type=None) -> str:
         elif 'euclidean' in dm_type.lower():
             dm_id = '2D'
         else:
-            raise ValueError(dm_type)
+            raise ValueError(f"Did not recognize the datamodule type {dm_type}. Did you introduce a new one?")
         s += f"{dm_id}"
 
     return s

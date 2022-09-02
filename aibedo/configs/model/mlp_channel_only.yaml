@@ -1,0 +1,12 @@
+_target_: aibedo.models.MLP.SimpleChannelOnlyMLP
+
+defaults:
+  - _self_
+  - _base_model_config.yaml   # general, model independent, parameters
+  - /optimizer: adamw.yaml
+
+hidden_dims: [256, 256, 512, 512]  #  [1024, 512, 256]
+net_normalization: "rms_layer_norm"
+activation_function: "Gelu"
+dropout: 0.0
+residual: True

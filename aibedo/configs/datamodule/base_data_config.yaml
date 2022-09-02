@@ -1,7 +1,7 @@
 data_dir: "/work/data/"   # Make sure that it is an absolute path!
 esm_for_training: "CESM2"
 
-input_vars: [ 'crelSurf_pre', 'crel_pre', 'cresSurf_pre', 'cres_pre', 'netTOAcs_pre', 'lsMask', 'netSurfcs_pre']
+input_vars: ['crelSurf_pre', 'crel_pre', 'cresSurf_pre', 'cres_pre', 'netTOAcs_pre', 'lsMask', 'netSurfcs_pre']
 output_vars: ['tas_pre', 'ps_pre', 'pr_pre']
 
 partition: [0.85, 0.15, "era5"] # partition for training, validation, test
