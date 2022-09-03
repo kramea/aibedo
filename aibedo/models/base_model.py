@@ -94,9 +94,10 @@ class BaseModel(LightningModule):
             self.log_text.setLevel(logging.WARN)
 
         self.AUX_VARS = AUXILIARY_VARS if use_auxiliary_vars else []
-        self._input_var_to_idx, self.main_input_vars = get_input_var_to_idx(
+        self._input_var_to_idx, _ = get_input_var_to_idx(
             datamodule_config.input_vars, self.AUX_VARS, window=self.hparams.window
         )
+        self.main_input_vars = datamodule_config.input_vars
 
         # Infer the data dimensions
         self._data_dir = datamodule_config.data_dir
