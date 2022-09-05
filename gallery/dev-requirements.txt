@@ -1,0 +1,15 @@
+sphinx>=3
+sphinx_rtd_theme
+pytest
+pytest-coverage
+numpy
+matplotlib
+pillow
+seaborn
+statsmodels
+joblib
+flake8
+check-manifest
+plotly
+absl-py
+graphviz
