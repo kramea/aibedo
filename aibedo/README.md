@@ -3,8 +3,11 @@
     conda activate aibedo  # activate the environment called 'aibedo'
 
 # Train a model
+From the repository root, please run the following in the command line:    
 
-    python train.py trainer.gpus=0 model=sunet logger=none callbacks=default
+    python run.py trainer.gpus=0 model=mlp logger=none callbacks=default
+
+This will train an MLP on the CPU using some default callbacks and hyperparameters, but no logging.
 
 ### Training Arguments and Hyperparameters
 - To run on CPU ``trainer.gpus=0``, to use a single GPU ``trainer.gpus=1``, etc.
@@ -24,7 +27,7 @@ Please install the hydra-optuna-wandb integration with
     python setup.py install --user  # or pip install -e . --user
 
 To tune the hyperparameters with, e.g., Optuna for any of the provided ML models please run the following command:
-``python train.py --multirun optuna=<ml-model-name>``, where <ml-model-name> is the name of the ML model (e.g. ´´mlp´´).
+``python train.py --multirun optuna=<ml-model-name>``, where ``ml-model-name`` is the name of the ML model (e.g. ``mlp``).
 
 To extend this example with your own ML model, please create a config file in [configs/optuna/](configs/optuna).
 Note that the config files defining the swept hyperparameters (and their possible values/ranges) for each model
