@@ -1,0 +1,19 @@
+# @package _global_
+
+defaults:
+  - nonorm.yaml
+  - _self_
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+# can also be accessed by loggers
+name: "nonorm_CanESM5_${datamodule.time_lag}h"
+
+datamodule:
+  batch_size: 5
+  eval_batch_size: 5
+  time_lag: 0
+  esm_for_training: "CanESM5"
+  ensemble_ids: "all"
