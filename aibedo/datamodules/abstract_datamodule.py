@@ -226,7 +226,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         # check that the ESM is known to us
         assert len(self.esm_for_training) > 0, "esm_for_training must be a non-empty list"
         for i, esm in enumerate(self.esm_for_training):
-            raise_error_if_invalid_value(esm, CLIMATE_MODELS_ALL, 'esm_for_training[i]')
+            options = CLIMATE_MODELS_ALL + self._possible_test_sets
+            raise_error_if_invalid_value(esm, options, 'esm_for_training[i]')
 
         # check that remove_vars are indeed not present in the input_vars
         input_vars = self.hparams.input_vars
@@ -393,19 +394,21 @@ class AIBEDO_DataModule(pl.LightningDataModule):
     def _model_specific_transform(self, input_data: np.ndarray, output_data: np.ndarray):
         return input_data, output_data
 
-    def _get_train_and_val_data_single_ESM_ensemble(self,
-                                                    stage: str,
-                                                    input_filename: str,
-                                                    ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    def _get_train_and_val_data_single_xarray(self,
+                                              stage: str,
+                                              input_filename: str,
+                                              output_filename: str = None,
+                                              shuffle: bool = False
+                                              ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
         """ Get the data corresponding to a single ESM run"""
         from sklearn.model_selection import train_test_split
         # compress.isosph5.SAM0-UNICON.historical.r1i1p1f1.Input.Exp8_fixed
         # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
         #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
         train_frac, val_frac, _ = self.hparams.partition
-        output_filename = self.input_filename_to_output_filename(input_filename)
-        train_data_in, train_data_out = self._process_nc_dataset(input_filename, output_filename, shuffle=True,
-                                                                 stage=stage)
+        output_filename = output_filename or self.input_filename_to_output_filename(input_filename)
+        train_data_in, train_data_out = self._process_nc_dataset(input_filename, output_filename,
+                                                                 shuffle=shuffle, stage=stage)
         X_train, X_val, Y_train, Y_val = train_test_split(train_data_in, train_data_out, train_size=train_frac,
                                                           random_state=self.hparams.seed)
         if stage == 'predict':
@@ -414,10 +417,17 @@ class AIBEDO_DataModule(pl.LightningDataModule):
 
         return X_train, X_val, Y_train, Y_val
 
-    def _get_train_and_val_data(self,
-                                stage: str,
-                                ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    def _get_train_and_val_data(self, stage: str) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
         """ Get the full data corresponding to all ESMs used for training/validating """
+        if self.esm_for_training[0] in self._possible_test_sets and len(self.esm_for_training) == 1:
+            # Use subset of the test set as training set
+            train_set = self.esm_for_training[0]
+            log.info(f" Using temporally split subset of evaluation set {train_set.upper()} as training set.")
+            test_input_fname, test_output_fname = get_test_set_filenames(train_set, file_prefix=self.files_id)
+            return self._get_train_and_val_data_single_xarray(
+                stage, input_filename=test_input_fname, output_filename=test_output_fname, shuffle=False
+            )
+
         if len(self.esm_for_training) > 1:
             log.info(f" Concatenating {len(self.esm_for_training)} ESM datasets for training/validation.")
         for i, esm in enumerate(self.esm_for_training):
@@ -438,6 +448,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             #})
             import wandb
             if wandb.run:
+                log.info(' Updating wandb config with training data info.')
                 wandb.config.update({
                     f"training_data/{esm}/input_filenames": input_filenames,
                     f"training_data/{esm}/ensemble_ids": ensemble_ids,
@@ -445,7 +456,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             log.info(f" Ensembles from ESM={esm} used for training: {ensemble_ids}")
 
             for j, input_filename in enumerate(input_filenames):
-                X_train_esm, X_val_esm, Y_train_esm, Y_val_esm = self._get_train_and_val_data_single_ESM_ensemble(
+                X_train_esm, X_val_esm, Y_train_esm, Y_val_esm = self._get_train_and_val_data_single_xarray(
                     stage, input_filename=input_filename
                 )
                 if stage == 'predict':
@@ -481,16 +492,14 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         elif test_frac in self._possible_test_sets or (
                 stage == 'predict' and self.prediction_data in self._possible_test_sets
         ):
-            file_prefix_id = self.files_id
             if test_frac == 'merra2' or (stage == 'predict' and self.prediction_data == 'merra2'):
-                #                  f"compress.{sphere}MERRA2_Input_Exp8_fixed.nc"
-                test_input_fname = f"{file_prefix_id}MERRA2_Exp8_Input.2022Jul06.nc"
-                test_output_fname = f"{file_prefix_id}MERRA2_Output.2022Jul06.nc"
+                test_set = 'merra2'
             elif test_frac == 'era5' or (stage == 'predict' and self.prediction_data == 'era5'):
-                test_input_fname = f"{file_prefix_id}ERA5_Input_Exp8.nc"
-                test_output_fname = f"{file_prefix_id}ERA5_Output_PrecipCon.nc"
+                test_set = 'era5'
             else:
                 raise ValueError(f"Unknown test_frac: {test_frac}")
+            test_input_fname, test_output_fname = get_test_set_filenames(test_set, file_prefix=self.files_id)
+
             if stage == "test" or stage == "predict":
                 X_test, Y_test = self._process_nc_dataset(test_input_fname, test_output_fname, shuffle=False,
                                                           stage=stage)
@@ -510,8 +519,8 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             elif self.prediction_data in CLIMATE_MODELS_ALL:
                 predict_esm = self.prediction_data
                 predict_filename = self.input_filename_for_esm(ESM=predict_esm)
-                _, X_predict, _, Y_predict = self._get_train_and_val_data_single_ESM_ensemble(stage='predict',
-                                                                                              input_filename=predict_filename)
+                _, X_predict, _, Y_predict = self._get_train_and_val_data_single_xarray(stage='predict',
+                                                                                        input_filename=predict_filename)
                 data_predict_id = self.prediction_data
             else:
                 options = ['same_as_test', 'val'] + CLIMATE_MODELS_ALL
@@ -684,3 +693,15 @@ class AIBEDO_DataModule(pl.LightningDataModule):
 def get_tensor_dataset_from_numpy(*ndarrays, dataset_id="", name='', **kwargs) -> AIBEDOTensorDataset:
     tensors = [torch.from_numpy(ndarray).float() for ndarray in ndarrays]
     return AIBEDOTensorDataset(*tensors, dataset_id=dataset_id, name=name, **kwargs)
+
+def get_test_set_filenames(test_set_name: str, file_prefix: str) -> (str, str):
+    if test_set_name == 'merra2':
+        #                  f"compress.{sphere}MERRA2_Input_Exp8_fixed.nc"
+        test_input_fname = f"{file_prefix}MERRA2_Exp8_Input.2022Jul06.nc"
+        test_output_fname = f"{file_prefix}MERRA2_Output.2022Jul06.nc"
+    elif test_set_name == 'era5':
+        test_input_fname = f"{file_prefix}ERA5_Input_Exp8.nc"
+        test_output_fname = f"{file_prefix}ERA5_Output_PrecipCon.nc"
+    else:
+        raise ValueError(f"Unknown ´´test_set_name´´ {test_set_name}")
+    return test_input_fname, test_output_fname
