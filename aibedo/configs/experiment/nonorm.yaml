@@ -1,0 +1,38 @@
+# @package _global_
+
+# to execute this experiment run:
+# python run.py experiment=nonorm
+
+defaults:
+  - override /mode: exp.yaml
+  - override /datamodule: icosahedron.yaml
+  - override /model: mlp.yaml
+  - override /callbacks: wandb.yaml
+  - override /logger: wandb.yaml
+  - _self_
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+# can also be accessed by loggers
+name: "nonorm_${datamodule.time_lag}h"
+
+seed: 7
+
+datamodule:
+  batch_size: 5
+  time_lag: 1
+  input_vars: ['crelSurf_nonorm', 'crel_nonorm', 'cresSurf_nonorm', 'cres_nonorm', 'netTOAcs_nonorm', 'lsMask', 'netSurfcs_nonorm' ]
+  output_vars: ['tas_nonorm', 'ps_nonorm', 'pr_nonorm']
+  order: 5
+
+logger:
+  wandb:
+    tags:
+      - "nonorm"
+      - "nonorm-inputs"
+      - "nonorm-outputs"
+      - "h=${datamodule.time_lag}"
+      - "order=${datamodule.order}"
+      - "w=${model.window}"

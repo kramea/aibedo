@@ -3,6 +3,7 @@ Author: Salva Rühling Cachay
 """
 import functools
 import glob
+import itertools
 import logging
 import math
 import os
@@ -232,19 +233,54 @@ def get_files_prefix(datamodule_config: DictConfig) -> str:
     return files_id
 
 
-def get_any_ensemble_id(data_dir, ESM_NAME: str, files_id: str = '', get_full_filename: bool = False) -> str:
+def get_any_ensemble_id(data_dir, masked_input_filename: str, get_full_filename: bool = False) -> str:
     """ Get ensemble id for any ensemble that is present in the data directory. """
-    prefix = f"{files_id}{ESM_NAME}.historical"
-    if os.path.isfile(os.path.join(data_dir, f"{prefix}.r1i1p1f1.Input.Exp8_fixed.nc")):
-        fname = f"{prefix}.r1i1p1f1.Input.Exp8_fixed.nc"
+    mask = '.*.'
+    if mask not in masked_input_filename:
+        raise ValueError(f"``masked_input_filename`` {masked_input_filename} does not mask the ensemble id with a '*'!")
+    default = masked_input_filename.replace(mask, 'r1i1p1f1')
+    if os.path.isfile(os.path.join(data_dir, default)):
+        fname = default
     else:
-        curdir = os.getcwd()
-        os.chdir(data_dir)
-        files = glob.glob(f"{prefix}.*.Input.Exp8_fixed.nc")
+        files = get_all_present_esm_ensemble_ids(data_dir, masked_input_filename, get_full_filenames=True)
         fname = files[0]
-        os.chdir(curdir)
+
     if get_full_filename:
         return fname
     else:
         ensemble_id = fname.split('.')[-4]
         return ensemble_id
+
+
+def get_all_present_esm_ensemble_ids(data_dir, masked_input_filename: str, get_full_filenames: bool = False) -> List[str]:
+    """ Get ensemble ID's for all ensembles that are present in the data directory. """
+    mask = '.*.'
+    if mask not in masked_input_filename:
+        raise ValueError(f"``masked_input_filename`` {masked_input_filename} does not mask the ensemble id with a '*'!")
+    curdir = os.getcwd()
+    os.chdir(data_dir)
+    files = glob.glob(masked_input_filename)
+    if len(files) == 0:
+        raise ValueError(f"No input files found in {data_dir} for mask: {masked_input_filename}!")
+    os.chdir(curdir)
+    if get_full_filenames:
+        return files
+    else:
+        files = [fname.split('.')[-4] for fname in files]
+        return files
+
+def stem_var_id(var_name: str) -> str:
+    """ Get variable id from transformed variable name. """
+    var_id = var_name.replace('_pre', '').replace('_denorm', '').replace('_nonorm', '')
+    return var_id
+
+def get_input_var_to_idx(input_vars: List[str], auxiliary_vars: List[str], window: int) -> (Dict[str, int], List[str]):
+    """Returns a dict mapping input variable names to their index in the input array."""
+    input_var_names = [[f'{v}_mon{i}' for i in range(window)] for v in input_vars]
+    input_var_names = list(itertools.chain(*input_var_names))  # flatten list of lists
+    input_var_to_idx = {
+        var: i for i, var
+        in enumerate(input_var_names + ['month'] + auxiliary_vars)
+    }
+    return input_var_to_idx, input_var_names
+

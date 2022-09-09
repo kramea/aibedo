@@ -1,0 +1,16 @@
+# @package _global_
+
+defaults:
+  - multi_esm_top5.yaml
+  - nonorm.yaml
+  - _self_
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+# can also be accessed by loggers
+name: "nonorm_top5ESM_${datamodule.time_lag}h"
+
+datamodule:
+  batch_size: 5

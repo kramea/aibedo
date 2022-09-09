@@ -12,7 +12,7 @@ model_checkpoint:
   save_last: True             # additionally always save model from last epoch
   verbose: ${verbose}
   dirpath: ${ckpt_dir}
-  filename: "epoch{epoch:03d}_seed${seed}"
+  filename: "${name}_epoch{epoch:03d}_seed${seed}"
   auto_insert_metric_name: False
   # every_n_epochs: 10
 

@@ -116,6 +116,14 @@ def extras(config: DictConfig) -> None:
         if config.datamodule.get("pin_memory"):
             config.datamodule.pin_memory = False
 
+    # Set a short name for the model
+    model_name = config.model.get('name')
+    if model_name is None or model_name == '':
+        model_class = config.model.get('_target_')
+        mixer = config.model.mixer.get('_target_') if config.model.get('mixer') else None
+        dm_type = config.datamodule.get('_target_')
+        config.model.name = clean_name(model_class, mixer=mixer, dm_type=dm_type)
+
     USE_WANDB = "logger" in config.keys() and config.logger.get("wandb")
     if USE_WANDB:
         if not config.logger.wandb.get('id'):  # no wandb id has been assigned yet
@@ -129,8 +137,12 @@ def extras(config: DictConfig) -> None:
         if not config.logger.wandb.get('name'):  # no wandb name has been assigned yet
             config.logger.wandb.name = get_detailed_name(config) + '_' + time.strftime(
                 '%Hh%Mm_on_%b_%d') + '_' + config.logger.wandb.id
+        else:
+            # Append the model name to the wandb name
+            config.logger.wandb.name += '_' + config.model.name
 
     check_config_values(config)
+
     # Init to wandb from rank 0 only in multi-gpu mode
     if USE_WANDB and int(os.environ.get('LOCAL_RANK', 0)) == 0 and os.environ.get('NODE_RANK', 0):
         # wandb_kwargs: dict = OmegaConf.to_container(config.logger.wandb, resolve=True)  # DictConfig -> simple dict
@@ -151,13 +163,6 @@ def extras(config: DictConfig) -> None:
 def check_config_values(config: DictConfig):
     """ Check if config values are valid. """
     with open_dict(config):
-        model_name = config.model.get('name')
-        if model_name is None or model_name == '':
-            model_class = config.model.get('_target_')
-            mixer = config.model.mixer.get('_target_') if config.model.get('mixer') else None
-            dm_type = config.datamodule.get('_target_')
-            config.model.name = clean_name(model_class, mixer=mixer, dm_type=dm_type)
-
         if "net_normalization" in config.model.keys():
             if config.model.net_normalization is None:
                 config.model.net_normalization = "none"
@@ -176,6 +181,11 @@ def check_config_values(config: DictConfig):
                 assert nonneg_precip in [None, True, False], f'lambda_physics4 should be either None, True, or False'
                 physics_lams2[3] = 1.0 if nonneg_precip else 0.0
                 config.model.physics_loss_weights = tuple([p or 0.0 for p in physics_lams2])
+
+        if not config.datamodule.get('use_crel', default_value=True):
+            config.datamodule.input_vars = [v for v in config.datamodule.input_vars if not str(v).startswith('crel_')]
+        if not config.datamodule.get('use_crelSurf', default_value=True):
+            config.datamodule.input_vars = [v for v in config.datamodule.input_vars if not v.startswith('crelSurf_')]
 
         if config.get('logger') and config.logger.get("wandb"):
             if 'callbacks' in config and config.callbacks.get('model_checkpoint'):
