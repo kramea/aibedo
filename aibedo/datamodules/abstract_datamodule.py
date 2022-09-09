@@ -19,7 +19,8 @@ from aibedo.models.base_model import BaseModel
 from aibedo.skeleton_framework.data_loader import shuffle_data
 from aibedo.utilities.constraints import AUXILIARY_VARS
 from aibedo.utilities.naming import var_names_to_clean_name
-from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value, get_any_ensemble_id, get_input_var_to_idx
+from aibedo.utilities.utils import get_logger, raise_error_if_invalid_value, get_any_ensemble_id, get_input_var_to_idx, \
+    get_all_present_esm_ensemble_ids
 
 log = get_logger(__name__)
 
@@ -50,6 +51,7 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                  output_vars: Sequence[str],
                  data_dir: str,
                  esm_for_training: Union[str, Sequence[str]] = "CESM2",
+                 ensemble_ids: Union[str, List[str]] = 'any',
                  partition: Sequence[float] = (0.8, 0.1, 0.1),
                  time_lag: int = 0,
                  prediction_data: str = "same_as_test",
@@ -70,6 +72,9 @@ class AIBEDO_DataModule(pl.LightningDataModule):
             output_vars: list of output/target variables, e.g. ['tas', 'pr', 'psl']
             data_dir (str):  A path to the data folder that contains the input and output files.
             esm_for_training (str | List[str]): The name(s) of the ESM to be used for training (and validation).
+            ensemble_ids (str | List[str]): The ensemble id(s) to be used for training (and validation).
+                Default: 'any', i.e. the ensemble id is set "r1i1p1f1" or any other id found in the data folder.
+                If 'all', all ensemble ids found in the data folder are used.
             partition (tuple): partition of the data into train, validation and test fractions/sets.
                                 Train and validation (indices 0 and 1) must be floats.
                                 Test (index 2) can be a float or a string.
@@ -113,10 +118,20 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         """
         raise NotImplementedError()
 
-    def input_filename_for_esm(self, ESM: str) -> str:
-        # Get the ensemble id (e.g.'r1i1p1f1')
+    def input_filename_for_esm(self, ESM: str, ensemble_id: str = None) -> str:
+        r""" Returns the filename of the input data for the given ESM and ensemble_id.
+
+            Args:
+                ESM (str): The name of the ESM. E.g.: "CESM2"
+                ensemble_id (str): The ensemble id. E.g.: "r1i1p1f1".
+                    Default: ´´None´´, i.e. the ensemble id is set "r1i1p1f1" or any other id found in the data folder.
+
+            Returns:
+                str: The filename of the input data for the given ESM and ensemble_id.
+        """
         masked_file = self.masked_ensemble_input_filename(ESM)
-        esm_ensemble_id = get_any_ensemble_id(self.hparams.data_dir, masked_file)
+        # Get the ensemble id (e.g.'r1i1p1f1')
+        esm_ensemble_id = ensemble_id or get_any_ensemble_id(self.hparams.data_dir, masked_file)
         return masked_file.replace('.*.', f'.{esm_ensemble_id}.')
 
     @property
@@ -378,17 +393,16 @@ class AIBEDO_DataModule(pl.LightningDataModule):
     def _model_specific_transform(self, input_data: np.ndarray, output_data: np.ndarray):
         return input_data, output_data
 
-    def _get_train_and_val_data_single_ESM(self,
-                                           stage: str,
-                                           ESM: str
-                                           ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    def _get_train_and_val_data_single_ESM_ensemble(self,
+                                                    stage: str,
+                                                    input_filename: str,
+                                                    ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
         """ Get the data corresponding to a single ESM run"""
         from sklearn.model_selection import train_test_split
         # compress.isosph5.SAM0-UNICON.historical.r1i1p1f1.Input.Exp8_fixed
         # E.g.:   input_file:  "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
         #         output_file: "<data-dir>/compress.isosph5.CESM2.historical.r1i1p1f1.Output.nc"
         train_frac, val_frac, _ = self.hparams.partition
-        input_filename = self.input_filename_for_esm(ESM=ESM)
         output_filename = self.input_filename_to_output_filename(input_filename)
         train_data_in, train_data_out = self._process_nc_dataset(input_filename, output_filename, shuffle=True,
                                                                  stage=stage)
@@ -407,18 +421,44 @@ class AIBEDO_DataModule(pl.LightningDataModule):
         if len(self.esm_for_training) > 1:
             log.info(f" Concatenating {len(self.esm_for_training)} ESM datasets for training/validation.")
         for i, esm in enumerate(self.esm_for_training):
-            X_train_esm, X_val_esm, Y_train_esm, Y_val_esm = self._get_train_and_val_data_single_ESM(stage, ESM=esm)
-            if stage == 'predict':
-                X_train_esm = Y_train_esm = None
-            if i == 0:
-                X_train, X_val, Y_train, Y_val = X_train_esm, X_val_esm, Y_train_esm, Y_val_esm
+            ensemble_id_strategy = self.hparams.ensemble_ids
+            if ensemble_id_strategy == 'all':
+                masked_esm_fname = self.masked_ensemble_input_filename(esm)
+                ensemble_ids = get_all_present_esm_ensemble_ids(self.hparams.data_dir, masked_esm_fname)
+                input_filenames = [self.input_filename_for_esm(esm, ensemble_id=ens_id) for ens_id in ensemble_ids]
+            elif ensemble_id_strategy == 'any':
+                input_filenames = [self.input_filename_for_esm(esm, ensemble_id=None)]
+                ensemble_ids = [input_filenames[0].split('.')[-4]]
             else:
-                # concatenate the data from the ESMs along the batch dimension
-                X_val = np.concatenate([X_val, X_val_esm], axis=0)
-                Y_val = np.concatenate([Y_val, Y_val_esm], axis=0)
-                if stage != 'predict':  # for predict data we don't care about the training data
-                    X_train = np.concatenate([X_train, X_train_esm], axis=0)
-                    Y_train = np.concatenate([Y_train, Y_train_esm], axis=0)
+                raise ValueError(f"Unknown ensemble_id_strategy: {ensemble_id_strategy}")
+
+            #self.trainer.logger.log_hyperparams({
+            #    f"training_data/{esm}/input_filenames": input_filenames,
+            #    f"training_data/{esm}/ensemble_ids": ensemble_ids,
+            #})
+            import wandb
+            if wandb.run:
+                wandb.config.update({
+                    f"training_data/{esm}/input_filenames": input_filenames,
+                    f"training_data/{esm}/ensemble_ids": ensemble_ids,
+                })
+            log.info(f" Ensembles from ESM={esm} used for training: {ensemble_ids}")
+
+            for j, input_filename in enumerate(input_filenames):
+                X_train_esm, X_val_esm, Y_train_esm, Y_val_esm = self._get_train_and_val_data_single_ESM_ensemble(
+                    stage, input_filename=input_filename
+                )
+                if stage == 'predict':
+                    X_train_esm = Y_train_esm = None
+                if i == 0 and j == 0:
+                    X_train, X_val, Y_train, Y_val = X_train_esm, X_val_esm, Y_train_esm, Y_val_esm
+                else:
+                    # concatenate the data from the ESMs along the batch dimension
+                    X_val = np.concatenate([X_val, X_val_esm], axis=0)
+                    Y_val = np.concatenate([Y_val, Y_val_esm], axis=0)
+                    if stage != 'predict':  # for predict data we don't care about the training data
+                        X_train = np.concatenate([X_train, X_train_esm], axis=0)
+                        Y_train = np.concatenate([Y_train, Y_train_esm], axis=0)
         return X_train, X_val, Y_train, Y_val
 
     def _log_at_setup_start(self, stage: Optional[str] = None):
@@ -468,9 +508,10 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                 _, X_predict, _, Y_predict = self._get_train_and_val_data(stage='predict')
                 data_predict_id = f'{train_val_esm}_val'
             elif self.prediction_data in CLIMATE_MODELS_ALL:
-                # E.g.: 'CESM2.historical.r1i1p1f1.Input.Exp8.nc' -> 'GFDL-4.historical.r1i1p1f1.Input.Exp8.nc'
                 predict_esm = self.prediction_data
-                _, X_predict, _, Y_predict = self._get_train_and_val_data_single_ESM(stage='predict', ESM=predict_esm)
+                predict_filename = self.input_filename_for_esm(ESM=predict_esm)
+                _, X_predict, _, Y_predict = self._get_train_and_val_data_single_ESM_ensemble(stage='predict',
+                                                                                              input_filename=predict_filename)
                 data_predict_id = self.prediction_data
             else:
                 options = ['same_as_test', 'val'] + CLIMATE_MODELS_ALL

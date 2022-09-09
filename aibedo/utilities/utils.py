@@ -242,19 +242,32 @@ def get_any_ensemble_id(data_dir, masked_input_filename: str, get_full_filename:
     if os.path.isfile(os.path.join(data_dir, default)):
         fname = default
     else:
-        curdir = os.getcwd()
-        os.chdir(data_dir)
-        files = glob.glob(masked_input_filename)
-        if len(files) == 0:
-            raise ValueError(f"No input files found in {data_dir} for mask: {masked_input_filename}!")
+        files = get_all_present_esm_ensemble_ids(data_dir, masked_input_filename, get_full_filenames=True)
         fname = files[0]
-        os.chdir(curdir)
+
     if get_full_filename:
         return fname
     else:
         ensemble_id = fname.split('.')[-4]
         return ensemble_id
 
+
+def get_all_present_esm_ensemble_ids(data_dir, masked_input_filename: str, get_full_filenames: bool = False) -> List[str]:
+    """ Get ensemble ID's for all ensembles that are present in the data directory. """
+    mask = '.*.'
+    if mask not in masked_input_filename:
+        raise ValueError(f"``masked_input_filename`` {masked_input_filename} does not mask the ensemble id with a '*'!")
+    curdir = os.getcwd()
+    os.chdir(data_dir)
+    files = glob.glob(masked_input_filename)
+    if len(files) == 0:
+        raise ValueError(f"No input files found in {data_dir} for mask: {masked_input_filename}!")
+    os.chdir(curdir)
+    if get_full_filenames:
+        return files
+    else:
+        files = [fname.split('.')[-4] for fname in files]
+        return files
 
 def stem_var_id(var_name: str) -> str:
     """ Get variable id from transformed variable name. """
