@@ -47,7 +47,7 @@ def get_detailed_name(config) -> str:
 
 def clean_name(class_name, mixer=None, dm_type=None) -> str:
     """ This names the model class paths with a more concise name."""
-    if "AFNONet" in class_name:
+    if "AFNONet" in class_name or 'Transformer' in class_name:
         if mixer is None or "AFNO" in mixer:
             s = 'FNO'
         elif "SelfAttention" in mixer:
@@ -89,7 +89,7 @@ def get_group_name(config) -> str:
     s = get_name_for_hydra_config_class(config.model)
     s = _shared_prefix(config, init_prefix=s)
     if config.datamodule.get('input_filename'):
-        s += f"_{config.datamodule._input_filename}"
+        s += f"_{config.datamodule.input_filename}"
 
     if config.get('normalizer'):
         if config.normalizer.get('spatial_normalization_in') and config.normalizer.get('spatial_normalization_out'):
