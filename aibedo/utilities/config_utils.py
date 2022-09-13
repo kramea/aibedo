@@ -186,6 +186,8 @@ def check_config_values(config: DictConfig):
             config.datamodule.input_vars = [v for v in config.datamodule.input_vars if not str(v).startswith('crel_')]
         if not config.datamodule.get('use_crelSurf', default_value=True):
             config.datamodule.input_vars = [v for v in config.datamodule.input_vars if not v.startswith('crelSurf_')]
+        if not config.datamodule.get('use_cresSurf', default_value=True):
+            config.datamodule.input_vars = [v for v in config.datamodule.input_vars if not v.startswith('cresSurf_')]
 
         if config.get('logger') and config.logger.get("wandb"):
             if 'callbacks' in config and config.callbacks.get('model_checkpoint'):

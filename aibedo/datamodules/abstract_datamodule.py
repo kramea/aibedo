@@ -55,8 +55,9 @@ class AIBEDO_DataModule(pl.LightningDataModule):
                  partition: Sequence[float] = (0.8, 0.1, 0.1),
                  time_lag: int = 0,
                  prediction_data: str = "same_as_test",
-                 use_crelSurf: bool = True,
                  use_crel: bool = True,
+                 use_crelSurf: bool = True,
+                 use_cresSurf: bool = True,
                  model_config: DictConfig = None,
                  batch_size: int = 64,
                  eval_batch_size: int = 512,
@@ -231,17 +232,13 @@ class AIBEDO_DataModule(pl.LightningDataModule):
 
         # check that remove_vars are indeed not present in the input_vars
         input_vars = self.hparams.input_vars
-        crel_in_input_vars = ['crel' in v for v in input_vars + self.input_var_names]
-        crelSurf_in_input_vars = ['crelSurf' in v for v in input_vars + self.input_var_names]
 
-        if self.hparams.use_crel:
-            assert any(crel_in_input_vars), "crel must be in input_vars if use_crel is True"
-        else:
-            assert not any(crel_in_input_vars), "crel cannot be in input_vars if use_crel is False"
-        if self.hparams.use_crelSurf:
-            assert any(crelSurf_in_input_vars), "crelSurf must be in input_vars if use_crelSurf is True"
-        else:
-            assert not any(crelSurf_in_input_vars), "crelSurf cannot be in input_vars if use_crelSurf is False"
+        for use_var in ['crel', 'crelSurf', 'cresSurf']:
+            var_in_input_vars = [use_var in v for v in input_vars + self.input_var_names]
+            if getattr(self.hparams, f'use_{use_var}'):
+                assert any(var_in_input_vars), f"{use_var} must be in input_vars if use_{use_var} is True"
+            else:
+                assert not any(var_in_input_vars), f"{use_var} cannot be in input_vars if use_{use_var} is False"
 
         # check if the train, val, test split is valid
         partition = self.hparams.partition
