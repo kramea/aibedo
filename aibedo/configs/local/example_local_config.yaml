@@ -4,14 +4,16 @@
 defaults:
   - override /trainer: default.yaml
 
-# override data dir for local runs
+# Override data dir for local runs here!
 datamodule:
   data_dir: "C:/Users/salvarc/data/"
-  input_filename: "compress.isosph5.CESM2.historical.r1i1p1f1.Input.Exp8_fixed.nc"
   num_workers: 1
 
+# Override here to use CPU only locally
 trainer:
   gpus: 0
 
+# Override here to change the complexity of the model, or whether to use CMIP6_<ERR>_clim_err.isoph6.npy files
 model:
   hidden_dims: [64]
+  use_auxiliary_vars: True
