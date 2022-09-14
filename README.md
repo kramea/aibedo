@@ -10,7 +10,7 @@ For a detailed documentation of AIBEDO, on the model architecture, dashboard, da
 ## Getting started
 
 ### Environment
-Please follow the instructions in the [environment](environment/README.md) folder to set up the correct conda environment.
+Please follow the instructions in the [environment](environment/) folder to set up the correct conda environment.
 
 ### Data Requirements
 Please read this [README](data/README.md) for information on how to download and set up the data.
