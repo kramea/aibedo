@@ -23,3 +23,6 @@ upload_best_ckpt_as_file:
 #  ckpt_dir: ${ckpt_dir}
 #  upload_best_only: True
 
+# This will log the LR as function of the #steps/epochs
+learning_rate_logging:
+ _target_: pytorch_lightning.callbacks.LearningRateMonitor

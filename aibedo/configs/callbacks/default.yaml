@@ -23,7 +23,3 @@ early_stopping:
   mode: ${model.mode}        # "min" means higher metric value is better, can be also "max"
   patience: 5                # how many validation epochs of not improving until training stops
   min_delta: 0               # minimum change in the monitored metric needed to qualify as an improvement
-
-# This will log the LR as function of the #steps/epochs
-learning_rate_logging:
- _target_: pytorch_lightning.callbacks.LearningRateMonitor
