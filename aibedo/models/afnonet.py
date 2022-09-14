@@ -8,7 +8,6 @@ import torch.nn.functional as F
 import torch.fft
 from einops import rearrange
 from omegaconf import DictConfig
-from timm.models.layers.drop import DropPath
 
 from timm.models.layers import to_2tuple, trunc_normal_
 from aibedo.models.base_model import BaseModel
@@ -205,8 +204,11 @@ class AFNO_Block(nn.Module):
         self.norm2 = get_normalization_layer(net_normalization, dim, **net_norm_kwargs)
 
         self.filter = hydra.utils.instantiate(filter_config, hidden_size=dim)
-
-        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        if drop_path > 0:
+            from timm.models.layers.drop import DropPath
+            self.drop_path = DropPath(drop_path)
+        else:
+            self.drop_path = nn.Identity()
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = MLP(input_dim=dim,
                        output_dim=dim,
