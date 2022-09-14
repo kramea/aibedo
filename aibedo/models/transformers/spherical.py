@@ -119,6 +119,7 @@ class PatchEmbedSpherical(nn.Module):
         pre_embed_dim = int(embed_dim * pre_embed_dim_factor)
         pre_embedders = list()
         for n_pixels_in_cluster in unique_member_counts:
+            # pre_embedders will project flattened version of each cluster to a vector of size pre_embed_dim
             pre_embedders += [nn.Linear(in_channels * n_pixels_in_cluster, pre_embed_dim)]
 
         self.pre_embedders = nn.ModuleList(pre_embedders)
@@ -135,10 +136,11 @@ class PatchEmbedSpherical(nn.Module):
                 zip(x, self.n_clusters_with_member_count, self.pre_embedders)
         ):
             # First, we need to extract the patch dim from x_sub & flatten the pixels in each patch to the channel dim:
+            # B = batch-size, p = #patches in sub-tensor, m = #pixel-members in each cluster, C = #input-channels
             x_sub = rearrange(x_sub, 'B (p m) C -> B p (m C)', p=n_patches_in_x_sub)
             # Now we can project the (pixels x in-channels) in each patch to the pre-embedding dim
             x[i] = sub_embedder(x_sub)  # new shape: (B, p, pre_embed_dim)
-        # Finally, we can concatenate the pre-projected patches back together
+        # Finally, we can concatenate the pre-projected patches back together into P total patches
         x: Tensor = torch.cat(x, dim=1)  # new shape: (B, P, pre_embed_dim)
         # ... and project them to the embedding dim
         x = self.embedder(x)  # new shape: (B, P, embed_dim)
