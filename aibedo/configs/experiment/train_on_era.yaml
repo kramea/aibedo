@@ -1,0 +1,29 @@
+# @package _global_
+
+# to execute this experiment run:
+# python run.py experiment=train_on_era
+
+defaults:
+  - override /mode: exp.yaml
+  - override /datamodule: icosahedron.yaml
+  - override /model: mlp.yaml
+  - override /callbacks: wandb.yaml
+  - override /logger: wandb.yaml
+  - _self_
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+# can also be accessed by loggers
+name: "ERA5_train_${datamodule.time_lag}h"
+
+datamodule:
+  time_lag: 0
+  esm_for_training: "era5"
+
+
+logger:
+  wandb:
+    tags:
+      - "ERA5-train"
