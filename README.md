@@ -7,28 +7,21 @@ AIBEDO is a hybrid AI framework to capture the effects of cloud properties on gl
 
 For a detailed documentation of AIBEDO, on the model architecture, dashboard, datasets and scenarios, please visit https://aibedo.readthedocs.io/
 
-## Environment
-
-AIBEDO is developed in Python 3.9.
-
-    # create new environment, if you want to use a different name, change the name (after -n) in the next line
-    conda env create -f env_simple.yaml -n aibedo
-    conda activate aibedo  # activate the environment called 'aibedo'
-
-*** Note for jupyter notebooks: *** You need to choose the above environment (aibedo) as kernel of the jupyter notebook.
-If the environment doesn't show up in the list of possible kernels, please do
-    
-    python -m ipykernel install --user --name aibedo   # change aibedo with whatever environment name you use 
-
-Then, please refresh the notebook page.
-
-## Demo
-
-Please visit [this notebook](notebooks/DEMO.ipynb) for a demo of AIBEDO.
-
 ## Getting started
 
+### Environment
+Please follow the instructions in the [environment](environment/README.md) folder to set up the correct conda environment.
+
+### Data Requirements
+Please read this [README](data/README.md) for information on how to download and set up the data.
+
+### Training
+
 ***Please have a look at [this README](aibedo/README.md)***
+
+### Demo
+
+Please visit [this notebook](notebooks/DEMO.ipynb) for a demo of AIBEDO.
 
 ## Concept
 

@@ -1,7 +1,3 @@
-# Environment
-    conda env create -f env.yaml   # create new environment with all dependencies
-    conda activate aibedo  # activate the environment called 'aibedo'
-
 # Train a model
 From the repository root, please run the following in the command line:    
 
@@ -14,11 +10,7 @@ This will train an MLP on the CPU using some default callbacks and hyperparamete
 - To train a specific model ``model=<model_name>``, e.g. ``model=sunet``, ``model=mlp``, etc.,
     where [configs/model/](configs/model)<model_name>.yaml is the configuration file for the model.
 
-- To override the data directory use either of the two options below:
-   1) ``datamodule.data_dir=<data-dir>``
-   2) Create a config file called [configs/local/](configs/local)default.yaml adapted 
-  from e.g. this example local config [configs/local/example_local_config.yaml](configs/local/example_local_config.yaml).
-  Its values will be automatically used whenever you run ``train.py``.
+- To override the data directory you can override the flag ``datamodule.data_dir=<data-dir>``
 
 ### Hyperparameter optimization
 Please install the hydra-optuna-wandb integration with
@@ -40,7 +32,7 @@ you can increase the limit with the following command: ``ulimit -n 65536``.
 ### Wandb support
 <details>
   <summary><b> Requirement </b></summary>
-The following requires you to have a wandb (team) account and you need to login with ``wandb login`` before you can use it.
+The following requires you to have a wandb (team) account, and you need to login with ``wandb login`` before you can use it.
 
 </details>
 
