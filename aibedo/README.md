@@ -61,7 +61,7 @@ in the [configs/local/](configs/local) subdirectory (Hydra searches for & uses b
 <details>
     <summary><b> Wandb </b></summary>
 
-If you use Wandb, make sure to select the "Group first prefix" option in the panel settings of the web app.
+If you use Wandb, make sure to select the "Group first prefix" option in the panel/workspace settings of the web app inside the project (in the top right corner).
 This will make it easier to browse through the logged metrics.
 </details>
 

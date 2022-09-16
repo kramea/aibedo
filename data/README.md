@@ -37,3 +37,10 @@ You can retain most functionality of the codebase without the ``CMIP6_<ERR>_clim
 If you don't have these files available, you can simply set the ``model.use_auxiliary_vars=False`` flag.
 Note that you won't be able to train the model with physics constraints in this case.
 
+### Download all ESM data
+To easily download all ESM data with Python you can follow these steps:
+  
+- Create a [_secrets.py](_secrets.py) file 
+- Add your AWS credentials to that file (the AWS_ACCESS_KEY and AWS_SECRET_KEY variables).
+- Make sure to have ``boto3`` installed (i.e. ``pip install boto3``).
+- Run the [download_data.py](download_data.py) script.
