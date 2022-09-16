@@ -23,7 +23,8 @@ From the repository root, please run the following in the command line:
 
 This will train an MLP on the CPU using some default callbacks and hyperparameters, but no logging.
 To change the used data directory you can override the flag ``datamodule.data_dir=YOUR-DATA-DIR``.
-For *more configuration & training options,* please see the [aibedo/README](aibedo/README.md).
+
+****For more configuration & training options, please see the [aibedo/README](aibedo/README.md).***
 
 ### Demo
 
