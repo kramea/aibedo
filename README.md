@@ -13,11 +13,17 @@ For a detailed documentation of AIBEDO, on the model architecture, dashboard, da
 Please follow the instructions in the [environment](environment/) folder to set up the correct conda environment.
 
 ### Data Requirements
-Please read this [README](data/README.md) for information on how to download and set up the data.
+Please read this [README](data/README.md) carefully for information on how to download and set up the data.
 
-### Training
+### Training a model
 
-***Please have a look at [this README](aibedo/README.md)***
+From the repository root, please run the following in the command line:    
+
+    python run.py trainer.gpus=0 model=mlp logger=none callbacks=default
+
+This will train an MLP on the CPU using some default callbacks and hyperparameters, but no logging.
+To change the used data directory you can override the flag ``datamodule.data_dir=YOUR-DATA-DIR``.
+For *more configuration & training options,* please see the [aibedo/README](aibedo/README.md).
 
 ### Demo
 
