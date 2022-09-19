@@ -2,7 +2,7 @@ data_dir: "/work/data/"   # Make sure that it is an absolute path!
 esm_for_training: "CESM2"
 ensemble_ids: "any"
 
-input_vars: ['crelSurf_pre', 'crel_pre', 'cresSurf_pre', 'cres_pre', 'netTOAcs_pre', 'lsMask', 'netSurfcs_pre']
+input_vars: ['crelSurf_pre', 'crel_pre', 'cresSurf_pre', 'cres_pre', 'netTOAcs_pre', 'lsMask', 'netSurfcs_pre', 'lon', 'lat']
 output_vars: ['tas_pre', 'ps_pre', 'pr_pre']
 use_crel: True
 use_crelSurf: True

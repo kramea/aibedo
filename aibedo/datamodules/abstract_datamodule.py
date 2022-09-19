@@ -299,13 +299,25 @@ class AIBEDO_DataModule(pl.LightningDataModule):
     def _concat_variables_into_channel_dim(self, data: xr.Dataset, variables: List[str], filename=None) -> np.ndarray:
         """Concatenate xarray variables into numpy channel dimension (last)."""
         data_all = []
+        data_dim1 = 1980 #hard_coded
         for var in variables:
-            # Get the variable from the dataset (as numpy array, by selecting .values)
-            var_data = data[var].values
-            # add feature dimension (channel)
-            var_data = np.expand_dims(var_data, axis=-1)
-            # add to list of all variables
-            data_all.append(var_data)
+            if var  == "lon" or var == "lat":
+                var_data = data[var].values
+                var_data_out = np.zeros([data_dim1, len(var_data)]) #1980, 40962
+                for i in range(data_dim1):
+                    var_data_out[i,:] = var_data
+                var_data = var_data_out
+                var_data = np.expand_dims(var_data, axis=-1)
+                data_all.append(var_data)
+            else:
+                # Get the variable from the dataset (as numpy array, by selecting .values)
+                var_data = data[var].values
+                data_dim1, data_dim2 = np.shape(var_data) 
+                # add feature dimension (channel)
+                var_data = np.expand_dims(var_data, axis=-1)
+                # add to list of all variables
+                data_all.append(var_data)
+        #SOO: Todo  append lon lat information
 
         # Concatenate all the variables into a single array along the last (channel/feature) dimension
         dataset = np.concatenate(data_all, axis=-1)
