@@ -82,7 +82,8 @@ def load_hydra_config_from_wandb(
     run = wandb.Api(timeout=77).run(run_path)
     if not isinstance(override_key_value, list):
         raise ValueError(f"override_key_value must be a list of strings, but has type {type(override_key_value)}")
-    overrides = override_key_value
+    # copy overrides to new list
+    overrides = list(override_key_value.copy())
     # Download from wandb cloud
     wandb_restore_kwargs = dict(run_path=run_path, replace=True, root=os.getcwd())
     try:
