@@ -3,6 +3,7 @@ mode: "min"          # "min" means higher metric value is better, can also be "m
 window: 1
 loss_weights: [0.333, 0.333, 0.333] # weights for the sub-losses
 physics_loss_weights: [0.0, 0.0, 0.0, 0.0, 0.0]
+input_noise_std: 0.0
 month_as_feature: False
 nonnegativity_at_train_time: True
 use_auxiliary_vars: True

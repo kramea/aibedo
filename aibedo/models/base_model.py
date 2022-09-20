@@ -48,6 +48,7 @@ class BaseModel(LightningModule):
         window (int): How many time-steps to use for prediction. Default: 1
         loss_weights: The weights for each of the sub-losses for each output variable. Default: Uniform weights
         physics_loss_weights: The weights for each of the physics losses. Default: No physics loss (all zeros)
+        input_noise_std (float): The standard deviation of the Gaussian noise to add to the input data. Default: 0
         nonnegativity_at_train_time (bool): Whether to enforce non-negativity at train time/ for backprop. Only used if physics_loss_weights[3] > 0
         month_as_feature (bool or str): Whether/How to use the month as a feature. Default: ``False`` (i.e. do not use it)
         use_auxiliary_vars (bool): Whether to use the auxiliary variables for computing the
@@ -74,6 +75,7 @@ class BaseModel(LightningModule):
                  lambda_physics3: float = None,
                  lambda_physics4: bool = None,
                  lambda_physics5: float = None,
+                 input_noise_std: float = 0.0,
                  nonnegativity_at_train_time: bool = True,
                  month_as_feature: Union[bool, str] = False,
                  use_auxiliary_vars: bool = True,
@@ -306,6 +308,13 @@ class BaseModel(LightningModule):
             # Just remove the potentially added auxiliary vars
             X_feats = X[..., :self.num_input_features]
 
+        # Do the following only during training
+        if self.training:
+            if self.hparams.input_noise_std > 0:
+                # Add white noise to the input
+                X_feats = X_feats + torch.randn_like(X_feats) * self.hparams.input_noise_std
+            # Add red noise to the input
+            # X_feats = X_feats + torch.randn_like(X_feats) * self.hparams.input_noise_std * torch.arange(X_feats.shape[-1], device=X_feats.device)
         Y = self(X_feats)  # forward pass
         return Y
 
