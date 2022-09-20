@@ -50,6 +50,6 @@ def run():
 
 if __name__ == '__main__':
     # load npz file
-    yy = np.load(f'{DATA_DIR}/preds-eof-nonorm.npz')
-    print(list(yy.keys()))
+    # yy = np.load(f'{DATA_DIR}/preds-eof-nonorm.npz')
+    # print(list(yy.keys()))
     run()
