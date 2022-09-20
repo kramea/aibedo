@@ -10,7 +10,8 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
 from aibedo.datamodules.abstract_datamodule import get_tensor_dataset_from_numpy
-from aibedo.utilities.utils import stem_var_id, get_logger
+from aibedo.utilities.utils import stem_var_id, get_logger, raise_error_if_invalid_value
+
 log = get_logger(__name__)
 
 
@@ -22,6 +23,7 @@ class AIBEDO_EOF_DataModule(pl.LightningDataModule):
                          'cres_pre', 'netTOAcs_pre', 'netSurfcs_pre'
                  ),
                  output_vars=('tas_pre', 'ps_pre', 'pr_pre'),
+                 simulation: str = 'historical',
                  partition: Sequence[float] = (0.8, 0.1, 0.1),
                  time_lag: int = 0,
                  batch_size: int = 32,
@@ -35,10 +37,13 @@ class AIBEDO_EOF_DataModule(pl.LightningDataModule):
         self.save_hyperparameters()
         self.input_vars = [(stem_var_id(var) + '_nonorm_pcs' if var != 'lsMask' else var) for var in input_vars]
         self.output_vars = [stem_var_id(var) + '_nonorm_pcs' for var in output_vars]
+        raise_error_if_invalid_value(simulation, ['historical', 'piControl'], name='simulation')
 
     def setup(self, stage: Optional[str] = None) -> None:
-        ds_in = xr.open_dataset(f"{self.hparams.data_dir}/eof.isosph5.nonorm.CESM2.historical.r1i1p1f1.Input.Exp8.nc")
-        ds_out = xr.open_dataset(f"{self.hparams.data_dir}/eof.isosph5.nonorm.CESM2.historical.r1i1p1f1.Output.nc")
+        # eof.isosph5.nonorm.CESM2.piControl.r1i1p1f1.Input.Exp8.nc
+        sim = self.hparams.simulation
+        ds_in = xr.open_dataset(f"{self.hparams.data_dir}/eof.isosph5.nonorm.CESM2.{sim}.r1i1p1f1.Input.Exp8.nc")
+        ds_out = xr.open_dataset(f"{self.hparams.data_dir}/eof.isosph5.nonorm.CESM2.{sim}.r1i1p1f1.Output.nc")
         ml_input = self._concat_variables_into_channel_dim(ds_in, self.input_vars)
         ml_output = self._concat_variables_into_channel_dim(ds_out, self.output_vars)
         # print(ml_input.shape, ml_output.shape)
