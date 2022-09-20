@@ -87,6 +87,7 @@ class AIBEDO_EOF_MLP(EOF_BaseModel):
         # The following saves all the args that are passed to the constructor to self.hparams
         #   e.g. access them with self.hparams.hidden_dims
         self.save_hyperparameters()
+        self.name = 'MLP'
 
         self.flatten_transform = FlattenTransform()
 
@@ -141,6 +142,7 @@ class EOF_AFNONet(EOF_BaseModel):
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.save_hyperparameters()
+        self.name = 'AFNO'
         mixer = OmegaConf.create({
             '_target_': 'aibedo.models.modules.afno1d.AFNO1D_Mixing',
             'num_blocks': 8,  # 8
