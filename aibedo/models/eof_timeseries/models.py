@@ -43,7 +43,16 @@ class EOF_BaseModel(LightningModule):
         Y_hat = self(X)
         loss = self.loss(Y_hat, Y)
         self.log('test/loss', loss, prog_bar=True)
-        return loss
+        return {'test_loss': loss, 'targets': Y, 'preds': Y_hat}
+
+    def test_epoch_end(self, outputs: List[Any]):
+        outputs = self._evaluation_get_preds(outputs)
+        return outputs
+
+    def _evaluation_get_preds(self, outputs: List[Any]):
+        targets = torch.cat([batch['targets'] for batch in outputs], dim=0).cpu().numpy()
+        preds = torch.cat([batch['preds'] for batch in outputs], dim=0).detach().cpu().numpy()
+        return {'targets': targets, 'preds': preds}
 
     def configure_optimizers(self, lr: float = 2e-4, weight_decay: float = 1e-5):
         return torch.optim.AdamW(self.parameters(), lr=lr, weight_decay=weight_decay)
@@ -52,6 +61,15 @@ class EOF_BaseModel(LightningModule):
         items = super().get_progress_bar_dict()
         items.pop("v_num", None)
         return items
+
+    def get_preds(self, dataloader):
+        self.eval()
+        outputs = []
+        for batch in dataloader:
+            X, Y = batch
+            Y_hat = self(X)
+            outputs.append({'targets': Y, 'preds': Y_hat})
+        return self._evaluation_get_preds(outputs)
 
 
 class AIBEDO_EOF_MLP(EOF_BaseModel):
