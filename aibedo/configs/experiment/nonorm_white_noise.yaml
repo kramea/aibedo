@@ -1,0 +1,20 @@
+# @package _global_
+
+defaults:
+  - multi_esm_top3.yaml
+  - nonorm.yaml
+  - _self_
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+# can also be accessed by loggers
+name: "nonorm_topM3ESM_${datamodule.time_lag}h_${model.input_noise_std}noise"
+
+datamodule:
+  batch_size: 5
+  time_lag: 3
+
+model:
+  input_noise_std: 0.05
