@@ -113,6 +113,7 @@ def reload_checkpoint_from_wandb(run_id: str,
                                  epoch: Optional[int] = None,
                                  override_key_value: Union[Sequence[str], dict] = None,
                                  try_local_recovery: bool = True,
+                                 local_checkpoint_path: str = None,
                                  ) -> dict:
     """
     Reload model checkpoint based on only the Wandb run ID
@@ -126,7 +127,8 @@ def reload_checkpoint_from_wandb(run_id: str,
         override_key_value: If a dict, every k, v pair is used to override the reloaded (hydra) config,
                             e.g. pass {datamodule.num_workers: 8} to change the corresponding flag in config.
                             If a sequence, each element is expected to have a "=" in it, like datamodule.num_workers=8
-        try_local_recovery: If True, try to reload the model from local file-system if it exists.
+        try_local_recovery (bool): If True, try to reload the model from local file-system if it exists.
+        local_checkpoint_path (str): If not None, the path to the local checkpoint to be reloaded.
     """
     from aibedo.interface import reload_model_from_config_and_ckpt
     run_path = f"{entity}/{project}/{run_id}"
@@ -139,7 +141,9 @@ def reload_checkpoint_from_wandb(run_id: str,
             OmegaConf.update(config, f'{k}._target_',
                              str(rgetattr(config, f'{k}._target_')).replace('aibedo_salva', 'aibedo'))
 
-    if try_local_recovery and get_local_ckpt_path(config, epoch=epoch) is not None:
+    if local_checkpoint_path is not None:
+        best_model_fname = best_model_path = local_checkpoint_path
+    elif try_local_recovery and get_local_ckpt_path(config, epoch=epoch) is not None:
         best_model_fname = best_model_path = get_local_ckpt_path(config, epoch=epoch)
         logging.info(f" Found a local ckpt for run {run_id} at {best_model_fname}, using it instead of wandb.")
     else:
