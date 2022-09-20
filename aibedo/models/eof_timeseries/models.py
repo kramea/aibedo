@@ -92,7 +92,7 @@ class AIBEDO_EOF_MLP(EOF_BaseModel):
         self.flatten_transform = FlattenTransform()
 
         mlp_total_spatial_dims = self.spatial_dim
-        self.output_tensor_shape = (-1, 1980, self.num_output_features)
+        self.output_tensor_shape = (-1, self.spatial_dim, self.num_output_features)
 
         self.input_dim = self.num_input_features * mlp_total_spatial_dims
         self.output_dim = self.num_output_features * mlp_total_spatial_dims
