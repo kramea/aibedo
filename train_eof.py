@@ -24,8 +24,10 @@ def run():
         time_lag=TIME_LAG
     )
 
-    mlp = AIBEDO_EOF_MLP(hidden_dims=[128, 128], dropout=0.1, residual=True)
-    afno = EOF_AFNONet(num_layers=3)
+    spatial_dim = 2000 if SIMULATION == 'piControl' else 1980
+
+    mlp = AIBEDO_EOF_MLP(hidden_dims=[128, 128], dropout=0.1, residual=True, spatial_dim=spatial_dim)
+    afno = EOF_AFNONet(num_layers=3, spatial_dim=spatial_dim)
 
     # CHOOSE HERE WHICH MODEL TO RUN
     model = mlp

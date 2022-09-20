@@ -17,9 +17,9 @@ log = get_logger(__name__)
 
 
 class EOF_BaseModel(LightningModule):
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, spatial_dim: int, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self.spatial_dim = 1980
+        self.spatial_dim = spatial_dim
         self.num_input_features = 6
         self.num_output_features = 3
         self.loss = get_loss('mse', reduction='mean')
