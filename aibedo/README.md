@@ -98,6 +98,13 @@ The following requires you to have a wandb (team) account, and you need to login
 ## Tips
 
 <details>
+    <summary><b> hydra.errors.InstantiationException </b></summary>
+
+The ``hydra.errors.InstantiationException`` itself is not very informative, 
+so you need to look at the preceding exception(s) (i.e. scroll up) to see what went wrong.
+</details>
+
+<details>
     <summary><b> Overriding nested Hydra config groups </b></summary>
 
 Nested config groups need to be overridden with a slash - not with a dot, since it would be interpreted as a string otherwise.
