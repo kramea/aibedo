@@ -11,6 +11,9 @@ from aibedo.train import run_model
 
 
 def single_esm_training_run(overrides, ESM: str):
+    for arg in overrides:
+        assert 'datamodule.esm_for_training=' not in arg, f"ESM should not be specified in overrides when calling this script: {arg}"
+
     esm_overrides = overrides + [f'datamodule.esm_for_training={ESM}']
 
     hydra.initialize(config_path="aibedo/configs", version_base=None)
