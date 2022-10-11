@@ -85,8 +85,10 @@ for the century if no intervention methods are employed.
 We plan to first do the study with E3SM, then repeat it with CESM, and the UKMO Earth System model.
 The project will first introduce perturbations in the cloud fields in the CESM2 model in 5 regions of the planet (see figure 1), and then introduce similar changes in the AIbedo AI model to see how accurate the AI model is reproducing/predicting the response of the GCM.
 
-.. image:: regions.png
-   :width: 600
+.. figure::
+   regions.png
+   
+   Figure 1. Region definitions for MCB perturbations
 
 The specific science questions to be addressed by these experiments are:
 
@@ -99,12 +101,12 @@ The specific science questions to be addressed by these experiments are:
 * Q7. Can one “optimize” the MCB to achieve particular climate goals?
 
 ~~~~~~~~~~~~~~~~~~~~~~~~
-Planned MCB Experiments
+Completed MCB Experiments
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 The AiBEDO team will participate in this inter-model comparison by contributing CESM2 simulations (outlined in Table 1) with perturbed cloud droplet number concentrations. In addition to the science conducted as part of the above described study, these simulations will serve as validation datasets for the AiBEDO response to cloud perturbations. As these simulations will have strong, out of sample perturbations and well sampled climate responses, they are the ideal test bed for evaluating the AiBEDO's ability to project climate responses to large perturbations in cloud droplet number of the kind required for MCB.
 
-.. list-table:: Table 1. MCB Experiments for model intercomparison
+.. list-table:: Experiment descriptions for CESM2 experiments completed to date (Oct 11, 2022)
    :widths: 20 20 20 20 20
    :header-rows: 1
 
@@ -119,30 +121,39 @@ The AiBEDO team will participate in this inter-model comparison by contributing 
      - Short atmosphere-only experiments aimed at identifying CDNC values in NE Pac (R1), SE Pac (R2), and SE Atl (R3) required to achieve -1.8Wm-2 forcing 
      - 10 x 5
    * - E2
-     - E3SM Control
+     - CESM Control
      - Fully Coupled
      - Control SSP2-4.5 experiments
-     - 2015 to 2070 x 10
+     - 2015 to 2065 x 17
    * - E3
-     - E3SM Control
-     - Fully Coupled + CDNC Fixed R1
+     - CESM Control + NEP forcing
+     - Fully Coupled
      - SSP2-4.5 experiments with CDNC forcing applied in the NE tropical Pacific
-     - 2015 to 2070 x 3
+     - 2015 to 2065 x 2
    * - E4
-     - E3SM Control
-     - Fully Coupled + CDNC Fixed R2
+     - CESM Control + SEP Forcing
+     - Fully Coupled
      - SSP2-4.5 experiments with CDNC forcing applied in the SE tropical Pacific
-     - 2015 to 2070 x 3
+     - 2015 to 2065 x 2
    * - E5
-     - E3SM Control
-     - Fully Coupled + CDNC Fixed R3
+     - CESM Control + SEA Forcing
+     - Fully Coupled
      - SSP2-4.5 experiments with CDNC forcing applied in the SE tropical Atlantic
-     - 2015 to 2070 x 3
+     - 2015 to 2065 x 2
    * - E6
-     - E3SM Control
-     - Fully Coupled + CDNC Fixed R1 + R2 + R3
+     - CESM Control + NEP, SEP, and SEA Forcing
+     - Fully Coupled 
      - SSP2-4.5 experiments with CDNC forcing applied in the NE Pac, SE Pac, and SE Atl
-     - 2015 to 2070 x 10
+     - 2015 to 2065 x 3
+
+Surface temperature and precipitation responses from experiments 3, 4, and 5 are shown in Figure 2. These anomaly patterns will be used to verify the pattern of climate response to MCB forcing in AiBEDO.
+
+.. figure:: 
+  forpres.png
+  
+  Figure 2. Surface temperature (left column) and precipitation (right column) responses to MCB-like perturbations in the SEP (top row), NEP (middle row), and SEA (bottom row). Calculated as the difference between the MCB perturbed simulations and the SSP2-4.5 baseline over the 2030-2060 period.
+
+
 ..   
 	Question for Kalai and Hansi:
 
@@ -193,9 +204,9 @@ References
 1.      Mcnutt, Marcia, et al. Climate Intervention: Carbon Dioxide Removal and Reliable Sequestration. Washington, D.C.: National Academies Press, 2015. https://doi.org/10.17226/18805.
 2.      Mcnutt, Marcia, et al. Climate Intervention: Reflecting Sunlight to Cool Earth. Washington, D.C.: National Academies Press, 2015. https://doi.org/10.17226/18988.
 3.      Latham, John, Keith Bower, Tom Choularton, Hugh Coe, Paul Connolly, Gary Cooper, Tim Craft, et al. “Marine Cloud Brightening.” Philosophical Transactions of the Royal Society A: Mathematical, Physical and Engineering Sciences 370, no. 1974 (September 13, 2012): 4217–62. https://doi.org/10.1098/rsta.2012.0086.
-4.	Jones, A., and J. M. Haywood. “Sea-Spray Geoengineering in the HadGEM2-ES Earth-System Model: Radiative Impact and Climate Response.” Atmospheric Chemistry and Physics 12, no. 22 (November 16, 2012): 10887–98. https://doi.org/10.5194/acp-12-10887-2012.
-1.      Jones, Andy, Jim Haywood, and Olivier Boucher. “Climate Impacts of Geoengineering Marine Stratocumulus Clouds.” Journal of Geophysical Research 114, no. D10 (May 27, 2009): D10106. https://doi.org/10.1029/2008JD011450.
-2.      Rasch, Philip J, John Latham, and Chih-Chieh (Jack) Chen. “Geoengineering by Cloud Seeding: Influence on Sea Ice and Climate System.” Environmental Research Letters 4, no. 4 (October 2009): 045112. https://doi.org/10.1088/1748-9326/4/4/045112.
+4.      Jones, A., and J. M. Haywood. “Sea-Spray Geoengineering in the HadGEM2-ES Earth-System Model: Radiative Impact and Climate Response.” Atmospheric Chemistry and Physics 12, no. 22 (November 16, 2012): 10887–98. https://doi.org/10.5194/acp-12-10887-2012.
+5.      Jones, Andy, Jim Haywood, and Olivier Boucher. “Climate Impacts of Geoengineering Marine Stratocumulus Clouds.” Journal of Geophysical Research 114, no. D10 (May 27, 2009): D10106. https://doi.org/10.1029/2008JD011450.
+6.      Rasch, Philip J, John Latham, and Chih-Chieh (Jack) Chen. “Geoengineering by Cloud Seeding: Influence on Sea Ice and Climate System.” Environmental Research Letters 4, no. 4 (October 2009): 045112. https://doi.org/10.1088/1748-9326/4/4/045112.
 
 
 
