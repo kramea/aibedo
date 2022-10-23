@@ -18,6 +18,7 @@ CLIMATE_MODELS_ALL = [
     "MPI-ESM1-2-LR",
     "MRI-ESM2-0",
     "SAM0-UNICON",
+    "BHISTsmbb",
 ]
 
 
