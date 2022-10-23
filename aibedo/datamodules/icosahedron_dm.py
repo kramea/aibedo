@@ -49,6 +49,7 @@ class IcosahedronDatamodule(AIBEDO_DataModule):
         suffix = 'Exp8' if self._is_denorm_nonorm else 'Exp8_fixed'
         return f"{self.files_id}{ESM}.historical.*.Input.{suffix}.nc"
 
+
     def input_filename_to_output_filename(self, input_filename: str) -> str:
         if self._is_denorm_nonorm:
             return input_filename.replace('Input.Exp8.nc', 'Output.nc')

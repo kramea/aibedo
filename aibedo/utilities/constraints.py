@@ -4,10 +4,10 @@ import torch.nn.functional as F
 from torch import Tensor
 
 AUXILIARY_VARS = [
-    'evspsbl_pre',  # evaporation
-    'hfss_pre',  # heat flux sea surface
-    'netTOARad_pre',  # top-of-atmosphere level radiation (shortwave)
-    'netSurfRad_pre'  # surface level radiation (longwave)
+    'evspsbl_nonorm',  # evaporation
+    'hfss_nonorm',  # heat flux sea surface
+    'netTOARad_nonorm',  # top-of-atmosphere level radiation (shortwave)
+    'netSurfRad_nonorm'  # surface level radiation (longwave)
 ]
 
 
