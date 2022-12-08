@@ -1,0 +1,3 @@
+[submodule "aibedoviz"]
+	path = aibedoviz
+	url = git@github.com:subhashis/aibedoviz.git
