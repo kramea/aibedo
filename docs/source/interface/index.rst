@@ -8,7 +8,7 @@ Our frontend interactive visual analysis (VA) system lets the climate scientists
 
 
 
-.. figure:: images/aibedo_VA_december_v2.png
+.. figure:: images/aibedo_VA_december_v3.png
    :scale: 28 %
    :alt: map to buried treasure
    
