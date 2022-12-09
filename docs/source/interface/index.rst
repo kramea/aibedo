@@ -30,8 +30,11 @@ Figure 1 shows a high-level overview of the VA system layout. The key functional
    
    Figure 1 High-level overview of the VA system.
    
-* V1. Input View: Visualize the input fields by selecting the desired input variable from the dropdown menu. The Perturbation switch when ``on`` shows the input fields with MCB perturbation, else it shows the base input field for the timestep selected in General Controls (C1)
-* V2. Output View: Visualize the output fields from different model run scenarios:
+* V1. Input View: 
+   * Visualize the input fields by selecting the desired input variable from the dropdown menu. 
+   * The Perturbation switch when ``on`` shows the input fields with MCB perturbation, else it shows the base input field for the timestep selected in General Controls (C1)
+* V2. Output View: 
+   * Visualize the output fields from different model run scenarios:
    * Current: Results of AiBEDO models with the base timestep as the input.
    * Before MCB: Results of AiBEDO models for the MCB duration without any perturbation applied.
    * After MCB: Results of AiBEDO models for the MCB duration with MCB perturbation seetings applied.
