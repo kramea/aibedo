@@ -129,22 +129,22 @@ The AiBEDO team will participate in this inter-model comparison by contributing 
      - CESM Control + NEP forcing
      - Fully Coupled
      - SSP2-4.5 experiments with CDNC forcing applied in the NE tropical Pacific
-     - 2015 to 2065 x 2
+     - 2015 to 2065 x 3
    * - E4
      - CESM Control + SEP Forcing
      - Fully Coupled
      - SSP2-4.5 experiments with CDNC forcing applied in the SE tropical Pacific
-     - 2015 to 2065 x 2
+     - 2015 to 2065 x 3
    * - E5
      - CESM Control + SEA Forcing
      - Fully Coupled
      - SSP2-4.5 experiments with CDNC forcing applied in the SE tropical Atlantic
-     - 2015 to 2065 x 2
+     - 2015 to 2065 x 3
    * - E6
      - CESM Control + NEP, SEP, and SEA Forcing
      - Fully Coupled 
      - SSP2-4.5 experiments with CDNC forcing applied in the NE Pac, SE Pac, and SE Atl
-     - 2015 to 2065 x 3
+     - 2015 to 2065 x 3 plus 2065-2075 rebound simulations
 
 Surface temperature and precipitation responses from experiments 3, 4, and 5 are shown in Figure 2. These anomaly patterns will be used to verify the pattern of climate response to MCB forcing in AiBEDO.
 

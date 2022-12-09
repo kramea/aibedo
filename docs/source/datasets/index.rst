@@ -6,9 +6,11 @@ Datasets
 Training data
 --------------
 
-Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (ESM) outputs which had sufficient data availability on AWS to calculate the requisite input variables for our analysis (shown in Table 1. For each ESM, there are three categories of data hyper-cubes: (a) input, (b) output, and (c) data for enforcing physics constraints. Based on the initial results from our alpha hybrid model, we revised and increased the list of input variables to achieve better hybrid model performance. The updated list of input, output, and constraint variables is shown in Table 2. Furthermore, testing indicates that model performance improves when the model is trained on a large data pool from a single ESM, thus we have opted to train on long preindustrial control (piControl) simulations in addition to historical simulations. 
+Our training data for Phase 1 consists of 
 
-.. list-table:: Table 1. Earth System Model datasets for Phase 1 training
+AiBEDO is trained on Earth System Model (ESM) output. In the case of the simultaneous model used for evaluating cloud-climate variability, we train on a subset of CMIP6 Earth System Model (ESM) outputs which had sufficient data availability on AWS to calculate the requisite input variables for our analysis (shown in Table 1. For each ESM, there are three categories of data hyper-cubes: (a) input, (b) output, and (c) data for enforcing physics constraints. Based on the initial results from our alpha hybrid model, we revised and increased the list of input variables to achieve better hybrid model performance. The updated list of input, output, and constraint variables is shown in Table 2. Furthermore, testing indicates that model performance improves when the model is trained on a large data pool from a single ESM, thus we have opted to train on long preindustrial control (piControl) simulations in addition to historical simulations.  
+
+.. list-table:: Table 1. Earth System Model datasets for training simultaneous AiBEDO
    :widths: 20 20 20 20 20
    :header-rows: 1
 
@@ -209,7 +211,14 @@ Our training data for Phase 1 consists of a subset of CMIP6 Earth System Model (
      - Time tendency of column integrated water vapour mass
      - :math:`\frac{dQ_{tot}}{dt} = \frac{1}{g}\frac{d}{dt} \sum_{lev} Q dp`
 
-The ESM data are pooled together to form the training and testing datasets for our hybrid model. However, it is important to note there are substantial differences in the climatologies and variability of some of the chosen input variables across models (Figure 1). In particular, global average cloud liquid water content, cloud ice water content, and net top of atmosphere radiation vary more across ESMs than other variables. The former two are the result of differences in cloud parameterizations between ESMs, while the latter is likely due to uncertainties in the overall magnitude of anthropogenic forcing over the historical period. Comparing spatial correlation scores (Figure 2), shows net TOA radiation fields are very similar across models while the spatial pattern of cloud ice and water content varies substantially. Such variations represent the inter-ESM uncertainty in the representation of the climate. However, many of these ESM differences are largely removed during preprocessing described below.
+The ESM data are pooled together to form the training and testing datasets for our hybrid model. However, it is important to note there are substantial differences in the climatologies and variability of some of the chosen input variables across models. In particular, global average cloud liquid water content, cloud ice water content, and net top of atmosphere radiation vary more across ESMs than other variables. The former two are the result of differences in cloud parameterizations between ESMs, while the latter is likely due to uncertainties in the overall magnitude of anthropogenic forcing over the historical period. Comparing spatial correlation scores, shows net TOA radiation fields are very similar across models while the spatial pattern of cloud ice and water content varies substantially. Such variations represent the inter-ESM uncertainty in the representation of the climate. However, many of these ESM differences are largely removed during preprocessing described below.
+
+When training a lagged model for MCB projections, we found we require a much larger, consistent sample of internal variability to train on. That is, we found that multi-model ensemble members of no-normalized data resulted errors in AiBEDO. Thus, we instead use data from the Community Earth System Model 2 (CESM2) Large Ensemble (LE) (Rodgers et al., 2021, Fig. 1), from which we use a 50-member ensemble of historical and SSP3-7.0 simulations with smoothed biomass burning. These are processed in the same manner as the CMIP6 data. 
+
+.. figure::
+	images/LENS_init_graphic.png
+
+  Figure 1. Initialization of CESM2 Large Ensemble simulations.
 
 Reanalysis
 -----------
@@ -230,6 +239,6 @@ Each of the above data hyper-cubes are preprocessed before ingestion into the hy
 #. **Remap data to Sphere-Icosahedral**: Use `Climate Data Operators <https://code.mpimet.mpg.de/projects/cdo/embedded/index.html#x1-6460002.12.1>`_ to bilinearly remap different ESM grids to uniform level-5 or level-6 Sphere-Icosahedral grid.
 
 .. figure::
-	images/preprocessing_example.png
+	images/preprocessing.png
 
-  Figure 3. Example preprocessing for a surface air temperature data point.
+  Figure 2. Example preprocessing for a surface air temperature data point.
