@@ -51,7 +51,7 @@ Figure 1 shows a high-level overview of the VA system layout. The key functional
    * ``Save MCB Settings`` button at the MCB Controls panel (C3) adds the current settings to the data table
    
 .. figure:: images/aibedo_mcb_records.png
-   :scale: 20 %
+   :scale: 40 %
    :alt: map to buried treasure
 
    Figure 2 MCB reords tab in the VA system.
