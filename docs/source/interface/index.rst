@@ -48,5 +48,11 @@ Figure 1 shows a high-level overview of the VA system layout. The key functional
    * The bar chart on the right sumarrizes the avergae percentage increase/decrease of the output fields after MCB application at these 7 differents sites
 * V4[Tab]. MCB Records:
    * Progressively store the desired MCB recordings in data table which can be later exported to track important MCB configurations.
+   * ``Save MCB Settings`` button at the MCB Controls panel (C3) adds the current settings to the data table
    
+.. figure:: images/aibedo_mcb_records.png
+   :scale: 20 %
+   :alt: map to buried treasure
+
+   Figure 2 MCB reords tab in the VA system.
    
