@@ -45,7 +45,7 @@ Figure 1 shows a high-level overview of the VA system layout. The key functional
 * V4. Tipping Point Risk:
    * Highlight the risk of climate tipping point at 7 geogragical sites after the MCB experiment. Red indicates the risk criteria is satisfied at that site else it is colored green.
    * ``TP Risk`` button at the MCB Controls panel (C3) updates this view for every MCB experiment
-   * The bar chart on the right sumarrizes the avergae percentage increase/decrease of the output fields after MCB application at these 7 differents sites
+   * The bar chart on the right summarizes the average percentage increase/decrease of the output fields after MCB application at these 7 differents sites
 * V4[Tab]. MCB Records:
    * Progressively store the desired MCB recordings in data table which can be later exported to track important MCB configurations.
    * ``Save MCB Settings`` button at the MCB Controls panel (C3) adds the current settings to the data table
@@ -54,5 +54,5 @@ Figure 1 shows a high-level overview of the VA system layout. The key functional
    :scale: 50 %
    :alt: map to buried treasure
 
-   Figure 2 MCB reords tab in the VA system.
+   Figure 2 MCB records tab in the VA system.
    
