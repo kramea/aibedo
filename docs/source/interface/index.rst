@@ -39,4 +39,14 @@ Figure 1 shows a high-level overview of the VA system layout. The key functional
    * Before MCB: Results of AiBEDO models for the MCB duration without any perturbation applied.
    * After MCB: Results of AiBEDO models for the MCB duration with MCB perturbation seetings applied.
    * Diff: The difference in output fields before and after MCB experiments.
-
+* V3. Distribution View:
+   * Display the density distribution of input fields for the full dataset being loaded. Desired input variable can be selected using the variable dropdown in panel V1.
+   * To detect any distribution shift because of MCB pertrurbations, the selected MCB duration fields are projected (red dot) on top of the original data distribution.
+* V4. Tipping Point Risk:
+   * Highlight the risk of climate tipping point at 7 geogragical sites after the MCB experiment. Red indicates the risk criteria is satisfied at that site else it is colored green.
+   * ``TP Risk`` button at the MCB Controls panel (C3) updates this view for every MCB experiment
+   * The bar chart on the right sumarrizes the avergae percentage increase/decrease of the output fields after MCB application at these 7 differents sites
+* V4[Tab]. MCB Records:
+   * Progressively store the desired MCB recordings in data table which can be later exported to track important MCB configurations.
+   
+   
