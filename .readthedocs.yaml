@@ -9,6 +9,10 @@ submodules:
   include: all
   recursive: true
 
+formats:
+  - epub
+  - pdf
+
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
    builder: html
