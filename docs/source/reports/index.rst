@@ -42,3 +42,23 @@ Milestone 5
 The main objective of this milestone is to illustrate the plans for Phase 2 dataset generation. The milestone also details the ongoing methodology. 
 
 `Link to milestone 5 report <https://github.com/kramea/aibedo/blob/main/docs/source/reports/Milestone5/AIBEDO_Milestone5_Jun13_22.pdf>`_
+
+
+Milestone 6
+-----------
+
+The objective of this milestone is to show the progress of the model and deliver the beta software (code).
+
+Milestone 7
+-----------
+
+The objective of this milestone is to a detailed plan for Phase 2 data integration.
+
+
+Milestone 8
+-----------
+
+This is the final deliverable of Phase 1.
+
+
+
