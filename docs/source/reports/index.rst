@@ -49,16 +49,23 @@ Milestone 6
 
 The objective of this milestone is to show the progress of the model and deliver the beta software (code).
 
+
+`Link to milestone 6 report <https://github.com/kramea/aibedo/blob/main/docs/source/reports/Milestone6/AIBEDO_Milestone6_Aug13.pdf>`__
+
 Milestone 7
 -----------
 
 The objective of this milestone is to a detailed plan for Phase 2 data integration.
 
 
+`Link to milestone 7 report <https://github.com/kramea/aibedo/blob/main/docs/source/reports/Milestone7/AIBEDO_Milestone7_Oct13.pdf>`__
+
 Milestone 8
 -----------
 
 This is the final deliverable of Phase 1.
 
+
+`Link to milestone 8 report <https://github.com/kramea/aibedo/blob/main/docs/source/reports/Milestone8/AIBEDO_Milestone8_Dec13.pdf>`__
 
 
