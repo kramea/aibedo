@@ -15,7 +15,7 @@ Figure 1 shows a high-level overview of the VA system layout. The key functional
    #. Projection: Geospatial projection scheme for visualization in input and output panels (i.e., V1 and v2). Default: ``natural earth``
 
 * C2. Model Controls:
-   #. Run AiBEDO: Execute the trained hybrid AI model with base input is MCB control (C3) is not turned-on, else run the model with MCB settings and explained below.
+   #. Run AiBEDO: Execute the trained hybrid AI model with base input if MCB control (C3) is not turned-on, else run the model with MCB settings and explained below.
    #. Clear Data: Clear the output buffers from memory.
 * C3. MCB Controls:
    #. Switch: Turn on to activate MCB experiments. Default: ``Off``
